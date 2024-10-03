@@ -16,7 +16,7 @@ import {
   Group as GroupIcon,
   ReportProblem as ReportProblemIcon,
 } from "@mui/icons-material";
-import logo from "./img/logo.png";
+import logo from "./img/Logo.svg";
 import { styled } from "@mui/system";
 
 const Header = () => {
