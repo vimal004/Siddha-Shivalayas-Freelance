@@ -37,9 +37,13 @@ router.get("/:id", async (req, res) => {
 // Update Stock
 router.put("/:id", async (req, res) => {
   try {
-    const stock = await Stock.findOneAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const stock = await Stock.findOneAndUpdate(
+      { stockId: req.params.id },
+      req.body,
+      {
+        new: true,
+      }
+    );
     if (!stock) return res.status(404).json({ message: "Stock not found" });
     res.json(stock);
   } catch (error) {
@@ -50,8 +54,7 @@ router.put("/:id", async (req, res) => {
 // Delete Stock
 router.delete("/:id", async (req, res) => {
   try {
-    const stock = await Stock.findOne(req.params.id);
-    stock.remove(); 
+    const stock = await Stock.findOneAndDelete({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
     res.json({ message: "Stock deleted successfully" });
   } catch (error) {
