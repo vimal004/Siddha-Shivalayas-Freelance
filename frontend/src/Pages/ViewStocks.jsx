@@ -83,7 +83,7 @@ const ViewStocks = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} style={{ textAlign: "center" }}>
-                      No Group Record Found
+                      No Product Stock Record Found
                     </TableCell>
                   </TableRow>
                 )}

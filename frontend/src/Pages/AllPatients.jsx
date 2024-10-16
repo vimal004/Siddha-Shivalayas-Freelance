@@ -31,7 +31,7 @@ const AllPatients = () => {
     data: customers,
     loading,
     error,
-  } = useFetchData("https://vcf-backend.vercel.app/customers");
+  } = useFetchData("https://siddha-shivalayas-backend.vercel.app/patients");
 
   const [filter, setFilter] = useState({ name: "", group: "" });
 
@@ -139,7 +139,7 @@ const AllPatients = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} style={{ textAlign: "center" }}>
-                      No Customer Record Found
+                      No Patient Record Found
                     </TableCell>
                   </TableRow>
                 )}
