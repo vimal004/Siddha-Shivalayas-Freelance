@@ -1,7 +1,6 @@
 import React from "react";
 import Header from "./Header";
 import Home from "./Home";
-import AllCustomers from "./Pages/AllCustomers";
 import Transaction from "./Pages/Transaction";
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import Defaulters from "./Pages/Defaulters";
@@ -9,6 +8,7 @@ import ViewStocks from "./Pages/ViewStocks";
 import StockForm from "./Pages/StockForm";
 import LoginForm from "./Pages/Login";
 import PatientForm from "./Pages/PatientForm";
+import AllPatients from "./Pages/AllPatients";
 
 function App() {
   return (
@@ -38,7 +38,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/allpatients",
-        element: <AllCustomers />,
+        element: <AllPatients />,
       },
       {
         path: "customers/:customerid",

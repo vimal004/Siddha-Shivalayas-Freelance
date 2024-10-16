@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const AllCustomers = () => {
+const AllPatients = () => {
   const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -152,4 +152,4 @@ const AllCustomers = () => {
   );
 };
 
-export default AllCustomers;
+export default AllPatients;

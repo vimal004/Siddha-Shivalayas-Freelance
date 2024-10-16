@@ -37,9 +37,13 @@ router.get("/:id", async (req, res) => {
 // Update Patient
 router.put("/:id", async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const patient = await Patient.findOneAndUpdate(
+      { id: req.params.id },
+      req.body,
+      {
+        new: true,
+      }
+    );
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);
   } catch (error) {
@@ -50,7 +54,7 @@ router.put("/:id", async (req, res) => {
 // Delete Patient
 router.delete("/:id", async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndDelete(req.params.id);
+    const patient = await Patient.findByIdAndDelete({ id: req.params.id });
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json({ message: "Patient deleted successfully" });
   } catch (error) {

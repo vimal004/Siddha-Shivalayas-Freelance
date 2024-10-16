@@ -77,7 +77,7 @@ const PatientForm = () => {
   const handleDelete = () => {
     setLoadingDelete(true);
     axios
-      .delete(`https://vcf-backend.vercel.app/patient/${formData.id}`) // API adjusted for hospital
+      .delete(`https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`) // API adjusted for hospital
       .then(() => {
         setDeleted(true);
         resetForm();
@@ -96,7 +96,10 @@ const PatientForm = () => {
   const handleUpdate = () => {
     setLoadingUpdate(true);
     axios
-      .put("https://vcf-backend.vercel.app/patient", formData) // Adjusted for hospital
+      .put(
+        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`,
+        formData
+      ) // Adjusted for hospital
       .then((res) => {
         setUpdated(true);
         resetForm();
