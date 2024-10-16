@@ -72,28 +72,28 @@ const Header = () => {
                 to="/allcustomers"
                 startIcon={<PeopleAltIcon />}
               >
-                View Customers
+                View Patients
               </AnimatedButton>
               <AnimatedButton
                 component={Link}
-                to="/managecustomers"
+                to="/managepatients"
                 startIcon={<PersonIcon />}
               >
-                Manage Customers
+                Manage Patients
               </AnimatedButton>
               <AnimatedButton
                 component={Link}
                 to="/managegroups"
                 startIcon={<GroupIcon />}
               >
-                Manage Groups
+                Manage Stocks
               </AnimatedButton>
               <AnimatedButton
                 component={Link}
                 to="/viewgroups"
                 startIcon={<GroupIcon />}
               >
-                View Groups
+                View Stocks
               </AnimatedButton>
               <AnimatedButton
                 component={Link}

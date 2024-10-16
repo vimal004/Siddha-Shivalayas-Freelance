@@ -87,7 +87,7 @@ const Home = () => {
               sx={buttonStyles}
               startIcon={<GroupIcon sx={iconStyles} />}
             >
-              Manage Groups
+              Manage Product Stocks
             </Button>
           </Link>
         </Grid>
