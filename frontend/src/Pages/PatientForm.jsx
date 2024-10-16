@@ -54,7 +54,7 @@ const PatientForm = () => {
   // Fetching treatment/medicine data from API
   useEffect(() => {
     axios
-      .get("https://vcf-backend.vercel.app/treatments") // Adjusted for hospital data
+      .get("https://siddha-shivalayas-backend.vercel.app") // Adjusted for hospital data
       .then((response) => {
         setTreatmentData(response?.data?.data);
       })
@@ -84,15 +84,6 @@ const PatientForm = () => {
         setTimeout(() => {
           setDeleted(false);
         }, 3000);
-        axios
-          .delete(`https://vcf-backend.vercel.app/treatment/records`, {
-            data: { id: formData.id },
-          })
-          .then((res) => {})
-          .catch((err) => {
-            console.error(err);
-          })
-          .finally(() => setLoadingDelete(false));
       })
       .catch((err) => {
         console.error(err);
@@ -141,7 +132,7 @@ const PatientForm = () => {
     }
 
     axios
-      .post("https://vcf-backend.vercel.app/patient", formData) // Adjusted for hospital
+      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData) // Adjusted for hospital
       .then(() => {
         setSuccess(true);
         setCreated(true);
@@ -151,13 +142,6 @@ const PatientForm = () => {
           setSuccess(null);
           setErrorMessage("");
         }, 3000);
-        if (treatmentData) {
-          setGroupData(
-            treatmentData.filter(
-              (d) => d.treatmentOrMedicine === formData.treatmentOrMedicine
-            ) || null
-          );
-        }
       })
       .catch((err) => {
         console.error(err);

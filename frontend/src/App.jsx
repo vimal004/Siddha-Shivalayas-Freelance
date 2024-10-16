@@ -3,7 +3,6 @@ import Header from "./Header";
 import Home from "./Home";
 import AllCustomers from "./Pages/AllCustomers";
 import Transaction from "./Pages/Transaction";
-import CustomerForm from "./Pages/CustomerForm";
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import Defaulters from "./Pages/Defaulters";
 import ViewGroups from "./Pages/ViewGroups";
