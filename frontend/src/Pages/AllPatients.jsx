@@ -33,7 +33,7 @@ const AllPatients = () => {
     error,
   } = useFetchData("https://siddha-shivalayas-backend.vercel.app/patients");
 
-  const [filter, setFilter] = useState({ name: "", group: "" });
+  const [filter, setFilter] = useState({ name: "", treatmentOrMedicine: "" });
 
   const handleFilterChange = (e) => {
     setFilter({ ...filter, [e.target.name]: e.target.value });
@@ -41,7 +41,7 @@ const AllPatients = () => {
 
   const filteredCustomers = customers.filter((customer) => {
     return (
-      (filter.group === "" || customer.group === parseInt(filter.group, 10)) &&
+      (filter.treatmentOrMedicine === "" || customer.treatmentOrMedicine === parseInt(filter.treatmentOrMedicine, 10)) &&
       (filter.name === "" ||
         customer.name.toLowerCase().includes(filter.name.toLowerCase()))
     );
@@ -65,7 +65,7 @@ const AllPatients = () => {
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
-          <strong>Customer Details</strong>
+          <strong>Patient Details</strong>
         </Typography>
         <div
           style={{
@@ -76,10 +76,10 @@ const AllPatients = () => {
           }}
         >
           <TextField
-            name="group"
-            value={filter.group}
+            name="treatmentOrMedicine"
+            value={filter.treatmentOrMedicine}
             onChange={handleFilterChange}
-            label="Filter By Group"
+            label="Filter By treatmentOrMedicine"
             variant="outlined"
             fullWidth
             style={{
