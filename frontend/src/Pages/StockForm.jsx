@@ -110,7 +110,7 @@ const StockForm = () => {
     e.preventDefault();
     setLoadingCreate(true);
     axios
-      .post("https://your-backend-url/stock", formData)
+      .post("https://siddha-shivalayas-backend.vercel.app/stocks", formData)
       .then(() => {
         setSuccess(true);
         setCreated(true);

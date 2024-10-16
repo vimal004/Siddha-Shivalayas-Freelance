@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
-const ViewGroups = () => {
+const ViewStocks = () => {
   const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -28,7 +28,7 @@ const ViewGroups = () => {
     data: groups,
     loading,
     error,
-  } = useFetchData("https://vcf-backend.vercel.app/group");
+  } = useFetchData("https://siddha-shivalayas-backend.vercel.app/stocks");
 
   return (
     <Container
@@ -45,7 +45,7 @@ const ViewGroups = () => {
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
-          <strong>Groups</strong>
+          <strong>Stocks</strong>
         </Typography>
         {loading ? (
           <div style={{ textAlign: "center", marginTop: "20px" }}>
@@ -60,20 +60,24 @@ const ViewGroups = () => {
             <Table>
               <TableHead style={{ backgroundColor: "#f5f5f5" }}>
                 <TableRow>
-                  <TableCell>Group Name</TableCell>
-                  <TableCell>Group</TableCell>
-                  <TableCell>Months</TableCell>
-                  <TableCell>Start Month</TableCell>
+                  <TableCell>Product ID</TableCell>
+                  <TableCell>Product Name</TableCell>
+                  <TableCell>Quantity</TableCell>
+                  <TableCell>Price</TableCell>
+                  <TableCell>Discount</TableCell>
+                  <TableCell>GST</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {groups.length > 0 ? (
                   groups.map((group) => (
-                    <TableRow key={group._id}>
-                      <TableCell>{group.groupname}</TableCell>
-                      <TableCell>{group.group}</TableCell>
-                      <TableCell>{group.months}</TableCell>
-                      <TableCell>{group.startmonth}</TableCell>
+                    <TableRow key={group.stockId}>
+                      <TableCell>{group.stockId}</TableCell>
+                      <TableCell>{group.productName}</TableCell>
+                      <TableCell>{group.quantity}</TableCell>
+                      <TableCell>{group.price}</TableCell>
+                      <TableCell>{group.discount}</TableCell>
+                      <TableCell>{group.gst}</TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -92,4 +96,4 @@ const ViewGroups = () => {
   );
 };
 
-export default ViewGroups;
+export default ViewStocks;

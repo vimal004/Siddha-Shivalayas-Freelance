@@ -5,9 +5,8 @@ import AllCustomers from "./Pages/AllCustomers";
 import Transaction from "./Pages/Transaction";
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import Defaulters from "./Pages/Defaulters";
-import ViewGroups from "./Pages/ViewGroups";
-import GroupForm from "./Pages/GroupForm";
-import { Login } from "@mui/icons-material";
+import ViewStocks from "./Pages/ViewStocks";
+import StockForm from "./Pages/StockForm";
 import LoginForm from "./Pages/Login";
 import PatientForm from "./Pages/PatientForm";
 
@@ -47,7 +46,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/managestocks",
-        element: <GroupForm />,
+        element: <StockForm />, 
       },
       {
         path: "/defaulters",
@@ -55,7 +54,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/viewstocks",
-        element: <ViewGroups />,
+        element: <ViewStocks />,
       },
     ],
   },
