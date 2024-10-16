@@ -54,35 +54,33 @@ const StockForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleDelete = () => {
-    setLoadingDelete(true);
+    setLoadingDelete(true); // Start loading state
     axios
-      .delete("https://your-backend-url/stock", {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: {
-          stockId: formData.stockId,
-        },
-      })
+      .delete(
+        `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`
+      )
       .then(() => {
-        setDeleted(true);
-        resetForm();
+        setDeleted(true); // Mark as deleted
+        resetForm(); // Clear form data
         setTimeout(() => {
-          setDeleted(false);
+          setDeleted(false); // Reset after 3 seconds
         }, 3000);
       })
       .catch((err) => {
-        console.error("Error deleting stock:", err);
-        setErrorMessage("Stock deletion failed");
-        setSuccess(false);
+        console.error("Error deleting stock:", err); // Log the error for debugging
+        setErrorMessage("Stock deletion failed"); // Show error message
+        setSuccess(false); // Reset success flag
       })
-      .finally(() => setLoadingDelete(false));
+      .finally(() => setLoadingDelete(false)); // Always stop loading state
   };
 
   const handleUpdate = () => {
     setLoadingUpdate(true);
     axios
-      .put("https://your-backend-url/stock", formData)
+      .put(
+        `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`,
+        formData
+      )
       .then(() => {
         setUpdated(true);
         resetForm();
