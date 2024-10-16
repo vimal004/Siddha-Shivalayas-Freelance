@@ -131,7 +131,7 @@ const AllPatients = () => {
                         </Link>
                       </TableCell>
                       <TableCell>{customer.name}</TableCell>
-                      <TableCell>{customer.phno}</TableCell>
+                      <TableCell>{customer.phone}</TableCell>
                       <TableCell>{customer.address}</TableCell>
                       <TableCell>{customer.treatmentOrMedicine}</TableCell>
                     </TableRow>
