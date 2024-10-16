@@ -54,7 +54,7 @@ router.put("/:id", async (req, res) => {
 // Delete Patient
 router.delete("/:id", async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndDelete({ id: req.params.id });
+    const patient = await Patient.findOneAndDelete({ id: req.params.id });
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json({ message: "Patient deleted successfully" });
   } catch (error) {

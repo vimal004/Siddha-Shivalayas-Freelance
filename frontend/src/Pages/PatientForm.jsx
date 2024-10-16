@@ -77,7 +77,9 @@ const PatientForm = () => {
   const handleDelete = () => {
     setLoadingDelete(true);
     axios
-      .delete(`https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`) // API adjusted for hospital
+      .delete(
+        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`
+      )
       .then(() => {
         setDeleted(true);
         resetForm();
