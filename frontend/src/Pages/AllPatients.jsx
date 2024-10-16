@@ -115,7 +115,7 @@ const AllPatients = () => {
                   <TableCell>Customer Name</TableCell>
                   <TableCell>Phone Number</TableCell>
                   <TableCell>Address</TableCell>
-                  <TableCell>Group Number</TableCell>
+                  <TableCell>treatmentOrMedicine</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -133,7 +133,7 @@ const AllPatients = () => {
                       <TableCell>{customer.name}</TableCell>
                       <TableCell>{customer.phno}</TableCell>
                       <TableCell>{customer.address}</TableCell>
-                      <TableCell>{customer.group}</TableCell>
+                      <TableCell>{customer.treatmentOrMedicine}</TableCell>
                     </TableRow>
                   ))
                 ) : (
