@@ -140,13 +140,13 @@ const GroupForm = () => {
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
-          <strong>Group Form</strong>
+          <strong>Stock Form</strong>
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
-                label="Group Number"
+                label="Stock ID"
                 name="group"
                 value={formData.group}
                 onChange={handleChange}
@@ -160,7 +160,7 @@ const GroupForm = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Group Name"
+                label="Product Name"
                 name="groupname"
                 value={formData.groupname}
                 onChange={handleChange}
@@ -173,7 +173,7 @@ const GroupForm = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Months"
+                label="Quantity"
                 name="months"
                 value={formData.months}
                 onChange={handleChange}
@@ -186,7 +186,46 @@ const GroupForm = () => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                label="Starting Month"
+                label="Price"
+                name="startmonth"
+                value={formData.startmonth}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+                InputProps={{
+                  style: { borderRadius: "8px" },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="HSN Code"
+                name="startmonth"
+                value={formData.startmonth}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+                InputProps={{
+                  style: { borderRadius: "8px" },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Discount"
+                name="startmonth"
+                value={formData.startmonth}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+                InputProps={{
+                  style: { borderRadius: "8px" },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="GST"
                 name="startmonth"
                 value={formData.startmonth}
                 onChange={handleChange}
@@ -275,7 +314,7 @@ const GroupForm = () => {
                 setUpdated(false);
               }}
             >
-              {created && "Group Created"}
+              {created && "Stock Created"}
               {deleted && "Group Record Deleted"}
               {updated && "Group Record Updated"}
             </MuiAlert>

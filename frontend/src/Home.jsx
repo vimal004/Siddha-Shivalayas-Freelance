@@ -70,13 +70,13 @@ const Home = () => {
           </Link>
         </Grid>
         <Grid item>
-          <Link to="/managecustomers" style={{ textDecoration: "none" }}>
+          <Link to="/managepatients" style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
               sx={buttonStyles}
               startIcon={<PeopleIcon sx={iconStyles} />}
             >
-              Manage Customer Records
+              Manage Patient Records
             </Button>
           </Link>
         </Grid>

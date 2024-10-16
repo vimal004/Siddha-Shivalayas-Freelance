@@ -10,6 +10,7 @@ import ViewGroups from "./Pages/ViewGroups";
 import GroupForm from "./Pages/GroupForm";
 import { Login } from "@mui/icons-material";
 import LoginForm from "./Pages/Login";
+import PatientForm from "./Pages/PatientForm";
 
 function App() {
   return (
@@ -34,8 +35,8 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "/managecustomers",
-        element: <CustomerForm />,
+        path: "/managepatients",
+        element: <PatientForm />,
       },
       {
         path: "/allcustomers",
