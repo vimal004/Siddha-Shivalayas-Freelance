@@ -12,7 +12,7 @@ import {
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
 
-const CustomerForm = () => {
+const PatientForm = () => {
   const navigate = useNavigate();
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -21,25 +21,17 @@ const CustomerForm = () => {
     }
   }, [navigate]);
 
+  // Form Data for Patient Information
   const [formData, setFormData] = useState({
     id: "",
     name: "",
-    phno: "",
+    phone: "",
     address: "",
-    group: "",
+    treatmentOrMedicine: "",
   });
 
-  const [inputValues, setInputValues] = useState({
-    auctionDate: "",
-    dueDate: "",
-    remainingAmount: "",
-    dueAmount: "",
-    paidAmount: "",
-    status: "Pending",
-  });
-
-  const [tdat, setTdat] = useState(null);
-  const [gdat, setGdat] = useState(null);
+  const [treatmentData, setTreatmentData] = useState(null); // Treatment Data from API
+  const [groupData, setGroupData] = useState(null); // Filtered group-specific data
   const [created, setCreated] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [updated, setUpdated] = useState(false);
@@ -48,37 +40,44 @@ const CustomerForm = () => {
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
   const resetForm = () => {
     setFormData({
       id: "",
       name: "",
-      phno: "",
+      phone: "",
       address: "",
-      group: "",
+      treatmentOrMedicine: "",
     });
   };
 
+  // Fetching treatment/medicine data from API
   useEffect(() => {
     axios
-      .get("https://vcf-backend.vercel.app/group")
+      .get("https://vcf-backend.vercel.app/treatments") // Adjusted for hospital data
       .then((response) => {
-        setTdat(response?.data?.data);
+        setTreatmentData(response?.data?.data);
       })
       .catch((error) => {
-        console.error("Error fetching group:", error);
+        console.error("Error fetching treatment data:", error);
       });
   }, []);
 
+  // Filter treatment data based on selected treatment or medicine
   useEffect(() => {
-    if (tdat) {
-      setGdat(tdat.filter((d) => d.group === formData.group));
+    if (treatmentData) {
+      setGroupData(
+        treatmentData.filter(
+          (d) => d.treatmentOrMedicine === formData.treatmentOrMedicine
+        )
+      );
     }
-  }, [formData, tdat]);
+  }, [formData, treatmentData]);
 
   const handleDelete = () => {
     setLoadingDelete(true);
     axios
-      .delete(`https://vcf-backend.vercel.app/customer/${formData.id}`)
+      .delete(`https://vcf-backend.vercel.app/patient/${formData.id}`) // API adjusted for hospital
       .then(() => {
         setDeleted(true);
         resetForm();
@@ -86,7 +85,7 @@ const CustomerForm = () => {
           setDeleted(false);
         }, 3000);
         axios
-          .delete(`https://vcf-backend.vercel.app/group/transaction`, {
+          .delete(`https://vcf-backend.vercel.app/treatment/records`, {
             data: { id: formData.id },
           })
           .then((res) => {})
@@ -98,7 +97,7 @@ const CustomerForm = () => {
       .catch((err) => {
         console.error(err);
         setLoadingDelete(false);
-        setErrorMessage("Customer deletion failed");
+        setErrorMessage("Patient deletion failed");
         setSuccess(false);
       });
   };
@@ -106,7 +105,7 @@ const CustomerForm = () => {
   const handleUpdate = () => {
     setLoadingUpdate(true);
     axios
-      .put("https://vcf-backend.vercel.app/customer", formData)
+      .put("https://vcf-backend.vercel.app/patient", formData) // Adjusted for hospital
       .then((res) => {
         setUpdated(true);
         resetForm();
@@ -118,7 +117,7 @@ const CustomerForm = () => {
       .catch((err) => {
         console.error(err);
         setLoadingUpdate(false);
-        setErrorMessage("Customer update failed");
+        setErrorMessage("Patient update failed");
         setSuccess(false);
       });
   };
@@ -135,14 +134,14 @@ const CustomerForm = () => {
     e.preventDefault();
     setLoadingCreate(true);
     if (!formData.id) {
-      setErrorMessage("ID is required");
+      setErrorMessage("Patient ID is required");
       setSuccess(false);
       setLoadingCreate(false);
       return;
     }
 
     axios
-      .post("https://vcf-backend.vercel.app/customer", formData)
+      .post("https://vcf-backend.vercel.app/patient", formData) // Adjusted for hospital
       .then(() => {
         setSuccess(true);
         setCreated(true);
@@ -152,34 +151,18 @@ const CustomerForm = () => {
           setSuccess(null);
           setErrorMessage("");
         }, 3000);
-        if (tdat) {
-          setGdat(tdat.filter((d) => d.group === formData.group) || null);
-        }
-        if (gdat && gdat.length > 0) {
-          setInputValues(
-            Array.from({ length: gdat[0].months }, () => ({
-              auctionDate: "",
-              dueDate: "",
-              remainingAmount: "",
-              dueAmount: "",
-              paidAmount: "",
-              status: "Pending",
-            }))
+        if (treatmentData) {
+          setGroupData(
+            treatmentData.filter(
+              (d) => d.treatmentOrMedicine === formData.treatmentOrMedicine
+            ) || null
           );
-
-          axios
-            .post("https://vcf-backend.vercel.app/group/transaction", {
-              id: formData.id,
-              data: inputValues,
-            })
-            .then((res) => {})
-            .catch((err) => {});
         }
       })
       .catch((err) => {
         console.error(err);
         setSuccess(false);
-        setErrorMessage("Customer creation failed");
+        setErrorMessage("Patient creation failed");
       })
       .finally(() => setLoadingCreate(false));
   };
@@ -198,13 +181,14 @@ const CustomerForm = () => {
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
-          <strong>Customer Form</strong>
+          <strong>Patient Form</strong>
         </Typography>
         <form onSubmit={handleCreate}>
           <Grid container spacing={2}>
+            {/* Patient ID */}
             <Grid item xs={12}>
               <TextField
-                label="ID"
+                label="Patient ID"
                 name="id"
                 value={formData.id}
                 onChange={handleChange}
@@ -216,9 +200,10 @@ const CustomerForm = () => {
                 }}
               />
             </Grid>
+            {/* Patient Name */}
             <Grid item xs={12}>
               <TextField
-                label="Name"
+                label="Patient Name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -229,11 +214,12 @@ const CustomerForm = () => {
                 }}
               />
             </Grid>
+            {/* Phone Number */}
             <Grid item xs={12}>
               <TextField
                 label="Phone Number"
-                name="phno"
-                value={formData.phno}
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -242,6 +228,7 @@ const CustomerForm = () => {
                 }}
               />
             </Grid>
+            {/* Address */}
             <Grid item xs={12}>
               <TextField
                 label="Address"
@@ -255,104 +242,110 @@ const CustomerForm = () => {
                 }}
               />
             </Grid>
+            {/* Treatment or Medicine */}
             <Grid item xs={12}>
               <TextField
-                label="Group"
-                name="group"
-                value={formData.group}
+                select
+                label="Treatment or Medicine"
+                name="treatmentOrMedicine"
+                value={formData.treatmentOrMedicine}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputProps={{
+                SelectProps={{
+                  native: true,
                   style: { borderRadius: "8px" },
                 }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disableElevation
-                  disabled={!isIdEntered || loadingCreate}
-                  style={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    margin: "8px",
-                  }}
-                >
-                  {loadingCreate ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    "Create"
-                  )}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="warning"
-                  disableElevation
-                  disabled={!isIdEntered || loadingUpdate}
-                  onClick={handleUpdate}
-                  style={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    margin: "8px",
-                  }}
-                >
-                  {loadingUpdate ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    "Update"
-                  )}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  disableElevation
-                  disabled={!isIdEntered || loadingDelete}
-                  onClick={handleDelete}
-                  style={{
-                    borderRadius: "8px",
-                    textTransform: "none",
-                    margin: "8px",
-                  }}
-                >
-                  {loadingDelete ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    "Delete"
-                  )}
-                </Button>
-              </div>
+              >
+                <option value=""></option>
+                <option value="treatment">Treatment</option>
+                <option value="medicine">Medicine</option>
+              </TextField>
             </Grid>
           </Grid>
+
+          {/* Buttons */}
+          <Grid item xs={12}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disableElevation
+                disabled={!isIdEntered || loadingCreate}
+                style={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  margin: "8px",
+                }}
+              >
+                {loadingCreate ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Create"
+                )}
+              </Button>
+              <Button
+                variant="contained"
+                color="warning"
+                disableElevation
+                disabled={!isIdEntered || loadingUpdate}
+                onClick={handleUpdate}
+                style={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  margin: "8px",
+                }}
+              >
+                {loadingUpdate ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Update"
+                )}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                disableElevation
+                disabled={!isIdEntered || loadingDelete}
+                onClick={handleDelete}
+                style={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  margin: "8px",
+                }}
+              >
+                {loadingDelete ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Delete"
+                )}
+              </Button>
+            </div>
+          </Grid>
+
+          {/* Success/Failure Alerts */}
           <Snackbar
             open={created || deleted || updated}
             autoHideDuration={3000}
-            onClose={() => {
-              setCreated(false);
-              setDeleted(false);
-              setUpdated(false);
-            }}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            onClose={() => setCreated(false)}
           >
-            <MuiAlert
-              elevation={6}
-              variant="filled"
-              severity="success"
-              onClose={() => {
-                setCreated(false);
-                setDeleted(false);
-                setUpdated(false);
-              }}
-            >
-              {created && "Customer Created"}
-              {deleted && "Customer Record Deleted"}
-              {updated && "Customer Record Updated"}
+            <MuiAlert elevation={6} variant="filled" severity="success">
+              {created
+                ? "Patient created successfully!"
+                : updated
+                ? "Patient updated successfully!"
+                : "Patient deleted successfully!"}
             </MuiAlert>
           </Snackbar>
-          {success === false && (
-            <Snackbar open={true} autoHideDuration={3000}>
+
+          {errorMessage && (
+            <Snackbar
+              open={Boolean(errorMessage)}
+              autoHideDuration={4000}
+              onClose={() => setErrorMessage("")}
+            >
               <MuiAlert elevation={6} variant="filled" severity="error">
                 {errorMessage}
               </MuiAlert>
@@ -364,4 +357,4 @@ const CustomerForm = () => {
   );
 };
 
-export default CustomerForm;
+export default PatientForm;

@@ -12,8 +12,9 @@ import {
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
 
-const GroupForm = () => {
+const StockForm = () => {
   const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -22,18 +23,24 @@ const GroupForm = () => {
   }, [navigate]);
 
   const [formData, setFormData] = useState({
-    group: "",
-    groupname: "",
-    months: "",
-    startmonth: "",
+    stockId: "",
+    productName: "",
+    quantity: "",
+    price: "",
+    hsnCode: "",
+    discount: "",
+    gst: "",
   });
 
   const resetForm = () => {
     setFormData({
-      group: "",
-      groupname: "",
-      months: "",
-      startmonth: "",
+      stockId: "",
+      productName: "",
+      quantity: "",
+      price: "",
+      hsnCode: "",
+      discount: "",
+      gst: "",
     });
   };
 
@@ -46,19 +53,15 @@ const GroupForm = () => {
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    // Fetch data or perform any initialization here
-  }, []); // Adjust according to your needs
-
   const handleDelete = () => {
     setLoadingDelete(true);
     axios
-      .delete("https://vcf-backend.vercel.app/group", {
+      .delete("https://your-backend-url/stock", {
         headers: {
           "Content-Type": "application/json",
         },
         data: {
-          group: formData.group,
+          stockId: formData.stockId,
         },
       })
       .then(() => {
@@ -69,8 +72,8 @@ const GroupForm = () => {
         }, 3000);
       })
       .catch((err) => {
-        console.error("Error deleting group:", err);
-        setErrorMessage("Group deletion failed");
+        console.error("Error deleting stock:", err);
+        setErrorMessage("Stock deletion failed");
         setSuccess(false);
       })
       .finally(() => setLoadingDelete(false));
@@ -79,7 +82,7 @@ const GroupForm = () => {
   const handleUpdate = () => {
     setLoadingUpdate(true);
     axios
-      .put("https://vcf-backend.vercel.app/group", formData)
+      .put("https://your-backend-url/stock", formData)
       .then(() => {
         setUpdated(true);
         resetForm();
@@ -88,8 +91,8 @@ const GroupForm = () => {
         }, 3000);
       })
       .catch((err) => {
-        console.error("Error updating group:", err);
-        setErrorMessage("Group update failed");
+        console.error("Error updating stock:", err);
+        setErrorMessage("Stock update failed");
         setSuccess(false);
       })
       .finally(() => setLoadingUpdate(false));
@@ -107,7 +110,7 @@ const GroupForm = () => {
     e.preventDefault();
     setLoadingCreate(true);
     axios
-      .post("https://vcf-backend.vercel.app/group", formData)
+      .post("https://your-backend-url/stock", formData)
       .then(() => {
         setSuccess(true);
         setCreated(true);
@@ -119,14 +122,14 @@ const GroupForm = () => {
         }, 3000);
       })
       .catch((err) => {
-        console.error("Error creating group:", err);
+        console.error("Error creating stock:", err);
         setSuccess(false);
-        setErrorMessage("Group creation failed");
+        setErrorMessage("Stock creation failed");
       })
       .finally(() => setLoadingCreate(false));
   };
 
-  const isIdEntered = formData.group.trim() !== "";
+  const isIdEntered = formData.stockId.trim() !== "";
 
   return (
     <Container maxWidth="md" style={{ marginTop: "50px" }}>
@@ -147,8 +150,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="Stock ID"
-                name="group"
-                value={formData.group}
+                name="stockId"
+                value={formData.stockId}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -161,8 +164,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="Product Name"
-                name="groupname"
-                value={formData.groupname}
+                name="productName"
+                value={formData.productName}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -174,8 +177,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="Quantity"
-                name="months"
-                value={formData.months}
+                name="quantity"
+                value={formData.quantity}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -187,8 +190,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="Price"
-                name="startmonth"
-                value={formData.startmonth}
+                name="price"
+                value={formData.price}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -200,8 +203,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="HSN Code"
-                name="startmonth"
-                value={formData.startmonth}
+                name="hsnCode"
+                value={formData.hsnCode}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -213,8 +216,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="Discount"
-                name="startmonth"
-                value={formData.startmonth}
+                name="discount"
+                value={formData.discount}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -226,8 +229,8 @@ const GroupForm = () => {
             <Grid item xs={12}>
               <TextField
                 label="GST"
-                name="startmonth"
-                value={formData.startmonth}
+                name="gst"
+                value={formData.gst}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
@@ -315,8 +318,8 @@ const GroupForm = () => {
               }}
             >
               {created && "Stock Created"}
-              {deleted && "Group Record Deleted"}
-              {updated && "Group Record Updated"}
+              {deleted && "Stock Deleted"}
+              {updated && "Stock Updated"}
             </MuiAlert>
           </Snackbar>
           {success === false && (
@@ -332,4 +335,4 @@ const GroupForm = () => {
   );
 };
 
-export default GroupForm;
+export default StockForm;
