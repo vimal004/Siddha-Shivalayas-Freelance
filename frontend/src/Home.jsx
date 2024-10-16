@@ -59,13 +59,13 @@ const Home = () => {
     >
       <Grid container spacing={3} direction="column" alignItems="center">
         <Grid item>
-          <Link to="/allcustomers" style={{ textDecoration: "none" }}>
+          <Link to="/allpatients" style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
               sx={buttonStyles}
               startIcon={<AccountCircleIcon sx={iconStyles} />}
             >
-              View Customers Details
+              View Patients Details
             </Button>
           </Link>
         </Grid>
@@ -81,7 +81,7 @@ const Home = () => {
           </Link>
         </Grid>
         <Grid item>
-          <Link to="/managegroups" style={{ textDecoration: "none" }}>
+          <Link to="/managestocks" style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
               sx={buttonStyles}
@@ -92,24 +92,13 @@ const Home = () => {
           </Link>
         </Grid>
         <Grid item>
-          <Link to="/viewgroups" style={{ textDecoration: "none" }}>
+          <Link to="/viewstocks" style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
               sx={buttonStyles}
               startIcon={<VisibilityIcon sx={iconStyles} />}
             >
-              View Groups
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item>
-          <Link to="/defaulters" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<ReportProblemIcon sx={iconStyles} />}
-            >
-              View Defaulters By Group
+              View Product Stocks
             </Button>
           </Link>
         </Grid>

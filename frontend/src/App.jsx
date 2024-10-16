@@ -39,7 +39,7 @@ const router = createBrowserRouter([
         element: <PatientForm />,
       },
       {
-        path: "/allcustomers",
+        path: "/allpatients",
         element: <AllCustomers />,
       },
       {
@@ -47,7 +47,7 @@ const router = createBrowserRouter([
         element: <Transaction />,
       },
       {
-        path: "/managegroups",
+        path: "/managestocks",
         element: <GroupForm />,
       },
       {
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
         element: <Defaulters />,
       },
       {
-        path: "/viewgroups",
+        path: "/viewstocks",
         element: <ViewGroups />,
       },
     ],

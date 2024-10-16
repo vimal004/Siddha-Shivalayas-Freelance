@@ -69,7 +69,7 @@ const Header = () => {
             <Navigation isSm={isSm}>
               <AnimatedButton
                 component={Link}
-                to="/allcustomers"
+                to="/allpatients"
                 startIcon={<PeopleAltIcon />}
               >
                 View Patients
@@ -83,24 +83,17 @@ const Header = () => {
               </AnimatedButton>
               <AnimatedButton
                 component={Link}
-                to="/managegroups"
+                to="/managestocks"
                 startIcon={<GroupIcon />}
               >
                 Manage Stocks
               </AnimatedButton>
               <AnimatedButton
                 component={Link}
-                to="/viewgroups"
+                to="/viewstocks"
                 startIcon={<GroupIcon />}
               >
                 View Stocks
-              </AnimatedButton>
-              <AnimatedButton
-                component={Link}
-                to="/defaulters"
-                startIcon={<ReportProblemIcon />}
-              >
-                View Defaulters
               </AnimatedButton>
             </Navigation>
           )}
