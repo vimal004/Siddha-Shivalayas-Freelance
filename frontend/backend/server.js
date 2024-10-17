@@ -6,6 +6,7 @@ const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const fs = require("fs");
 const path = require("path");
+const { convertToPdf } = require("docx-pdf"); // Install docx-pdf for conversion
 
 const app = express();
 
@@ -65,11 +66,10 @@ app.post("/generate-bill", (req, res) => {
   const buf = doc.getZip().generate({ type: "nodebuffer" });
 
   // Save or send the generated bill (optional: convert to PDF)
-  fs.writeFileSync(path.resolve(__dirname, "generated-bill.docx"), buf);
+  fs.writeFileSync(path.resolve(__dirname, `generated-bill${id}.docx`), buf);
 
   res.send("Bill generated successfully");
 });
-
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
