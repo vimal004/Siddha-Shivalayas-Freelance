@@ -13,6 +13,7 @@ import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
 
 const Transaction = () => {
+  let id = window.location.pathname.split("/")[2];
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     id: "",
@@ -32,6 +33,15 @@ const Transaction = () => {
       navigate("/");
     }
   }, [navigate]);
+
+  useEffect(() => {
+    axios
+      .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
+      .then((response) => {
+        setFormData(response.data);
+      })
+      .catch((error) => {});
+  }, []);
 
   const resetForm = () => {
     setFormData({
