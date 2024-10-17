@@ -205,19 +205,6 @@ const Transaction = () => {
           {/* Create Button */}
           <Grid item xs={12} style={{ marginTop: "16px" }}>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={!isIdEntered || loadingCreate}
-                style={{ margin: "8px" }}
-              >
-                {loadingCreate ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Create"
-                )}
-              </Button>
               {/* Download Bill Button */}
               <Button
                 variant="contained"
