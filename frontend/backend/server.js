@@ -37,30 +37,30 @@ app.get("/", (req, res) => {
   res.json("Hello World");
 });
 
+const content = fs.readFileSync(
+  path.resolve(__dirname, "./bill_template.docx"),
+  "binary"
+);
+const zip = new PizZip(content);
+const doc = new Docxtemplater(zip);
+
 app.post("/generate-bill", (req, res) => {
   const { id, name, phone, address, treatmentOrMedicine, date } = req.body;
 
-  // Load the bill template
-  const content = fs.readFileSync(
-    path.resolve(__dirname, "./bill_template.docx"),
-    "binary"
-  );
-  const zip = new PizZip(content);
-  const doc = new Docxtemplater(zip);
-
   // Replace placeholders with form data
   doc.setData({
-    id: id,
-    name: name,
-    phone: phone,
-    address: address,
-    treatmentOrMedicine: treatmentOrMedicine,
-    date: date,
+    id,
+    name,
+    phone,
+    address,
+    treatmentOrMedicine,
+    date,
   });
 
   try {
     doc.render();
   } catch (error) {
+    console.error("Error rendering document:", error);
     return res.status(500).send("Error generating bill");
   }
 

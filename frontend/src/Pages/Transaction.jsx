@@ -14,14 +14,6 @@ import { useNavigate } from "react-router-dom";
 
 const Transaction = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    }
-  }, [navigate]);
-
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -30,10 +22,16 @@ const Transaction = () => {
     treatmentOrMedicine: "",
     date: "",
   });
-
   const [created, setCreated] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const resetForm = () => {
     setFormData({
@@ -54,52 +52,49 @@ const Transaction = () => {
     });
   };
 
-  const handleCreate = (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
     setLoadingCreate(true);
+
     if (!formData.id) {
       setErrorMessage("Patient ID is required");
       setLoadingCreate(false);
       return;
     }
 
-    axios
-      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData)
-      .then(() => {
-        setCreated(true);
-        resetForm();
-        setTimeout(() => {
-          setCreated(false);
-          setErrorMessage("");
-        }, 3000);
-      })
-      .catch((err) => {
-        setErrorMessage("Patient creation failed");
-        setLoadingCreate(false);
-      })
-      .finally(() => setLoadingCreate(false));
+    try {
+      await axios.post(
+        "https://siddha-shivalayas-backend.vercel.app/patients",
+        formData
+      );
+      setCreated(true);
+      resetForm();
+    } catch (err) {
+      setErrorMessage("Patient creation failed");
+    } finally {
+      setLoadingCreate(false);
+    }
   };
 
-  const handleDownloadBill = () => {
-    axios
-      .post(
+  const handleDownloadBill = async () => {
+    try {
+      const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         formData,
         { responseType: "blob" }
-      )
-      .then((response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `generated-bill-${formData.id}.docx`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      })
-      .catch((err) => {
-        console.error(err);
-        setErrorMessage("Error downloading the bill");
-      });
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `generated-bill-${formData.id}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Error downloading the bill");
+    }
   };
 
   const isIdEntered = formData.id.trim() !== "";
@@ -116,7 +111,7 @@ const Transaction = () => {
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
-          <strong>Patient Form</strong>
+          <strong>Generate Bill</strong>
         </Typography>
         <form onSubmit={handleCreate}>
           <Grid container spacing={2}>
@@ -130,9 +125,6 @@ const Transaction = () => {
                 variant="outlined"
                 fullWidth
                 required
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
             {/* Patient Name */}
@@ -144,9 +136,6 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
             {/* Phone Number */}
@@ -158,9 +147,6 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
             {/* Address */}
@@ -172,9 +158,6 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
             {/* Treatment or Medicine */}
@@ -187,10 +170,7 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                SelectProps={{
-                  native: true,
-                  style: { borderRadius: "8px" },
-                }}
+                SelectProps={{ native: true }}
               >
                 <option value=""></option>
                 <option value="treatment">Treatment</option>
@@ -207,12 +187,7 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
           </Grid>
@@ -224,13 +199,8 @@ const Transaction = () => {
                 type="submit"
                 variant="contained"
                 color="primary"
-                disableElevation
                 disabled={!isIdEntered || loadingCreate}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
+                style={{ margin: "8px" }}
               >
                 {loadingCreate ? (
                   <CircularProgress size={24} color="inherit" />
@@ -244,11 +214,7 @@ const Transaction = () => {
                 color="secondary"
                 onClick={handleDownloadBill}
                 disabled={!isIdEntered}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
+                style={{ margin: "8px" }}
               >
                 Download Bill
               </Button>
@@ -259,7 +225,6 @@ const Transaction = () => {
           <Snackbar
             open={created}
             autoHideDuration={3000}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
             onClose={() => setCreated(false)}
           >
             <MuiAlert elevation={6} variant="filled" severity="success">
