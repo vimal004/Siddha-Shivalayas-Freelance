@@ -38,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/generate-bill", (req, res) => {
-  const { id, name, phone, address, treatmentOrMedicine } = req.body;
+  const { id, name, phone, address, treatmentOrMedicine, date } = req.body;
 
   // Load the bill template
   const content = fs.readFileSync(
@@ -55,21 +55,30 @@ app.post("/generate-bill", (req, res) => {
     phone: phone,
     address: address,
     treatmentOrMedicine: treatmentOrMedicine,
+    date: date,
   });
 
   try {
     doc.render();
   } catch (error) {
-    res.status(500).send("Error generating bill");
+    return res.status(500).send("Error generating bill");
   }
 
   const buf = doc.getZip().generate({ type: "nodebuffer" });
 
-  // Save or send the generated bill (optional: convert to PDF)
-  fs.writeFileSync(path.resolve(__dirname, `generated-bill${id}.docx`), buf);
-
-  res.send("Bill generated successfully");
+  // Send the file as a downloadable response without saving it
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=generated-bill-${id}.docx`
+  );
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  );
+  res.send(buf);
 });
+
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
