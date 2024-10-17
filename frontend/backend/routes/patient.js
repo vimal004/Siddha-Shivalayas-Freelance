@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
 // Read Single Patient by ID
 router.get("/:id", async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
+    const patient = await Patient.findOne({ id: req.params.id });
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);
   } catch (error) {
