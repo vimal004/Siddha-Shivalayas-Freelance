@@ -2,6 +2,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const PizZip = require("pizzip");
+const Docxtemplater = require("docxtemplater");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
@@ -30,6 +34,40 @@ app.use("/patients", patientRoutes);
 
 app.get("/", (req, res) => {
   res.json("Hello World");
+});
+
+app.post("/generate-bill", (req, res) => {
+  const { id, name, phone, address, treatmentOrMedicine } = req.body;
+
+  // Load the bill template
+  const content = fs.readFileSync(
+    path.resolve(__dirname, "./bill_template.docx"),
+    "binary"
+  );
+  const zip = new PizZip(content);
+  const doc = new Docxtemplater(zip);
+
+  // Replace placeholders with form data
+  doc.setData({
+    id: id,
+    name: name,
+    phone: phone,
+    address: address,
+    treatmentOrMedicine: treatmentOrMedicine,
+  });
+
+  try {
+    doc.render();
+  } catch (error) {
+    res.status(500).send("Error generating bill");
+  }
+
+  const buf = doc.getZip().generate({ type: "nodebuffer" });
+
+  // Save or send the generated bill (optional: convert to PDF)
+  fs.writeFileSync(path.resolve(__dirname, "generated-bill.docx"), buf);
+
+  res.send("Bill generated successfully");
 });
 
 // Start server
