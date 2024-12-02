@@ -47,7 +47,6 @@ try {
 }
 
 const zip = new PizZip(content);
-const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
 // Optimized Bill Generation Endpoint
 app.post("/generate-bill", (req, res) => {
@@ -108,6 +107,12 @@ app.post("/generate-bill", (req, res) => {
     const finalTotal = (subtotal + totalGST - discountValue) // Use the validated discountValue here
       .toFixed(2);
 
+    // Create Docxtemplater instance
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
     // Replace placeholders with form data
     doc.setData({
       id,
@@ -143,7 +148,6 @@ app.post("/generate-bill", (req, res) => {
     return res.status(500).send("Internal server error during bill generation");
   }
 });
-
 
 // Start server
 const PORT = process.env.PORT || 5000;
