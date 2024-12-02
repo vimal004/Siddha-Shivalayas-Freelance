@@ -59,7 +59,7 @@ app.post("/generate-bill", (req, res) => {
     treatmentOrMedicine,
     date,
     items,
-    discount, // discount might not be a number, ensure it is a valid number
+    discount,
   } = req.body;
 
   // Ensure 'items' array is not empty
@@ -70,12 +70,7 @@ app.post("/generate-bill", (req, res) => {
   // Ensure discount is a valid number (if undefined, default to 0)
   const discountValue = isNaN(discount) ? 0 : parseFloat(discount);
 
-  // Log to check if discount is valid
-  console.log("Discount value: ", discountValue);
-
   try {
-    // Proceed with the bill generation (same as before)
-
     // Calculate item totals, GST for each item, and update items array
     const itemTotals = items.map((item) => {
       const itemPrice = parseFloat(item.price);
@@ -128,12 +123,8 @@ app.post("/generate-bill", (req, res) => {
       total: finalTotal,
     });
 
-    try {
-      doc.render(); // Render the document with replaced placeholders
-    } catch (err) {
-      console.error("Error rendering document:", err);
-      return res.status(500).send("Error generating bill: " + err.message);
-    }
+    // Render the document only once after setting all data
+    doc.render(); // Render the document with replaced placeholders
 
     const buf = doc.getZip().generate({ type: "nodebuffer" });
 
@@ -152,6 +143,7 @@ app.post("/generate-bill", (req, res) => {
     return res.status(500).send("Internal server error during bill generation");
   }
 });
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
