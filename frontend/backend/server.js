@@ -45,7 +45,48 @@ const zip = new PizZip(content);
 const doc = new Docxtemplater(zip);
 
 app.post("/generate-bill", (req, res) => {
-  const { id, name, phone, address, treatmentOrMedicine, date } = req.body;
+  const {
+    id,
+    name,
+    phone,
+    address,
+    treatmentOrMedicine,
+    date,
+    items,
+    discount,
+  } = req.body;
+
+  // Load the template file
+  const templatePath = path.join(__dirname, "bill_template.docx");
+  let template;
+  try {
+    template = fs.readFileSync(templatePath, "binary");
+  } catch (err) {
+    console.error("Error loading template file:", err);
+    return res.status(500).send("Error loading template file");
+  }
+
+  const zip = new PizZip(template);
+  let doc;
+  try {
+    doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  } catch (err) {
+    console.error("Error initializing docxtemplater:", err);
+    return res.status(500).send("Error initializing template");
+  }
+
+  // Calculate item totals and document data
+  const itemTotals = items.map((item) => ({
+    ...item,
+    total: (item.quantity * item.price).toFixed(2),
+  }));
+
+  // Calculate subtotal, discount, and total
+  const subtotal = itemTotals.reduce(
+    (sum, item) => sum + parseFloat(item.total),
+    0
+  );
+  const finalTotal = (subtotal - discount).toFixed(2);
 
   // Replace placeholders with form data
   doc.setData({
@@ -55,12 +96,16 @@ app.post("/generate-bill", (req, res) => {
     address,
     treatmentOrMedicine,
     date,
+    items: itemTotals, // Pass items array to the document template
+    subtotal: subtotal.toFixed(2),
+    discount: discount.toFixed(2),
+    total: finalTotal,
   });
 
   try {
-    doc.render();
-  } catch (error) {
-    console.error("Error rendering document:", error);
+    doc.render(); // Render the document with replaced placeholders
+  } catch (err) {
+    console.error("Error rendering document:", err);
     return res.status(500).send("Error generating bill");
   }
 
@@ -77,8 +122,6 @@ app.post("/generate-bill", (req, res) => {
   );
   res.send(buf);
 });
-
-
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

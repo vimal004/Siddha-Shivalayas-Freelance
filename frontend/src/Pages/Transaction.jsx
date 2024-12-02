@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   Snackbar,
-  CircularProgress,
   Grid,
   Typography,
   Container,
@@ -22,6 +21,8 @@ const Transaction = () => {
     address: "",
     treatmentOrMedicine: "",
     date: "",
+    items: [], // Initialize items as an empty array
+    discount: 0,
   });
   const [created, setCreated] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
@@ -38,21 +39,10 @@ const Transaction = () => {
     axios
       .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
       .then((response) => {
-        setFormData(response.data);
+        setFormData({ ...formData, ...response.data });
       })
-      .catch((error) => {});
-  }, []);
-
-  const resetForm = () => {
-    setFormData({
-      id: "",
-      name: "",
-      phone: "",
-      address: "",
-      treatmentOrMedicine: "",
-      date: "",
-    });
-  };
+      .catch((error) => console.error(error));
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,28 +52,25 @@ const Transaction = () => {
     });
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setLoadingCreate(true);
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index][field] = value;
+    setFormData({ ...formData, items: updatedItems });
+  };
+  
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [
+        ...formData.items,
+        { description: "", HSN: "", GST: "", quantity: "", price: "" },
+      ],
+    });
+  };
 
-    if (!formData.id) {
-      setErrorMessage("Patient ID is required");
-      setLoadingCreate(false);
-      return;
-    }
-
-    try {
-      await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/patients",
-        formData
-      );
-      setCreated(true);
-      resetForm();
-    } catch (err) {
-      setErrorMessage("Patient creation failed");
-    } finally {
-      setLoadingCreate(false);
-    }
+  const removeItem = (index) => {
+    const updatedItems = formData.items.filter((_, i) => i !== index);
+    setFormData({ ...formData, items: updatedItems });
   };
 
   const handleDownloadBill = async () => {
@@ -107,8 +94,6 @@ const Transaction = () => {
     }
   };
 
-  const isIdEntered = formData.id.trim() !== "";
-
   return (
     <Container maxWidth="md" style={{ marginTop: "50px" }}>
       <div
@@ -123,9 +108,9 @@ const Transaction = () => {
         <Typography variant="h4" align="center" gutterBottom>
           <strong>Generate Bill</strong>
         </Typography>
-        <form onSubmit={handleCreate}>
+        <form>
           <Grid container spacing={2}>
-            {/* Patient ID */}
+            {/* Patient Details */}
             <Grid item xs={12}>
               <TextField
                 label="Patient ID"
@@ -137,7 +122,6 @@ const Transaction = () => {
                 required
               />
             </Grid>
-            {/* Patient Name */}
             <Grid item xs={12}>
               <TextField
                 label="Patient Name"
@@ -148,7 +132,6 @@ const Transaction = () => {
                 fullWidth
               />
             </Grid>
-            {/* Phone Number */}
             <Grid item xs={12}>
               <TextField
                 label="Phone Number"
@@ -159,7 +142,6 @@ const Transaction = () => {
                 fullWidth
               />
             </Grid>
-            {/* Address */}
             <Grid item xs={12}>
               <TextField
                 label="Address"
@@ -170,24 +152,6 @@ const Transaction = () => {
                 fullWidth
               />
             </Grid>
-            {/* Treatment or Medicine */}
-            <Grid item xs={12}>
-              <TextField
-                select
-                label="Treatment or Medicine"
-                name="treatmentOrMedicine"
-                value={formData.treatmentOrMedicine}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                SelectProps={{ native: true }}
-              >
-                <option value=""></option>
-                <option value="treatment">Treatment</option>
-                <option value="medicine">Medicine</option>
-              </TextField>
-            </Grid>
-            {/* Date */}
             <Grid item xs={12}>
               <TextField
                 label="Date"
@@ -200,47 +164,117 @@ const Transaction = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-          </Grid>
 
-          {/* Create Button */}
-          <Grid item xs={12} style={{ marginTop: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              {/* Download Bill Button */}
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleDownloadBill}
-                disabled={!isIdEntered}
-                style={{ margin: "8px" }}
-              >
-                Download Bill
+            {/* Items Section */}
+            <Typography variant="h6" style={{ margin: "16px 0" }}>
+              Items
+            </Typography>
+            {formData.items.map((item, index) => (
+              <Grid container spacing={2} key={index}>
+                <Grid item xs={3}>
+                  <TextField
+                    label="Description"
+                    value={item.description}
+                    onChange={(e) =>
+                      handleItemChange(index, "description", e.target.value)
+                    }
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <TextField
+                    label="HSN"
+                    value={item.HSN}
+                    onChange={(e) =>
+                      handleItemChange(index, "HSN", e.target.value)
+                    }
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <TextField
+                    label="GST"
+                    value={item.GST}
+                    onChange={(e) =>
+                      handleItemChange(index, "GST", e.target.value)
+                    }
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <TextField
+                    label="Quantity"
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleItemChange(index, "quantity", e.target.value)
+                    }
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <TextField
+                    label="Price"
+                    value={item.price}
+                    onChange={(e) =>
+                      handleItemChange(index, "price", e.target.value)
+                    }
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={1}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => removeItem(index)}
+                  >
+                    Remove
+                  </Button>
+                </Grid>
+              </Grid>
+            ))}
+            <Grid item xs={12}>
+              <Button variant="contained" onClick={addItem}>
+                Add Item
               </Button>
-            </div>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                label="Discount"
+                name="discount"
+                value={formData.discount}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+              />
+            </Grid>
           </Grid>
 
-          {/* Alerts */}
-          <Snackbar
-            open={created}
-            autoHideDuration={3000}
-            onClose={() => setCreated(false)}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleDownloadBill}
+            style={{ marginTop: "16px" }}
           >
-            <MuiAlert elevation={6} variant="filled" severity="success">
-              Patient created successfully!
-            </MuiAlert>
-          </Snackbar>
-
-          {errorMessage && (
-            <Snackbar
-              open={Boolean(errorMessage)}
-              autoHideDuration={4000}
-              onClose={() => setErrorMessage("")}
-            >
-              <MuiAlert elevation={6} variant="filled" severity="error">
-                {errorMessage}
-              </MuiAlert>
-            </Snackbar>
-          )}
+            Download Bill
+          </Button>
         </form>
+
+        {/* Alerts */}
+        <Snackbar
+          open={Boolean(errorMessage)}
+          autoHideDuration={4000}
+          onClose={() => setErrorMessage("")}
+        >
+          <MuiAlert elevation={6} variant="filled" severity="error">
+            {errorMessage}
+          </MuiAlert>
+        </Snackbar>
       </div>
     </Container>
   );
