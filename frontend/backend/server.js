@@ -6,7 +6,6 @@ const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const fs = require("fs");
 const path = require("path");
-const { convertToPdf } = require("docx-pdf"); // Install docx-pdf for conversion
 
 const app = express();
 
@@ -37,13 +36,20 @@ app.get("/", (req, res) => {
   res.json("Hello World");
 });
 
-const content = fs.readFileSync(
-  path.resolve(__dirname, "./bill_template.docx"),
-  "binary"
-);
-const zip = new PizZip(content);
-const doc = new Docxtemplater(zip);
+// Cache the template content to avoid reading it multiple times
+const templatePath = path.resolve(__dirname, "bill_template.docx");
+let content;
+try {
+  content = fs.readFileSync(templatePath, "binary");
+} catch (err) {
+  console.error("Error loading template file:", err);
+  process.exit(1); // Exit the process if template loading fails
+}
 
+const zip = new PizZip(content);
+const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+// Optimized Bill Generation Endpoint
 app.post("/generate-bill", (req, res) => {
   const {
     id,
@@ -59,25 +65,6 @@ app.post("/generate-bill", (req, res) => {
   // Ensure 'items' array is not empty
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).send("Error: No items provided for the bill.");
-  }
-
-  // Load the template file
-  const templatePath = path.join(__dirname, "bill_template.docx");
-  let template;
-  try {
-    template = fs.readFileSync(templatePath, "binary");
-  } catch (err) {
-    console.error("Error loading template file:", err);
-    return res.status(500).send("Error loading template file: " + err.message);
-  }
-
-  const zip = new PizZip(template);
-  let doc;
-  try {
-    doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-  } catch (err) {
-    console.error("Error initializing docxtemplater:", err);
-    return res.status(500).send("Error initializing template: " + err.message);
   }
 
   // Calculate item totals, GST for each item, and update items array
