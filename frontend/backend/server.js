@@ -46,7 +46,9 @@ try {
   process.exit(1); // Exit the process if template loading fails
 }
 
+// Initialize Docxtemplater once
 const zip = new PizZip(content);
+const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
 // Optimized Bill Generation Endpoint
 app.post("/generate-bill", (req, res) => {
@@ -69,51 +71,37 @@ app.post("/generate-bill", (req, res) => {
   // Ensure discount is a valid number (if undefined, default to 0)
   const discountValue = isNaN(discount) ? 0 : parseFloat(discount);
 
+  // Process items and calculate totals
+  const itemTotals = items.map((item) => {
+    const itemPrice = parseFloat(item.price);
+    const itemQuantity = parseFloat(item.quantity);
+    const gstRate = parseFloat(item.GST) / 100;
+
+    const baseTotal = itemPrice * itemQuantity;
+    const gstAmount = baseTotal * gstRate;
+    const finalAmount = baseTotal + gstAmount;
+
+    return {
+      ...item,
+      baseTotal: baseTotal.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      finalAmount: finalAmount.toFixed(2),
+    };
+  });
+
+  // Calculate subtotal, total GST, and final total
+  const subtotal = itemTotals.reduce(
+    (sum, item) => sum + parseFloat(item.baseTotal),
+    0
+  );
+  const totalGST = itemTotals.reduce(
+    (sum, item) => sum + parseFloat(item.gstAmount),
+    0
+  );
+  const finalTotal = (subtotal + totalGST - discountValue).toFixed(2);
+
+  // Set data in Docxtemplater instance
   try {
-    // Calculate item totals, GST for each item, and update items array
-    const itemTotals = items.map((item) => {
-      const itemPrice = parseFloat(item.price);
-      const itemQuantity = parseFloat(item.quantity);
-      const gstRate = parseFloat(item.GST) / 100; // Convert GST percentage to decimal (e.g., 18% -> 0.18)
-
-      // Calculate the base total price (without GST)
-      const baseTotal = itemPrice * itemQuantity;
-
-      // Calculate GST for the item
-      const gstAmount = baseTotal * gstRate;
-
-      // Final price including GST
-      const finalAmount = baseTotal + gstAmount;
-
-      return {
-        ...item,
-        baseTotal: baseTotal.toFixed(2), // Item price before GST
-        gstAmount: gstAmount.toFixed(2), // GST amount for the item
-        finalAmount: finalAmount.toFixed(2), // Final price including GST
-      };
-    });
-
-    // Calculate subtotal, total GST, and final total with discount
-    const subtotal = itemTotals.reduce(
-      (sum, item) => sum + parseFloat(item.baseTotal),
-      0
-    );
-
-    const totalGST = itemTotals.reduce(
-      (sum, item) => sum + parseFloat(item.gstAmount),
-      0
-    );
-
-    const finalTotal = (subtotal + totalGST - discountValue) // Use the validated discountValue here
-      .toFixed(2);
-
-    // Create Docxtemplater instance
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
-
-    // Replace placeholders with form data
     doc.setData({
       id,
       name,
@@ -123,14 +111,15 @@ app.post("/generate-bill", (req, res) => {
       date,
       items: itemTotals, // Pass items array with calculated values to the document template
       subtotal: subtotal.toFixed(2),
-      totalGST: totalGST.toFixed(2), // Add the total GST to the document
-      discount: discountValue.toFixed(2), // Ensure discount is formatted correctly
+      totalGST: totalGST.toFixed(2),
+      discount: discountValue.toFixed(2),
       total: finalTotal,
     });
 
     // Render the document only once after setting all data
-    doc.render(); // Render the document with replaced placeholders
+    doc.render();
 
+    // Generate the document buffer
     const buf = doc.getZip().generate({ type: "nodebuffer" });
 
     // Send the generated document as a downloadable response
