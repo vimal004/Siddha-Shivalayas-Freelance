@@ -46,10 +46,6 @@ try {
   process.exit(1); // Exit the process if template loading fails
 }
 
-// Initialize Docxtemplater once
-const zip = new PizZip(content);
-const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-
 // Optimized Bill Generation Endpoint
 app.post("/generate-bill", (req, res) => {
   const {
@@ -63,9 +59,33 @@ app.post("/generate-bill", (req, res) => {
     discount,
   } = req.body;
 
-  // Ensure 'items' array is not empty
-  if (!Array.isArray(items) || items.length === 0) {
-    return res.status(400).send("Error: No items provided for the bill.");
+  // Validation: Ensure all required fields are provided
+  if (
+    !id ||
+    !name ||
+    !phone ||
+    !address ||
+    !date ||
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    return res.status(400).send("Error: Missing required fields.");
+  }
+
+  // Validate items structure
+  for (let item of items) {
+    if (!item.description || !item.price || !item.quantity || !item.GST) {
+      return res
+        .status(400)
+        .send(
+          "Error: Each item must have description, price, quantity, and GST."
+        );
+    }
+    if (isNaN(item.price) || isNaN(item.quantity) || isNaN(item.GST)) {
+      return res
+        .status(400)
+        .send("Error: Price, quantity, and GST must be valid numbers.");
+    }
   }
 
   // Ensure discount is a valid number (if undefined, default to 0)
@@ -100,8 +120,12 @@ app.post("/generate-bill", (req, res) => {
   );
   const finalTotal = (subtotal + totalGST - discountValue).toFixed(2);
 
-  // Set data in Docxtemplater instance
+  // Create a new Docxtemplater instance for each request
+  const zip = new PizZip(content);
+  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
   try {
+    // Set data for Docxtemplater
     doc.setData({
       id,
       name,
