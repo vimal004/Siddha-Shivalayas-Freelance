@@ -57,7 +57,7 @@ const Transaction = () => {
     updatedItems[index][field] = value;
     setFormData({ ...formData, items: updatedItems });
   };
-  
+
   const addItem = () => {
     setFormData({
       ...formData,
@@ -100,16 +100,17 @@ const Transaction = () => {
         style={{
           background: "#ffffff",
           boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          padding: "24px",
-          borderRadius: "8px",
+          padding: "40px",
+          borderRadius: "12px",
           width: "100%",
         }}
       >
         <Typography variant="h4" align="center" gutterBottom>
           <strong>Generate Bill</strong>
         </Typography>
+
         <form>
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             {/* Patient Details */}
             <Grid item xs={12}>
               <TextField
@@ -120,6 +121,7 @@ const Transaction = () => {
                 variant="outlined"
                 fullWidth
                 required
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -130,6 +132,7 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -140,6 +143,7 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -150,6 +154,7 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -162,86 +167,96 @@ const Transaction = () => {
                 variant="outlined"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
 
             {/* Items Section */}
-            <Typography variant="h6" style={{ margin: "16px 0" }}>
+            <Typography
+              variant="h6"
+              style={{ marginBottom: "16px", marginLeft: "20px" }}
+            >
               Items
-            </Typography>
-            {formData.items.map((item, index) => (
-              <Grid container spacing={2} key={index}>
-                <Grid item xs={3}>
-                  <TextField
-                    label="Description"
-                    value={item.description}
-                    onChange={(e) =>
-                      handleItemChange(index, "description", e.target.value)
-                    }
-                    variant="outlined"
-                    fullWidth
-                  />
+              {formData.items.map((item, index) => (
+                <Grid container spacing={2} key={index} alignItems="center">
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Name"
+                      value={item.description}
+                      onChange={(e) =>
+                        handleItemChange(index, "description", e.target.value)
+                      }
+                      variant="outlined"
+                      fullWidth
+                      style={{ marginBottom: "16px" }}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="HSN"
+                      value={item.HSN}
+                      onChange={(e) =>
+                        handleItemChange(index, "HSN", e.target.value)
+                      }
+                      variant="outlined"
+                      fullWidth
+                      style={{ marginBottom: "16px" }}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="GST"
+                      value={item.GST}
+                      onChange={(e) =>
+                        handleItemChange(index, "GST", e.target.value)
+                      }
+                      variant="outlined"
+                      fullWidth
+                      style={{ marginBottom: "16px" }}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Quantity"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        handleItemChange(index, "quantity", e.target.value)
+                      }
+                      variant="outlined"
+                      fullWidth
+                      style={{ marginBottom: "16px" }}
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Price"
+                      value={item.price}
+                      onChange={(e) =>
+                        handleItemChange(index, "price", e.target.value)
+                      }
+                      variant="outlined"
+                      fullWidth
+                      style={{ marginBottom: "16px" }}
+                    />
+                  </Grid>
+                  <Grid item xs={1}>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => removeItem(index)}
+                      style={{ height: "100%" }}
+                    >
+                      Remove
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={2}>
-                  <TextField
-                    label="HSN"
-                    value={item.HSN}
-                    onChange={(e) =>
-                      handleItemChange(index, "HSN", e.target.value)
-                    }
-                    variant="outlined"
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField
-                    label="GST"
-                    value={item.GST}
-                    onChange={(e) =>
-                      handleItemChange(index, "GST", e.target.value)
-                    }
-                    variant="outlined"
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField
-                    label="Quantity"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      handleItemChange(index, "quantity", e.target.value)
-                    }
-                    variant="outlined"
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <TextField
-                    label="Price"
-                    value={item.price}
-                    onChange={(e) =>
-                      handleItemChange(index, "price", e.target.value)
-                    }
-                    variant="outlined"
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={1}>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => removeItem(index)}
-                  >
-                    Remove
-                  </Button>
-                </Grid>
+              ))}
+              <Grid item xs={12} style={{ marginBottom: "16px" }}>
+                <Button variant="contained" onClick={addItem}>
+                  Add Item
+                </Button>
               </Grid>
-            ))}
-            <Grid item xs={12}>
-              <Button variant="contained" onClick={addItem}>
-                Add Item
-              </Button>
-            </Grid>
+            </Typography>
 
             <Grid item xs={12}>
               <TextField
@@ -251,18 +266,27 @@ const Transaction = () => {
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
+                style={{ marginBottom: "16px" }}
               />
             </Grid>
           </Grid>
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleDownloadBill}
-            style={{ marginTop: "16px" }}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginTop: "24px",
+            }}
           >
-            Download Bill
-          </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleDownloadBill}
+              style={{ padding: "10px 20px", fontSize: "16px" }}
+            >
+              Download Bill
+            </Button>
+          </div>
         </form>
 
         {/* Alerts */}
