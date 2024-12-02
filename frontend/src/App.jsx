@@ -56,6 +56,10 @@ const router = createBrowserRouter([
         path: "/viewstocks",
         element: <ViewStocks />,
       },
+      {
+        path: "/generatebill",
+        element: <Transaction />, 
+      }
     ],
   },
 ]);

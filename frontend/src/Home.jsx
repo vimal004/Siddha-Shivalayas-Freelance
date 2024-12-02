@@ -92,6 +92,17 @@ const Home = () => {
           </Link>
         </Grid>
         <Grid item>
+          <Link to="/generatebill" style={{ textDecoration: "none" }}>
+            <Button
+              variant="contained"
+              sx={buttonStyles}
+              startIcon={<GroupIcon sx={iconStyles} />}
+            >
+              Generate Bill
+            </Button>
+          </Link>
+        </Grid>
+        <Grid item>
           <Link to="/viewstocks" style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
