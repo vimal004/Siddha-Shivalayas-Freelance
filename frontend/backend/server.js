@@ -8,7 +8,6 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 
-
 const app = express();
 
 // Middleware
@@ -63,12 +62,12 @@ app.post("/generate-bill", (req, res) => {
 
   // Validation: Ensure all required fields are provided
   if (
-    !id ||
-    !name ||
-    !phone ||
-    !address ||
-    !date ||
-    !Array.isArray(items) ||
+    !id &&
+    !name &&
+    !phone &&
+    !address &&
+    !date &&
+    !Array.isArray(items) &&
     items.length === 0
   ) {
     return res.status(400).send("Error: Missing required fields.");
@@ -139,7 +138,7 @@ app.post("/generate-bill", (req, res) => {
       subtotal: subtotal.toFixed(2),
       totalGST: totalGST.toFixed(2),
       discount: discountValue.toFixed(2),
-      total: subtotal- discountValue.toFixed(2),
+      total: subtotal - discountValue.toFixed(2),
     });
 
     // Render the document only once after setting all data
