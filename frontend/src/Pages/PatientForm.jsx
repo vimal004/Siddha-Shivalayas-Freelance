@@ -48,6 +48,7 @@ const PatientForm = () => {
       phone: "",
       address: "",
       treatmentOrMedicine: "",
+      date: "", 
     });
   };
 
@@ -229,6 +230,18 @@ const PatientForm = () => {
                 InputProps={{
                   style: { borderRadius: "8px" },
                 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Date"
+                name="date"
+                type="date"
+                value={formData.date}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
             {/* Treatment or Medicine */}

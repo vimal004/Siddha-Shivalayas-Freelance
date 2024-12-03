@@ -41,7 +41,9 @@ const AllPatients = () => {
 
   const filteredCustomers = customers.filter((customer) => {
     return (
-      (filter.treatmentOrMedicine === "" || customer.treatmentOrMedicine === parseInt(filter.treatmentOrMedicine, 10)) &&
+      (filter.treatmentOrMedicine === "" ||
+        customer.treatmentOrMedicine ===
+          parseInt(filter.treatmentOrMedicine, 10)) &&
       (filter.name === "" ||
         customer.name.toLowerCase().includes(filter.name.toLowerCase()))
     );
@@ -115,7 +117,8 @@ const AllPatients = () => {
                   <TableCell>Customer Name</TableCell>
                   <TableCell>Phone Number</TableCell>
                   <TableCell>Address</TableCell>
-                  <TableCell>treatmentOrMedicine</TableCell>
+                  <TableCell>Treatment/Medicine</TableCell>
+                  <TableCell>Date</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -134,6 +137,7 @@ const AllPatients = () => {
                       <TableCell>{customer.phone}</TableCell>
                       <TableCell>{customer.address}</TableCell>
                       <TableCell>{customer.treatmentOrMedicine}</TableCell>
+                      <TableCell>{customer.date}</TableCell>
                     </TableRow>
                   ))
                 ) : (

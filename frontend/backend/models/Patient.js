@@ -6,6 +6,7 @@ const patientSchema = new mongoose.Schema({
   phone: { type: String },
   address: { type: String },
   treatmentOrMedicine: { type: String },
+  date: { type: Date },
 });
 
 module.exports = mongoose.model("Patient", patientSchema);
