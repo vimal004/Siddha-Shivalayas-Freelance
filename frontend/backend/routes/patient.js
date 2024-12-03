@@ -35,14 +35,14 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update Patient
+// Update Patient
 router.put("/:id", async (req, res) => {
   try {
+    const updatedFields = req.body; // Contains only the fields sent from the client
     const patient = await Patient.findOneAndUpdate(
-      { id: req.params.id },
-      req.body,
-      {
-        new: true,
-      }
+      { id: req.params.id }, // Query condition
+      { $set: updatedFields }, // Update only specified fields
+      { new: true } // Return the updated document
     );
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);
@@ -50,6 +50,7 @@ router.put("/:id", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
 
 // Delete Patient
 router.delete("/:id", async (req, res) => {

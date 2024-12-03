@@ -98,11 +98,17 @@ const PatientForm = () => {
 
   const handleUpdate = () => {
     setLoadingUpdate(true);
+
+    // Create an object with only non-empty fields to send
+    const updatedData = Object.fromEntries(
+      Object.entries(formData).filter(([key, value]) => value.trim() !== "")
+    );
+
     axios
       .put(
         `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`,
-        formData
-      ) // Adjusted for hospital
+        updatedData
+      )
       .then((res) => {
         setUpdated(true);
         resetForm();
@@ -118,6 +124,7 @@ const PatientForm = () => {
         setSuccess(false);
       });
   };
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
