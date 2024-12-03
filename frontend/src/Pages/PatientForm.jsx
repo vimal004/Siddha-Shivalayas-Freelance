@@ -249,6 +249,7 @@ const PatientForm = () => {
                 <option value=""></option>
                 <option value="treatment">Treatment</option>
                 <option value="medicine">Medicine</option>
+                <option value="consulting">Consulting</option>
               </TextField>
             </Grid>
           </Grid>
