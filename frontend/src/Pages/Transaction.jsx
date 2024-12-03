@@ -10,8 +10,20 @@ import {
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
+import { Autocomplete } from "@mui/material";
 
 const Transaction = () => {
+  const handleItemSelection = (index, selectedStock) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      description: selectedStock.productName,
+      price: selectedStock.price,
+      GST: selectedStock.gst,
+      HSN: selectedStock.hsnCode,
+    };
+    setFormData({ ...formData, items: updatedItems });
+  };
   let id = window.location.pathname.split("/")[2];
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -181,22 +193,28 @@ const Transaction = () => {
                 Items
               </Typography>
               {formData.items.map((item, index) => (
-                <Grid container spacing={2} key={index} alignItems="center">
-                  <Grid item xs={12} sm={2}>
-                    <TextField
-                      label="Name"
-                      value={item.description}
-                      onChange={(e) =>
-                        handleItemChange(index, "description", e.target.value)
+                <Grid container spacing={2} key={index} alignItems="center" margin={"2px"}>
+                  <Grid item xs={12} sm={3}>
+                    <Autocomplete
+                      options={stocks}
+                      getOptionLabel={(option) => option.productName}
+                      onChange={(event, selectedStock) =>
+                        handleItemSelection(index, selectedStock)
                       }
-                      variant="outlined"
-                      fullWidth
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Name"
+                          variant="outlined"
+                          fullWidth
+                        />
+                      )}
                     />
                   </Grid>
                   <Grid item xs={6} sm={2}>
                     <TextField
                       label="HSN"
-                      value={item.HSN}
+                      value={item.HSN || ""}
                       onChange={(e) =>
                         handleItemChange(index, "HSN", e.target.value)
                       }
@@ -207,7 +225,7 @@ const Transaction = () => {
                   <Grid item xs={6} sm={2}>
                     <TextField
                       label="GST"
-                      value={item.GST}
+                      value={item.GST || ""}
                       onChange={(e) =>
                         handleItemChange(index, "GST", e.target.value)
                       }
@@ -218,7 +236,7 @@ const Transaction = () => {
                   <Grid item xs={6} sm={2}>
                     <TextField
                       label="Quantity"
-                      value={item.quantity}
+                      value={item.quantity || ""}
                       onChange={(e) =>
                         handleItemChange(index, "quantity", e.target.value)
                       }
@@ -229,7 +247,7 @@ const Transaction = () => {
                   <Grid item xs={6} sm={2}>
                     <TextField
                       label="Price"
-                      value={item.price}
+                      value={item.price || ""}
                       onChange={(e) =>
                         handleItemChange(index, "price", e.target.value)
                       }
@@ -237,7 +255,7 @@ const Transaction = () => {
                       fullWidth
                     />
                   </Grid>
-                  <Grid item xs={12} sm={2}>
+                  <Grid item xs={12} sm={1}>
                     <Button
                       variant="contained"
                       color="secondary"
@@ -257,6 +275,7 @@ const Transaction = () => {
                 Add Item
               </Button>
             </Grid>
+            ;
             <Grid item xs={12}>
               <TextField
                 label="Discount"
