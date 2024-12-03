@@ -93,19 +93,18 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
-   useEffect(() => {
-     const total = formData.items.reduce((acc, item) => {
-       const price = parseFloat(item.price || 0);
-       const quantity = parseInt(item.quantity || 0, 10);
-       const gst = parseFloat(item.GST || 0) / 100;
-       const itemTotal = price * quantity * (1 - 0); // Including GST in the item total
-       return acc + itemTotal;
-     }, 0);
-     const discountedTotal = total - (total * formData.discount) / 100;
-     setFormData((prevData) => ({ ...prevData, totalAmount: discountedTotal }));
-   }, [formData.items, formData.discount]);
+  useEffect(() => {
+    const total = formData.items.reduce((acc, item) => {
+      const price = parseFloat(item.price || 0);
+      const quantity = parseInt(item.quantity || 0, 10);
+      const gst = parseFloat(item.GST || 0) / 100;
+      const itemTotal = price * quantity * (1 - 0); // Including GST in the item total
+      return acc + itemTotal;
+    }, 0);
+    const discountedTotal = total - (total * formData.discount) / 100;
+    setFormData((prevData) => ({ ...prevData, totalAmount: discountedTotal }));
+  }, [formData.items, formData.discount]);
 
-  
   const addItem = () => {
     setFormData({
       ...formData,
@@ -138,7 +137,7 @@ const Transaction = () => {
         if (selectedStock) {
           await axios.put(
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
-            { quantity: selectedStock.quantity - 0 }//item.quantity }
+            { quantity: selectedStock.quantity - item.quantity }
           );
         }
       }
