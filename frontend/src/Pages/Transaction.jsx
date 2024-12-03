@@ -137,7 +137,7 @@ const Transaction = () => {
         if (selectedStock) {
           await axios.put(
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
-            { quantity: selectedStock.quantity - 0 }
+            { quantity: selectedStock.quantity - formData.quantity }
           );
         }
       }
