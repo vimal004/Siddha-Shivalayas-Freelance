@@ -37,17 +37,19 @@ router.get("/:id", async (req, res) => {
 // Update Stock
 router.put("/:id", async (req, res) => {
   try {
-    const stock = await Stock.findOneAndUpdate(
-      { stockId: req.params.id },
-      req.body,
-      {
-        new: true,
-      }
-    );
+    const { quantity } = req.body;
+    const stock = await Stock.findById(req.params.id);
     if (!stock) return res.status(404).json({ message: "Stock not found" });
+
+    if (quantity < 0) {
+      return res.status(400).json({ message: "Insufficient stock available" });
+    }
+
+    stock.quantity = quantity;
+    await stock.save();
     res.json(stock);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 

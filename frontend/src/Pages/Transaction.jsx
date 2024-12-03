@@ -110,12 +110,27 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
+      // Generate the bill
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         formData,
         { responseType: "blob" }
       );
 
+      // Update the stock quantities
+      for (let item of formData.items) {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+        if (selectedStock) {
+          await axios.put(
+            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
+            { quantity: selectedStock.quantity - item.quantity }
+          );
+        }
+      }
+
+      // Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -125,9 +140,10 @@ const Transaction = () => {
       document.body.removeChild(link);
     } catch (err) {
       console.error(err);
-      setErrorMessage("Error downloading the bill");
+      setErrorMessage("Error processing the request");
     }
   };
+
 
   return (
     <Container maxWidth="lg" style={{ marginTop: "50px" }}>
