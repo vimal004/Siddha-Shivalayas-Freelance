@@ -79,9 +79,19 @@ const Transaction = () => {
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
+    if (field === "quantity") {
+      const selectedStock = stocks.find(
+        (stock) => stock.productName === updatedItems[index].description
+      );
+      if (selectedStock && value > selectedStock.quantity) {
+        setErrorMessage("Insufficient stock available");
+        return;
+      }
+    }
     updatedItems[index][field] = value;
     setFormData({ ...formData, items: updatedItems });
   };
+
 
   const addItem = () => {
     setFormData({
