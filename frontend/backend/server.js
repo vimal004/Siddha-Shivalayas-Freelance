@@ -139,7 +139,7 @@ app.post("/generate-bill", (req, res) => {
       subtotal: subtotal.toFixed(2),
       totalGST: totalGST.toFixed(2),
       discount: discountValue.toFixed(2),
-      total: finalTotal,
+      total: subtotal- discountValue.toFixed(2),
     });
 
     // Render the document only once after setting all data
