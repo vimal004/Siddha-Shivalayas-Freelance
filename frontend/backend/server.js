@@ -101,7 +101,7 @@ app.post("/generate-bill", (req, res) => {
 
     const baseTotal = itemPrice * itemQuantity;
     const gstAmount = baseTotal * gstRate;
-    const finalAmount = baseTotal + gstAmount;
+    const finalAmount = baseTotal + 0;
 
     return {
       ...item,
