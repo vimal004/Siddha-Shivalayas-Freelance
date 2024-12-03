@@ -24,7 +24,18 @@ const Transaction = () => {
     items: [],
     discount: 0,
   });
+  const [stocks, setstocks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    axios
+      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
+      .then((response) => {
+        setstocks(response.data);
+        console.log(stocks);
+      })
+      .catch((error) => console.error(error));
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
