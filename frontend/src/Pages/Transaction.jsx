@@ -35,6 +35,7 @@ const Transaction = () => {
     date: "",
     items: [],
     discount: 0,
+    totalAmount: 0, // New field for total amount
   });
   const [stocks, setstocks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -92,7 +93,16 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
-
+   useEffect(() => {
+     const total = formData.items.reduce((acc, item) => {
+       const price = parseFloat(item.price || 0);
+       const quantity = parseInt(item.quantity || 0, 10);
+       return acc + price * quantity;
+     }, 0);
+     const discountedTotal = total - (total * formData.discount) / 100;
+     setFormData((prevData) => ({ ...prevData, totalAmount: discountedTotal }));
+   }, [formData.items, formData.discount]);
+  
   const addItem = () => {
     setFormData({
       ...formData,
@@ -143,7 +153,6 @@ const Transaction = () => {
       setErrorMessage("Error processing the request");
     }
   };
-
 
   return (
     <Container maxWidth="lg" style={{ marginTop: "50px" }}>
@@ -219,7 +228,13 @@ const Transaction = () => {
                 Items
               </Typography>
               {formData.items.map((item, index) => (
-                <Grid container spacing={2} key={index} alignItems="center" margin={"2px"}>
+                <Grid
+                  container
+                  spacing={2}
+                  key={index}
+                  alignItems="center"
+                  margin={"2px"}
+                >
                   <Grid item xs={12} sm={3}>
                     <Autocomplete
                       options={stocks}
@@ -311,6 +326,11 @@ const Transaction = () => {
                 variant="outlined"
                 fullWidth
               />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h6" align="right">
+                Total Amount: ₹{formData.totalAmount.toFixed(2)}
+              </Typography>
             </Grid>
           </Grid>
           <Grid container justifyContent="center" style={{ marginTop: "24px" }}>
