@@ -38,6 +38,10 @@ const Transaction = () => {
   }, []);
 
   useEffect(() => {
+    console.log(stocks);
+  }, [stocks]);
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/");
