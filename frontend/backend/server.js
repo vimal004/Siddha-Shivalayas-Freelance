@@ -151,7 +151,7 @@ app.post("/generate-bill", (req, res) => {
     // Send the generated document as a downloadable response
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=generated-bill-${id}.docx`
+      `attachment; filename=generated-bill-${id}.pdf`
     );
     res.setHeader(
       "Content-Type",
