@@ -5,6 +5,10 @@ const Stock = require("../models/Stock");
 // Create Stock
 router.post("/", async (req, res) => {
   try {
+    const existingStock = await Stock.findOne({ stockId: req.body.stockId });
+    if (existingStock) {
+      return res.status(400).json({ message: "Stock with this ID already exists" });
+    }
     const stock = new Stock(req.body);
     await stock.save();
     res.status(201).json(stock);
@@ -52,6 +56,25 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Update Stock Details
+router.put("/", async (req, res) => {
+  try {
+    const stock = await Stock.findById(req.body.stockId);  
+    if (!stock) return res.status(404).json({ message: "Stock not found" });
+
+    Object.keys(req.body).forEach(key => {
+      stock[key] = req.body[key];
+    });
+
+    await stock.save();
+    res.json(stock);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
 
 // Delete Stock
 router.delete("/:id", async (req, res) => {
