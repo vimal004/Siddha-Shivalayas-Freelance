@@ -25,30 +25,22 @@ const BillHistory = () => {
   }, []);
 
   // Handle download bill request
-  const handleDownloadBill = async (billId) => {
+  const handleDownloadBill = async (billId, fileFormat) => {
     try {
-      // Fetch the bill based on the billId
       const response = await axios.get(
-        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`,
+        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}?fileFormat=${fileFormat}`,
         {
-          responseType: "blob", // Make sure the response is a blob
+          responseType: "blob",
         }
       );
 
-      // Verify the content type of the response
-      const contentType = response.headers["content-type"];
+      // Determine file extension based on format
+      let fileExtension = fileFormat === "pdf" ? ".pdf" : ".docx";
 
-      // Adjust file extension based on content type
-      let fileExtension = ".docx"; // Default to .docx
-      if (contentType === "application/pdf") {
-        fileExtension = ".pdf";
-      }
-
+      // Generate download link and trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-
-      // Adjust file name dynamically based on the file type
       link.setAttribute("download", `generated-bill-${billId}${fileExtension}`);
       document.body.appendChild(link);
       link.click();
@@ -60,8 +52,6 @@ const BillHistory = () => {
       setErrorMessage("Error downloading the bill.");
     }
   };
-
-
 
   return (
     <Container maxWidth="lg" style={{ marginTop: "50px" }}>
@@ -96,7 +86,7 @@ const BillHistory = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => handleDownloadBill(bill._id)}
+                  onClick={() => handleDownloadBill(bill._id, "pdf")} // or "docx"
                   style={{ marginTop: "10px" }}
                 >
                   Download Bill

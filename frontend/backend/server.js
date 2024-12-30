@@ -219,78 +219,74 @@ app.get("/bills-history", async (req, res) => {
   }
 });
 
+// New API: Fetch a specific bill by ID
 app.get("/bills/:billId", async (req, res) => {
   const { billId } = req.params;
+  const { fileFormat } = req.query; // query parameter for file format (docx or pdf)
 
   try {
-    // Log the received billId
-    console.log("Received billId:", billId);
-
-    // Find the bill from MongoDB by the given billId
     const bill = await Bill.findOne({ id: billId });
-
     if (!bill) {
-      console.log("Bill not found for ID:", billId);
       return res.status(404).json({ error: "Bill not found" });
     }
 
-    // Load the bill template file (DOCX format)
+    // Load the template file for DOCX
     const templatePath = path.resolve(__dirname, "bill_template.docx");
     let content;
     try {
       content = fs.readFileSync(templatePath, "binary");
     } catch (err) {
-      console.error("Error reading template file:", err);
       return res.status(500).send("Template file not found.");
     }
 
-    // Create a new Docxtemplater instance
-    const zip = new PizZip(content);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
+    if (fileFormat === "pdf") {
+      // Generate PDF file
+      const doc = new PDFDocument();
+      res.setHeader("Content-Disposition", `attachment; filename=generated-bill-${billId}.pdf`);
+      res.setHeader("Content-Type", "application/pdf");
+      
+      // Add content to PDF
+      doc.fontSize(12).text(`Bill ID: ${bill.id}`);
+      doc.text(`Patient Name: ${bill.name}`);
+      doc.text(`Phone: ${bill.phone}`);
+      doc.text(`Address: ${bill.address}`);
+      doc.text(`Treatment/Medicine: ${bill.treatmentOrMedicine}`);
+      doc.text(`Date: ${bill.date}`);
+      // Add more bill details here...
 
-    // Set the template data (bill details)
-    doc.setData({
-      id: bill.id,
-      name: bill.name,
-      phone: bill.phone,
-      address: bill.address,
-      treatmentOrMedicine: bill.treatmentOrMedicine,
-      date: bill.date,
-      items: bill.items,
-      subtotal: bill.items
-        .reduce((sum, item) => sum + item.baseTotal, 0)
-        .toFixed(2),
-      totalGST: bill.items
-        .reduce((sum, item) => sum + item.gstAmount, 0)
-        .toFixed(2),
-      discount: bill.discount.toFixed(2),
-      total: (
-        bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
-        bill.discount
-      ).toFixed(2),
-    });
+      doc.pipe(res);
+      doc.end();
+    } else {
+      // Default to DOCX generation
+      const zip = new PizZip(content);
+      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
-    // Render the document
-    doc.render();
+      // Set data for DOCX template
+      doc.setData({
+        id: bill.id,
+        name: bill.name,
+        phone: bill.phone,
+        address: bill.address,
+        treatmentOrMedicine: bill.treatmentOrMedicine,
+        date: bill.date,
+        items: bill.items,
+        subtotal: bill.items.reduce((sum, item) => sum + item.baseTotal, 0).toFixed(2),
+        totalGST: bill.items.reduce((sum, item) => sum + item.gstAmount, 0).toFixed(2),
+        discount: bill.discount.toFixed(2),
+        total: (bill.items.reduce((sum, item) => sum + item.baseTotal, 0) - bill.discount).toFixed(2),
+      });
 
-    // Generate the document buffer
-    const buf = doc.getZip().generate({ type: "nodebuffer" });
+      // Render the document
+      doc.render();
 
-    // Send the generated document as a downloadable response
-    // Check the content type when sending back the file
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=generated-bill-${billId}.docx`
-    );
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+      // Generate the document buffer
+      const buf = doc.getZip().generate({ type: "nodebuffer" });
 
-    res.send(buf);
+      // Send the DOCX file
+      res.setHeader("Content-Disposition", `attachment; filename=generated-bill-${billId}.docx`);
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.send(buf);
+    }
   } catch (err) {
     console.error("Error during bill generation:", err);
     res.status(500).send("Internal server error during bill generation");
