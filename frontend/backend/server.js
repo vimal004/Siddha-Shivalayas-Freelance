@@ -6,6 +6,7 @@ const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const fs = require("fs");
 const path = require("path");
+const PDFDocument = require("pdfkit");
 
 const app = express();
 
@@ -24,6 +25,27 @@ mongoose
   )
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
+
+// Routes
+const stockRoutes = require("./routes/stock");
+const patientRoutes = require("./routes/patient");
+
+app.use("/stocks", stockRoutes);
+app.use("/patients", patientRoutes);
+
+app.get("/", (req, res) => {
+  res.json("Hello World");
+});
+
+// Cache the template content to avoid reading it multiple times
+const templatePath = path.resolve(__dirname, "bill_template.docx");
+let content;
+try {
+  content = fs.readFileSync(templatePath, "binary");
+} catch (err) {
+  console.error("Error loading template file:", err);
+  process.exit(1); // Exit the process if template loading fails
+}
 
 // Bill Schema (Model for storing bills)
 const BillSchema = new mongoose.Schema({
