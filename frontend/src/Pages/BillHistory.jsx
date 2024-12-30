@@ -56,13 +56,31 @@ const BillHistory = () => {
 
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
+    const billToSend = billHistory.find((bill) => bill._id === billId);
+
+    if (!billToSend) {
+      setErrorMessage("Bill not found.");
+      return;
+    }
+
     try {
+      // Fill missing fields with "0"
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        { id: billId }
+        {
+          id: billToSend._id || "0",
+          name: billToSend.name || "0",
+          date: billToSend.date || "0",
+          treatmentOrMedicine: billToSend.treatmentOrMedicine || "0",
+          subtotal: billToSend.subtotal || "0",
+          totalGST: billToSend.totalGST || "0",
+          discount: billToSend.discount || "0",
+          total: billToSend.total || "0",
+          items: billToSend.items || [], // Items should be an empty array if not available
+        }
       );
 
-      // Trigger download
+      // Trigger download of the generated bill
       const file = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
