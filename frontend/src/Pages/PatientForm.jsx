@@ -22,18 +22,6 @@ const PatientForm = () => {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app/patients")
-      .then((res) => {
-        console.log(res.data); // Adjusted for hospital data
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
-
-  // Form Data for Patient Information
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -44,15 +32,14 @@ const PatientForm = () => {
   });
 
   const [patients, setPatients] = useState([]); // For auto-complete suggestions
-  const [treatmentData, setTreatmentData] = useState(null); // Treatment Data from API
   const [created, setCreated] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [updated, setUpdated] = useState(false);
-  const [success, setSuccess] = useState(null);
+  const [success, setSuccess] = useState(false); // For success Snackbar
+  const [errorMessage, setErrorMessage] = useState(""); // For error Snackbar
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const resetForm = () => {
     setFormData({
@@ -65,40 +52,16 @@ const PatientForm = () => {
     });
   };
 
-  // Fetching treatment/medicine data from API
-  useEffect(() => {
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app") // Adjusted for hospital data
-      .then((response) => {
-        setTreatmentData(response?.data?.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching treatment data:", error);
-      });
-  }, []);
-
-  // Fetch all patients for auto-complete
   useEffect(() => {
     axios
       .get("https://siddha-shivalayas-backend.vercel.app/patients")
       .then((response) => {
-        setPatients(response.data); // Assuming the response is an array of patients
+        setPatients(response.data);
       })
       .catch((error) => {
         console.error("Error fetching patients:", error);
       });
   }, []);
-
-  // Filter treatment data based on selected treatment or medicine
-  useEffect(() => {
-    if (treatmentData) {
-      setGroupData(
-        treatmentData.filter(
-          (d) => d.treatmentOrMedicine === formData.treatmentOrMedicine
-        )
-      );
-    }
-  }, [formData, treatmentData]);
 
   const handleDelete = () => {
     setLoadingDelete(true);
@@ -108,90 +71,64 @@ const PatientForm = () => {
       )
       .then(() => {
         setDeleted(true);
+        setSuccess(true); // Success Message
         resetForm();
-        setTimeout(() => {
-          setDeleted(false);
-        }, 3000);
+        setTimeout(() => setDeleted(false), 3000);
       })
       .catch((err) => {
         console.error(err);
         setLoadingDelete(false);
-        setErrorMessage("Patient deletion failed");
+        setErrorMessage("Patient deletion failed"); // Error Message
         setSuccess(false);
       });
   };
 
   const handleUpdate = () => {
     setLoadingUpdate(true);
-
-    const updatedData = Object.fromEntries(
-      Object.entries(formData).filter(([key, value]) => {
-        // Ensure value is a string before calling trim
-        return typeof value === "string" && value.trim() !== "";
-      })
-    );
-
-
     axios
       .put(
         `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`,
-        updatedData
+        formData
       )
-      .then((res) => {
+      .then(() => {
         setUpdated(true);
+        setSuccess(true); // Success Message
         resetForm();
-        setTimeout(() => {
-          setUpdated(false);
-        }, 3000);
-        setLoadingUpdate(false);
+        setTimeout(() => setUpdated(false), 3000);
       })
       .catch((err) => {
         console.error(err);
         setLoadingUpdate(false);
-        setErrorMessage("Patient update failed");
+        setErrorMessage("Patient update failed"); // Error Message
         setSuccess(false);
       });
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
   };
 
   const handleCreate = (e) => {
     e.preventDefault();
     setLoadingCreate(true);
     if (!formData.id) {
-      setErrorMessage("Patient ID is required");
+      setErrorMessage("Patient ID is required"); // Error Message
       setSuccess(false);
       setLoadingCreate(false);
       return;
     }
 
     axios
-      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData) // Adjusted for hospital
+      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData)
       .then(() => {
-        setSuccess(true);
         setCreated(true);
+        setSuccess(true); // Success Message
         resetForm();
-        setTimeout(() => {
-          setCreated(false);
-          setSuccess(null);
-          setErrorMessage("");
-        }, 3000);
+        setTimeout(() => setCreated(false), 3000);
       })
       .catch((err) => {
         console.error(err);
         setSuccess(false);
-        setErrorMessage("Patient creation failed");
+        setErrorMessage("Patient creation failed"); // Error Message
       })
       .finally(() => setLoadingCreate(false));
   };
-
-  const isIdEntered = formData.id.trim() !== "";
 
   const handleAutocompleteChange = (event, value) => {
     if (value) {
@@ -200,6 +137,8 @@ const PatientForm = () => {
       resetForm();
     }
   };
+
+  const isIdEntered = formData.id.trim() !== "";
 
   return (
     <Container maxWidth="md" style={{ marginTop: "50px" }}>
@@ -229,61 +168,53 @@ const PatientForm = () => {
 
         <form onSubmit={handleCreate}>
           <Grid container spacing={2}>
-            {/* Patient ID */}
             <Grid item xs={12}>
               <TextField
                 label="Patient ID"
                 name="id"
                 value={formData.id}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, id: e.target.value })
+                }
                 variant="outlined"
                 fullWidth
                 required
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
-            {/* Patient Name */}
             <Grid item xs={12}>
               <TextField
                 label="Patient Name"
                 name="name"
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
-            {/* Phone Number */}
             <Grid item xs={12}>
               <TextField
                 label="Phone Number"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
-            {/* Address */}
             <Grid item xs={12}>
               <TextField
                 label="Address"
                 name="address"
                 value={formData.address}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 variant="outlined"
                 fullWidth
-                InputProps={{
-                  style: { borderRadius: "8px" },
-                }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -292,36 +223,16 @@ const PatientForm = () => {
                 name="date"
                 type="date"
                 value={formData.date}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
                 variant="outlined"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            {/* Treatment or Medicine */}
-            <Grid item xs={12}>
-              <TextField
-                select
-                label="Treatment or Medicine"
-                name="treatmentOrMedicine"
-                value={formData.treatmentOrMedicine}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                SelectProps={{
-                  native: true,
-                  style: { borderRadius: "8px" },
-                }}
-              >
-                <option value=""></option>
-                <option value="treatment">Treatment</option>
-                <option value="medicine">Medicine</option>
-                <option value="consulting">Consulting</option>
-              </TextField>
-            </Grid>
           </Grid>
 
-          {/* Buttons */}
           <Grid item xs={12}>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <Button
@@ -382,9 +293,9 @@ const PatientForm = () => {
           </Grid>
         </form>
 
-        {/* Snackbar for feedback */}
+        {/* Snackbar for success message */}
         <Snackbar open={success} autoHideDuration={3000}>
-          <MuiAlert severity="success">
+          <MuiAlert severity="success" onClose={() => setSuccess(false)} variant="filled">
             {created
               ? "Created successfully!"
               : updated
@@ -395,9 +306,11 @@ const PatientForm = () => {
           </MuiAlert>
         </Snackbar>
 
-        {/* Error Message Snackbar */}
-        <Snackbar open={errorMessage} autoHideDuration={3000}>
-          <MuiAlert severity="error">{errorMessage}</MuiAlert>
+        {/* Snackbar for error message */}
+        <Snackbar open={!!errorMessage} autoHideDuration={3000}>
+          <MuiAlert severity="error" onClose={() => setErrorMessage("")}>
+            {errorMessage}
+          </MuiAlert>
         </Snackbar>
       </div>
     </Container>
