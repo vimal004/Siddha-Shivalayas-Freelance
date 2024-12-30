@@ -315,7 +315,7 @@ const PatientForm = () => {
 
         {/* Snackbar for error message */}
         <Snackbar open={!!errorMessage} autoHideDuration={3000}>
-          <MuiAlert severity="error" onClose={() => setErrorMessage("")}>
+          <MuiAlert severity="error" onClose={() => setErrorMessage("")} variant="filled">
             {errorMessage}
           </MuiAlert>
         </Snackbar>
