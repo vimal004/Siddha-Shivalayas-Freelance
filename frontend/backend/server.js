@@ -219,7 +219,6 @@ app.get("/bills-history", async (req, res) => {
   }
 });
 
-// New API: Fetch a specific bill by ID and return as .docx
 app.get("/bills/:billId", async (req, res) => {
   const { billId } = req.params;
 
