@@ -72,7 +72,7 @@ const BillSchema = new mongoose.Schema({
 const Bill = mongoose.model("Bill", BillSchema);
 
 // Optimized Bill Generation Endpoint
-app.post("/generate-bill", (req, res) => {
+app.post("/generate-bill", async (req, res) => {
   const {
     id,
     name,
@@ -145,11 +145,32 @@ app.post("/generate-bill", (req, res) => {
   );
   const finalTotal = (subtotal + totalGST - discountValue).toFixed(2);
 
-  // Create a new Docxtemplater instance for each request
-  const zip = new PizZip(content);
-  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  // Save the bill to the database
+  const newBill = new Bill({
+    id,
+    name,
+    phone,
+    address,
+    treatmentOrMedicine,
+    date,
+    items: itemTotals, // Pass items array with calculated values to the database
+    subtotal: subtotal.toFixed(2),
+    totalGST: totalGST.toFixed(2),
+    discount: discountValue.toFixed(2),
+    total: finalTotal,
+  });
 
   try {
+    // Save the new bill to MongoDB
+    await newBill.save();
+
+    // Create a new Docxtemplater instance for each request
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
     // Set data for Docxtemplater
     doc.setData({
       id,
