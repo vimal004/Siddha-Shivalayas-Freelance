@@ -113,6 +113,17 @@ const Home = () => {
             </Button>
           </Link>
         </Grid>
+        <Grid item>
+          <Link to="/billhistory" style={{ textDecoration: "none" }}>
+            <Button
+              variant="contained"
+              sx={buttonStyles}
+              startIcon={<VisibilityIcon sx={iconStyles} />}
+            >
+              View Bill History
+            </Button>
+          </Link>
+        </Grid>
       </Grid>
     </div>
   );

@@ -95,6 +95,13 @@ const Header = () => {
               >
                 View Stocks
               </AnimatedButton>
+              <AnimatedButton
+                component={Link}
+                to="/billhistory"
+                startIcon={<GroupIcon />}
+              >
+                Bill History
+              </AnimatedButton>
             </Navigation>
           )}
         </Box>
