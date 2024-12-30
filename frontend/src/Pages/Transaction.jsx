@@ -146,9 +146,19 @@ const Transaction = () => {
         );
 
         if (selectedStock) {
+          const updatedQuantity = selectedStock.quantity - item.quantity;
+
+          // Ensure the quantity is not negative
+          if (updatedQuantity < 0) {
+            throw new Error("Insufficient stock for one or more items.");
+          }
+
+          console.log("Updating Stock ID:", selectedStock.stockId); // Verify stockId here
+
+          // Update the stock quantity in the database using stockId
           return axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
-            { quantity: selectedStock.quantity - item.quantity }
+            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+            { quantity: updatedQuantity }
           );
         }
       });
@@ -156,13 +166,14 @@ const Transaction = () => {
       // Wait for all stock updates to complete
       await Promise.all(updateStockPromises);
 
-      // Success message (optional)
+      // Success message
       setSuccessMessage("Bill generated and stock updated successfully.");
     } catch (err) {
       console.error(err);
-      setErrorMessage("Error processing the request");
+      setErrorMessage(err.message || "Error processing the request");
     }
   };
+
 
   return (
     <Container maxWidth="lg" style={{ marginTop: "50px" }}>
