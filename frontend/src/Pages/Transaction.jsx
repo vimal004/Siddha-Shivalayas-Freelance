@@ -356,7 +356,7 @@ const Transaction = () => {
 
         <Snackbar
           open={Boolean(errorMessage)}
-          autoHideDuration={4000}
+          autoHideDuration={3000}
           onClose={() => setErrorMessage("")}
         >
           <MuiAlert elevation={6} variant="filled" severity="error">
@@ -365,8 +365,8 @@ const Transaction = () => {
         </Snackbar>
         <Snackbar
           open={Boolean(successMessage)}
-          autoHideDuration={4000}
-          onClose={() => setsuccessMessage("")}
+          autoHideDuration={3000}
+          onClose={() => setSuccessMessage("")}
         >
           <MuiAlert elevation={6} variant="filled" severity="success">
             {successMessage}
