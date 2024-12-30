@@ -11,7 +11,9 @@ const PDFDocument = require("pdfkit");
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors());  // Enable CORS (Cross-Origin Resource Sharing)
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.text());
 app.use(bodyParser.json());
 
 // Connect to MongoDB
