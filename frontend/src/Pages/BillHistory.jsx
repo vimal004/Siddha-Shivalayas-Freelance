@@ -47,6 +47,33 @@ const BillHistory = () => {
     }
   };
 
+  // Handle generate bill request (to generate and download the bill)
+  const handleGenerateBill = async (billId) => {
+    try {
+      const response = await axios.post(
+        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
+        { id: billId } // Assuming you are passing just the bill ID for generation
+      );
+
+      // Trigger download
+      const file = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      const fileURL = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = fileURL;
+      a.download = `generated-bill-${billId}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setSuccessMessage("Bill generated and downloaded successfully.");
+    } catch (error) {
+      console.error("Error generating the bill:", error);
+      setErrorMessage("Error generating the bill.");
+    }
+  };
+
   return (
     <Container maxWidth="lg" style={{ marginTop: "50px" }}>
       <div
@@ -112,6 +139,13 @@ const BillHistory = () => {
                     style={{ marginRight: "10px" }}
                   >
                     Delete Bill
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleGenerateBill(bill._id)}
+                  >
+                    Generate Bill
                   </Button>
                 </CardActions>
               </Card>
