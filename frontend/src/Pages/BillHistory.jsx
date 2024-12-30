@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Button, Snackbar, Container, Typography, Grid } from "@mui/material";
+import {
+  Button,
+  Snackbar,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+} from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 
 const BillHistory = () => {
@@ -24,32 +33,17 @@ const BillHistory = () => {
     fetchBillHistory();
   }, []);
 
-  // Handle download bill request
-  const handleDownloadBill = async (billId, fileFormat) => {
+  // Handle delete bill request
+  const handleDeleteBill = async (billId) => {
     try {
-      const response = await axios.get(
-        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}?fileFormat=${fileFormat}`,
-        {
-          responseType: "blob",
-        }
+      await axios.delete(
+        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
       );
-
-      // Determine file extension based on format
-      let fileExtension = fileFormat === "pdf" ? ".pdf" : ".docx";
-
-      // Generate download link and trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `generated-bill-${billId}${fileExtension}`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setSuccessMessage("Bill downloaded successfully.");
+      setBillHistory(billHistory.filter((bill) => bill._id !== billId));
+      setSuccessMessage("Bill deleted successfully.");
     } catch (error) {
-      console.error("Error downloading the bill:", error);
-      setErrorMessage("Error downloading the bill.");
+      console.error("Error deleting the bill:", error);
+      setErrorMessage("Error deleting the bill.");
     }
   };
 
@@ -67,31 +61,60 @@ const BillHistory = () => {
           <strong>Bill History</strong>
         </Typography>
 
-        {/* Display bills */}
+        {/* Display bills as cards */}
         <Grid container spacing={3}>
           {billHistory.map((bill) => (
             <Grid item xs={12} sm={6} md={4} key={bill._id}>
-              <div
+              <Card
                 style={{
                   padding: "16px",
-                  border: "1px solid #ccc",
-                  borderRadius: "8px",
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
                 }}
               >
-                <Typography variant="h6">{`Bill ID: ${bill._id}`}</Typography>
-                <Typography variant="body1">
-                  Patient Name: {bill.name}
-                </Typography>
-                <Typography variant="body2">Date: {bill.date}</Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => handleDownloadBill(bill._id, "pdf")} // or "docx"
-                  style={{ marginTop: "10px" }}
-                >
-                  Download Bill
-                </Button>
-              </div>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    <strong>Bill ID:</strong> {bill._id}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Patient Name:</strong> {bill.name}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Bill Date:</strong> {bill.date}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Treatment / Medicine:</strong>{" "}
+                    {bill.treatmentOrMedicine}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Subtotal:</strong> {bill.subtotal}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Total GST:</strong> {bill.totalGST}
+                  </Typography>
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Discount:</strong> {bill.discount}
+                  </Typography>
+                  <Typography variant="h6" gutterBottom>
+                    <strong>Total Amount:</strong> {bill.total}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>Address:</strong> {bill.address || "N/A"}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>Contact:</strong> {bill.contact || "N/A"}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleDeleteBill(bill._id)}
+                    style={{ marginRight: "10px" }}
+                  >
+                    Delete Bill
+                  </Button>
+                </CardActions>
+              </Card>
             </Grid>
           ))}
         </Grid>

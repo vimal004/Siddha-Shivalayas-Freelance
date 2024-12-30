@@ -293,6 +293,23 @@ app.get("/bills/:billId", async (req, res) => {
   }
 });
 
+// New API: Delete a specific bill by ID
+app.delete("/bills/:billId", async (req, res) => {
+  const { billId } = req.params;
+
+  try {
+    const bill = await Bill.findByIdAndDelete(billId);
+    if (!bill) {
+      return res.status(404).json({ error: "Bill not found" });
+    }
+    res.json({ message: "Bill deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting the bill:", error);
+    res.status(500).json({ error: "Error deleting the bill." });
+  }
+});
+
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
