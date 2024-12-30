@@ -129,7 +129,7 @@ const Transaction = () => {
         { responseType: "blob" }
       );
 
-      // Update the stock quantities
+      /*// Update the stock quantities
       for (let item of formData.items) {
         const selectedStock = stocks.find(
           (stock) => stock.productName === item.description
@@ -140,7 +140,7 @@ const Transaction = () => {
             { quantity: selectedStock.quantity - formData.quantity }
           );
         }
-      }
+      }*/
 
       // Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
