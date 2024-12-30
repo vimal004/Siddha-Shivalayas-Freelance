@@ -27,25 +27,29 @@ const BillHistory = () => {
   // Handle download bill request
   const handleDownloadBill = async (billId) => {
     try {
-      // Log the billId to verify it's being passed correctly
-      console.log("Downloading bill with ID:", billId);
-
+      // Fetch the bill based on the billId
       const response = await axios.get(
         `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`,
         {
-          responseType: "blob", // Ensure the response is a blob
+          responseType: "blob", // Make sure the response is a blob
         }
       );
 
-      // Check the response object
-      console.log(response);
+      // Verify the content type of the response
+      const contentType = response.headers["content-type"];
+
+      // Adjust file extension based on content type
+      let fileExtension = ".docx"; // Default to .docx
+      if (contentType === "application/pdf") {
+        fileExtension = ".pdf";
+      }
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
 
-      // Ensure correct file extension
-      link.setAttribute("download", `generated-bill-${billId}.docx`);
+      // Adjust file name dynamically based on the file type
+      link.setAttribute("download", `generated-bill-${billId}${fileExtension}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -56,6 +60,7 @@ const BillHistory = () => {
       setErrorMessage("Error downloading the bill.");
     }
   };
+
 
 
   return (

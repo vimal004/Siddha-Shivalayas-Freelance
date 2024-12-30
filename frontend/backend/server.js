@@ -280,6 +280,7 @@ app.get("/bills/:billId", async (req, res) => {
     const buf = doc.getZip().generate({ type: "nodebuffer" });
 
     // Send the generated document as a downloadable response
+    // Check the content type when sending back the file
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=generated-bill-${billId}.docx`
@@ -288,6 +289,7 @@ app.get("/bills/:billId", async (req, res) => {
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
+
     res.send(buf);
   } catch (err) {
     console.error("Error during bill generation:", err);
