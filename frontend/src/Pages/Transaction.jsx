@@ -39,6 +39,7 @@ const Transaction = () => {
   });
   const [stocks, setstocks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); 
 
   useEffect(() => {
     axios
@@ -122,27 +123,14 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
-      // Generate the bill
+      // Step 1: Generate the bill
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         formData,
         { responseType: "blob" }
       );
 
-      /*// Update the stock quantities
-      for (let item of formData.items) {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
-        if (selectedStock) {
-          await axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
-            { quantity: selectedStock.quantity - formData.quantity }
-          );
-        }
-      }*/
-
-      // Download the bill
+      // Step 2: Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -150,6 +138,26 @@ const Transaction = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Step 3: Update the stock quantities after the bill is downloaded
+      const updateStockPromises = formData.items.map(async (item) => {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+
+        if (selectedStock) {
+          return axios.put(
+            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock._id}`,
+            { quantity: selectedStock.quantity - item.quantity }
+          );
+        }
+      });
+
+      // Wait for all stock updates to complete
+      await Promise.all(updateStockPromises);
+
+      // Success message (optional)
+      setSuccessMessage("Bill generated and stock updated successfully.");
     } catch (err) {
       console.error(err);
       setErrorMessage("Error processing the request");
@@ -353,6 +361,15 @@ const Transaction = () => {
         >
           <MuiAlert elevation={6} variant="filled" severity="error">
             {errorMessage}
+          </MuiAlert>
+        </Snackbar>
+        <Snackbar
+          open={Boolean(successMessage)}
+          autoHideDuration={4000}
+          onClose={() => setsuccessMessage("")}
+        >
+          <MuiAlert elevation={6} variant="filled" severity="success">
+            {successMessage}
           </MuiAlert>
         </Snackbar>
       </div>
