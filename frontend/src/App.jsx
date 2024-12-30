@@ -9,6 +9,7 @@ import StockForm from "./Pages/StockForm";
 import LoginForm from "./Pages/Login";
 import PatientForm from "./Pages/PatientForm";
 import AllPatients from "./Pages/AllPatients";
+import BillHistory from "./Pages/BillHistory";
 
 function App() {
   return (
@@ -46,7 +47,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/managestocks",
-        element: <StockForm />, 
+        element: <StockForm />,
       },
       {
         path: "/defaulters",
@@ -58,8 +59,12 @@ const router = createBrowserRouter([
       },
       {
         path: "/generatebill",
-        element: <Transaction />, 
-      }
+        element: <Transaction />,
+      },
+      {
+        path: "/BillHistory",
+        element: <BillHistory />,
+      },
     ],
   },
 ]);
