@@ -15,21 +15,6 @@ import { useNavigate } from "react-router-dom";
 
 const PatientForm = () => {
   const navigate = useNavigate();
-
-  const [patients, setPatients] = useState([]); // All patients data
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    address: "",
-    treatmentOrMedicine: "",
-    date: "",
-  });
-
-  const [created, setCreated] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loadingCreate, setLoadingCreate] = useState(false);
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -41,13 +26,33 @@ const PatientForm = () => {
     axios
       .get("https://siddha-shivalayas-backend.vercel.app/patients")
       .then((res) => {
-        setPatients(res.data); // Store all patient data
+        console.log(res.data); // Adjusted for hospital data
       })
       .catch((err) => {
         console.error(err);
-        setErrorMessage("Failed to fetch patient data");
       });
   }, []);
+
+  // Form Data for Patient Information
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    address: "",
+    treatmentOrMedicine: "",
+    date: "",
+  });
+
+  const [patients, setPatients] = useState([]); // For auto-complete suggestions
+  const [treatmentData, setTreatmentData] = useState(null); // Treatment Data from API
+  const [created, setCreated] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [updated, setUpdated] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [loadingCreate, setLoadingCreate] = useState(false);
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const resetForm = () => {
     setFormData({
@@ -60,6 +65,94 @@ const PatientForm = () => {
     });
   };
 
+  // Fetching treatment/medicine data from API
+  useEffect(() => {
+    axios
+      .get("https://siddha-shivalayas-backend.vercel.app") // Adjusted for hospital data
+      .then((response) => {
+        setTreatmentData(response?.data?.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching treatment data:", error);
+      });
+  }, []);
+
+  // Fetch all patients for auto-complete
+  useEffect(() => {
+    axios
+      .get("https://siddha-shivalayas-backend.vercel.app/patients")
+      .then((response) => {
+        setPatients(response.data); // Assuming the response is an array of patients
+      })
+      .catch((error) => {
+        console.error("Error fetching patients:", error);
+      });
+  }, []);
+
+  // Filter treatment data based on selected treatment or medicine
+  useEffect(() => {
+    if (treatmentData) {
+      setGroupData(
+        treatmentData.filter(
+          (d) => d.treatmentOrMedicine === formData.treatmentOrMedicine
+        )
+      );
+    }
+  }, [formData, treatmentData]);
+
+  const handleDelete = () => {
+    setLoadingDelete(true);
+    axios
+      .delete(
+        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`
+      )
+      .then(() => {
+        setDeleted(true);
+        resetForm();
+        setTimeout(() => {
+          setDeleted(false);
+        }, 3000);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadingDelete(false);
+        setErrorMessage("Patient deletion failed");
+        setSuccess(false);
+      });
+  };
+
+  const handleUpdate = () => {
+    setLoadingUpdate(true);
+
+    const updatedData = Object.fromEntries(
+      Object.entries(formData).filter(([key, value]) => {
+        // Ensure value is a string before calling trim
+        return typeof value === "string" && value.trim() !== "";
+      })
+    );
+
+
+    axios
+      .put(
+        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`,
+        updatedData
+      )
+      .then((res) => {
+        setUpdated(true);
+        resetForm();
+        setTimeout(() => {
+          setUpdated(false);
+        }, 3000);
+        setLoadingUpdate(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadingUpdate(false);
+        setErrorMessage("Patient update failed");
+        setSuccess(false);
+      });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -68,41 +161,44 @@ const PatientForm = () => {
     });
   };
 
-  const handleSelectPatient = (patient) => {
-    if (patient) {
-      setFormData({
-        id: patient.id || "",
-        name: patient.name || "",
-        phone: patient.phone || "",
-        address: patient.address || "",
-        treatmentOrMedicine: patient.treatmentOrMedicine || "",
-        date: patient.date
-          ? new Date(patient.date).toISOString().split("T")[0]
-          : "",
-      });
-    } else {
-      resetForm();
-    }
-  };
-
   const handleCreate = (e) => {
     e.preventDefault();
     setLoadingCreate(true);
+    if (!formData.id) {
+      setErrorMessage("Patient ID is required");
+      setSuccess(false);
+      setLoadingCreate(false);
+      return;
+    }
 
     axios
-      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData)
+      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData) // Adjusted for hospital
       .then(() => {
+        setSuccess(true);
         setCreated(true);
         resetForm();
         setTimeout(() => {
           setCreated(false);
+          setSuccess(null);
+          setErrorMessage("");
         }, 3000);
       })
       .catch((err) => {
         console.error(err);
+        setSuccess(false);
         setErrorMessage("Patient creation failed");
       })
       .finally(() => setLoadingCreate(false));
+  };
+
+  const isIdEntered = formData.id.trim() !== "";
+
+  const handleAutocompleteChange = (event, value) => {
+    if (value) {
+      setFormData(value); // Prefill the form with selected patient data
+    } else {
+      resetForm();
+    }
   };
 
   return (
@@ -119,33 +215,35 @@ const PatientForm = () => {
         <Typography variant="h4" align="center" gutterBottom>
           <strong>Patient Form</strong>
         </Typography>
+
+        {/* Autocomplete for patient ID */}
+        <Autocomplete
+          options={patients}
+          getOptionLabel={(option) => option.id || ""}
+          style={{ marginBottom: "20px" }}
+          onChange={handleAutocompleteChange}
+          renderInput={(params) => (
+            <TextField {...params} label="Search Patient by ID" fullWidth />
+          )}
+        />
+
         <form onSubmit={handleCreate}>
           <Grid container spacing={2}>
-            {/* Patient ID Autocomplete */}
+            {/* Patient ID */}
             <Grid item xs={12}>
-              <Autocomplete
-                options={patients}
-                getOptionLabel={(option) => option.id || ""}
-                onChange={(event, value) => handleSelectPatient(value)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Patient ID"
-                    name="id"
-                    value={formData.id}
-                    onChange={handleChange}
-                    variant="outlined"
-                    fullWidth
-                    required
-                    InputProps={{
-                      ...params.InputProps,
-                      style: { borderRadius: "8px" },
-                    }}
-                  />
-                )}
+              <TextField
+                label="Patient ID"
+                name="id"
+                value={formData.id}
+                onChange={handleChange}
+                variant="outlined"
+                fullWidth
+                required
+                InputProps={{
+                  style: { borderRadius: "8px" },
+                }}
               />
             </Grid>
-
             {/* Patient Name */}
             <Grid item xs={12}>
               <TextField
@@ -160,7 +258,6 @@ const PatientForm = () => {
                 }}
               />
             </Grid>
-
             {/* Phone Number */}
             <Grid item xs={12}>
               <TextField
@@ -175,7 +272,6 @@ const PatientForm = () => {
                 }}
               />
             </Grid>
-
             {/* Address */}
             <Grid item xs={12}>
               <TextField
@@ -190,8 +286,6 @@ const PatientForm = () => {
                 }}
               />
             </Grid>
-
-            {/* Date */}
             <Grid item xs={12}>
               <TextField
                 label="Date"
@@ -204,24 +298,30 @@ const PatientForm = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-
             {/* Treatment or Medicine */}
             <Grid item xs={12}>
               <TextField
+                select
                 label="Treatment or Medicine"
                 name="treatmentOrMedicine"
                 value={formData.treatmentOrMedicine}
                 onChange={handleChange}
                 variant="outlined"
                 fullWidth
-                InputProps={{
+                SelectProps={{
+                  native: true,
                   style: { borderRadius: "8px" },
                 }}
-              />
+              >
+                <option value=""></option>
+                <option value="treatment">Treatment</option>
+                <option value="medicine">Medicine</option>
+                <option value="consulting">Consulting</option>
+              </TextField>
             </Grid>
           </Grid>
 
-          {/* Submit Button */}
+          {/* Buttons */}
           <Grid item xs={12}>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <Button
@@ -229,7 +329,7 @@ const PatientForm = () => {
                 variant="contained"
                 color="primary"
                 disableElevation
-                disabled={loadingCreate}
+                disabled={!isIdEntered || loadingCreate}
                 style={{
                   borderRadius: "8px",
                   textTransform: "none",
@@ -242,32 +342,63 @@ const PatientForm = () => {
                   "Create"
                 )}
               </Button>
+              <Button
+                variant="contained"
+                color="warning"
+                disableElevation
+                disabled={!isIdEntered || loadingUpdate}
+                onClick={handleUpdate}
+                style={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  margin: "8px",
+                }}
+              >
+                {loadingUpdate ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Update"
+                )}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                disableElevation
+                disabled={!isIdEntered || loadingDelete}
+                onClick={handleDelete}
+                style={{
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  margin: "8px",
+                }}
+              >
+                {loadingDelete ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Delete"
+                )}
+              </Button>
             </div>
           </Grid>
-
-          {/* Success/Failure Alerts */}
-          <Snackbar
-            open={created}
-            autoHideDuration={3000}
-            onClose={() => setCreated(false)}
-          >
-            <MuiAlert elevation={6} variant="filled" severity="success">
-              Patient created successfully!
-            </MuiAlert>
-          </Snackbar>
-
-          {errorMessage && (
-            <Snackbar
-              open={Boolean(errorMessage)}
-              autoHideDuration={4000}
-              onClose={() => setErrorMessage("")}
-            >
-              <MuiAlert elevation={6} variant="filled" severity="error">
-                {errorMessage}
-              </MuiAlert>
-            </Snackbar>
-          )}
         </form>
+
+        {/* Snackbar for feedback */}
+        <Snackbar open={success} autoHideDuration={3000}>
+          <MuiAlert severity="success">
+            {created
+              ? "Created successfully!"
+              : updated
+              ? "Updated successfully!"
+              : deleted
+              ? "Deleted successfully!"
+              : ""}
+          </MuiAlert>
+        </Snackbar>
+
+        {/* Error Message Snackbar */}
+        <Snackbar open={errorMessage} autoHideDuration={3000}>
+          <MuiAlert severity="error">{errorMessage}</MuiAlert>
+        </Snackbar>
       </div>
     </Container>
   );
