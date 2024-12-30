@@ -7,7 +7,9 @@ router.post("/", async (req, res) => {
   try {
     const existingStock = await Stock.findOne({ stockId: req.body.stockId });
     if (existingStock) {
-      return res.status(400).json({ message: "Stock with this ID already exists" });
+      return res
+        .status(400)
+        .json({ message: "Stock with this ID already exists" });
     }
     const stock = new Stock(req.body);
     await stock.save();
@@ -27,10 +29,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Read Single Stock by ID
+// Read Single Stock by Stock ID
 router.get("/:id", async (req, res) => {
   try {
-    const stock = await Stock.findById(req.params.id);
+    const stock = await Stock.findOne({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
     res.json(stock);
   } catch (error) {
@@ -38,45 +40,30 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update Stock
+// Update Stock by Stock ID
 router.put("/:id", async (req, res) => {
   try {
-    const { quantity } = req.body;
-    const stock = await Stock.findById(req.params.id);
+    const stock = await Stock.findOne({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 
-    if (quantity < 0) {
-      return res.status(400).json({ message: "Insufficient stock available" });
+    if (req.body.quantity !== undefined && req.body.quantity < 0) {
+      return res.status(400).json({ message: "Quantity cannot be negative" });
     }
 
-    stock.quantity = quantity;
-    await stock.save();
-    res.json(stock);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Update Stock Details
-router.put("/", async (req, res) => {
-  try {
-    const stock = await Stock.findById(req.body.stockId);  
-    if (!stock) return res.status(404).json({ message: "Stock not found" });
-
-    Object.keys(req.body).forEach(key => {
-      stock[key] = req.body[key];
+    Object.keys(req.body).forEach((key) => {
+      if (req.body[key] !== undefined) {
+        stock[key] = req.body[key];
+      }
     });
 
     await stock.save();
-    res.json(stock);
+    res.status(200).json({ message: "Stock updated successfully", stock });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-
-
-// Delete Stock
+// Delete Stock by Stock ID
 router.delete("/:id", async (req, res) => {
   try {
     const stock = await Stock.findOneAndDelete({ stockId: req.params.id });
