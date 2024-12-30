@@ -223,16 +223,26 @@ app.get("/bills/:billId", async (req, res) => {
   const { billId } = req.params;
 
   try {
+    // Log the received billId
+    console.log("Received billId:", billId);
+
     // Find the bill from MongoDB by the given billId
     const bill = await Bill.findOne({ id: billId });
 
     if (!bill) {
+      console.log("Bill not found for ID:", billId);
       return res.status(404).json({ error: "Bill not found" });
     }
 
     // Load the bill template file (DOCX format)
     const templatePath = path.resolve(__dirname, "bill_template.docx");
-    const content = fs.readFileSync(templatePath, "binary");
+    let content;
+    try {
+      content = fs.readFileSync(templatePath, "binary");
+    } catch (err) {
+      console.error("Error reading template file:", err);
+      return res.status(500).send("Template file not found.");
+    }
 
     // Create a new Docxtemplater instance
     const zip = new PizZip(content);
@@ -284,6 +294,7 @@ app.get("/bills/:billId", async (req, res) => {
     res.status(500).send("Internal server error during bill generation");
   }
 });
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
