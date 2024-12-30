@@ -73,11 +73,12 @@ const PatientForm = () => {
         setDeleted(true);
         setSuccess(true); // Success Message
         resetForm();
+        setLoadingDelete(false); // Reset loading state
         setTimeout(() => setDeleted(false), 3000);
       })
       .catch((err) => {
         console.error(err);
-        setLoadingDelete(false);
+        setLoadingDelete(false); // Reset loading state
         setErrorMessage("Patient deletion failed"); // Error Message
         setSuccess(false);
       });
@@ -94,11 +95,12 @@ const PatientForm = () => {
         setUpdated(true);
         setSuccess(true); // Success Message
         resetForm();
+        setLoadingUpdate(false); // Reset loading state
         setTimeout(() => setUpdated(false), 3000);
       })
       .catch((err) => {
         console.error(err);
-        setLoadingUpdate(false);
+        setLoadingUpdate(false); // Reset loading state
         setErrorMessage("Patient update failed"); // Error Message
         setSuccess(false);
       });
@@ -120,14 +122,15 @@ const PatientForm = () => {
         setCreated(true);
         setSuccess(true); // Success Message
         resetForm();
+        setLoadingCreate(false); // Reset loading state
         setTimeout(() => setCreated(false), 3000);
       })
       .catch((err) => {
         console.error(err);
         setSuccess(false);
         setErrorMessage("Patient creation failed"); // Error Message
-      })
-      .finally(() => setLoadingCreate(false));
+        setLoadingCreate(false); // Reset loading state
+      });
   };
 
   const handleAutocompleteChange = (event, value) => {
@@ -295,7 +298,11 @@ const PatientForm = () => {
 
         {/* Snackbar for success message */}
         <Snackbar open={success} autoHideDuration={3000}>
-          <MuiAlert severity="success" onClose={() => setSuccess(false)} variant="filled">
+          <MuiAlert
+            severity="success"
+            onClose={() => setSuccess(false)}
+            variant="filled"
+          >
             {created
               ? "Created successfully!"
               : updated
