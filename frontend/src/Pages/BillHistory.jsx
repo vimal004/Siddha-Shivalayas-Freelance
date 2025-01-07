@@ -70,15 +70,15 @@ const BillHistory = () => {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         {
-          id: billToSend.id,
-          name: billToSend.name ||"",
-          phone: billToSend.phone || "",  
-          address: billToSend.address || "",  
-          treatmentOrMedicine: billToSend.treatmentOrMedicine || "",
-          date: billToSend.date || "",
-          items: billToSend.items || [],
-          discount: billToSend.discount || 0,
-          totalAmount: billToSend.totalAmount || 0, // New field for total amount
+          id: "",
+          name: "",
+          phone: "",
+          address: "",
+          treatmentOrMedicine: "",
+          date: "",
+          items: [],
+          discount: 0,
+          totalAmount: 0, // New field for total amount
         }
       );
 
