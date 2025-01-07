@@ -52,24 +52,25 @@ try {
 // Bill Schema (Model for storing bills)
 const BillSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  address: { type: String, required: true },
-  treatmentOrMedicine: { type: String, required: true },
-  date: { type: Date, required: true },
+  name: { type: String, required: false }, // Make optional
+  phone: { type: String, required: false }, // Make optional
+  address: { type: String, required: false }, // Make optional
+  treatmentOrMedicine: { type: String, required: false }, // Make optional
+  date: { type: Date, required: false }, // Make optional
   items: [
     {
-      description: { type: String, required: true },
-      price: { type: Number, required: true },
-      quantity: { type: Number, required: true },
-      GST: { type: Number, required: true },
-      baseTotal: { type: Number, required: true },
-      gstAmount: { type: Number, required: true },
-      finalAmount: { type: Number, required: true },
+      description: { type: String, required: false }, // Make optional
+      price: { type: Number, required: false }, // Make optional
+      quantity: { type: Number, required: false }, // Make optional
+      GST: { type: Number, required: false }, // Make optional
+      baseTotal: { type: Number, required: false }, // Make optional
+      gstAmount: { type: Number, required: false }, // Make optional
+      finalAmount: { type: Number, required: false }, // Make optional
     },
   ],
   discount: { type: Number, default: 0 },
 });
+
 
 const Bill = mongoose.model("Bill", BillSchema);
 
@@ -77,7 +78,7 @@ const Bill = mongoose.model("Bill", BillSchema);
 app.post("/generate-bill", async (req, res) => {
   const {
     id,
-    name,
+    name, 
     phone,
     address,
     treatmentOrMedicine,
@@ -87,17 +88,10 @@ app.post("/generate-bill", async (req, res) => {
   } = req.body;
 
   // Validation: Ensure all required fields are provided
-  if (
-    !id &&
-    !name &&
-    !phone &&
-    !address &&
-    !date &&
-    !Array.isArray(items) &&
-    items.length === 0
-  ) {
+  if (!id || !Array.isArray(items) || items.length === 0) {
     return res.status(400).send("Error: Missing required fields.");
   }
+
 
   // Validate items structure
   for (let item of items) {
@@ -175,17 +169,17 @@ app.post("/generate-bill", async (req, res) => {
 
     // Set data for Docxtemplater
     doc.setData({
-      id,
-      name,
-      phone,
-      address,
-      treatmentOrMedicine,
-      date,
-      items: itemTotals, // Pass items array with calculated values to the document template
-      subtotal: subtotal.toFixed(2),
-      totalGST: totalGST.toFixed(2),
-      discount: discountValue.toFixed(2),
-      total: (subtotal + totalGST - discountValue).toFixed(2),
+      id: id || "N/A",
+      name: name || "N/A",
+      phone: phone || "N/A",
+      address: address || "N/A",
+      treatmentOrMedicine: treatmentOrMedicine || "N/A",
+      date: date || new Date().toISOString(),
+      items: itemTotals || [],
+      subtotal: subtotal.toFixed(2) || "0.00",
+      totalGST: totalGST.toFixed(2) || "0.00",
+      discount: discountValue.toFixed(2) || "0.00",
+      total: finalTotal || "0.00",
     });
 
     // Render the document only once after setting all data
