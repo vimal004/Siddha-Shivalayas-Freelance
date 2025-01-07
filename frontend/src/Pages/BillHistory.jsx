@@ -32,7 +32,7 @@ const BillHistory = () => {
           "https://siddha-shivalayas-backend.vercel.app/bills-history"
         );
         setBillHistory(response.data);
-        console.log("Bill history:", response.data[0]);  
+        console.log("Bill history:", response.data[0]);
       } catch (error) {
         setErrorMessage("Error fetching bill history.");
       }
@@ -58,7 +58,7 @@ const BillHistory = () => {
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
     const billToSend = billHistory.find((bill) => bill._id === billId);
-    console.log("Bill to send:", billToSend); 
+    console.log("Bill to send:", billToSend);
     if (!billToSend) {
       setErrorMessage("Bill not found.");
       return;
@@ -79,7 +79,8 @@ const BillHistory = () => {
           items: [],
           discount: 0,
           totalAmount: 0, // New field for total amount
-        }
+        },
+        { responseType: "blob" }
       );
 
       // Trigger download of the generated bill
