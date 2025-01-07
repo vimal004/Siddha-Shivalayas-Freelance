@@ -70,7 +70,7 @@ const BillHistory = () => {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         {
-          id: billToSend._id,
+          id: billToSend.id,
           name: billToSend.name ||"",
           phone: billToSend.phone || "",  
           address: billToSend.address || "",  
