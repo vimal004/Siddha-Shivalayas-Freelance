@@ -68,6 +68,7 @@ const BillHistory = () => {
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
     const billToSend = billHistory.find((bill) => bill._id === billId);
+    console.log(billToSend);
     if (!billToSend) {
       setErrorMessage("Bill not found.");
       return;
@@ -76,17 +77,7 @@ const BillHistory = () => {
     try {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        {
-          id: "",
-          name: "",
-          phone: "",
-          address: "",
-          treatmentOrMedicine: "",
-          date: "",
-          items: [],
-          discount: 0,
-          totalAmount: 0,
-        },
+        billToSend, 
         { responseType: "blob" }
       );
 

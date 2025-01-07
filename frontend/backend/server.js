@@ -31,6 +31,7 @@ mongoose
 // Routes
 const stockRoutes = require("./routes/stock");
 const patientRoutes = require("./routes/patient");
+const { getHeapSnapshot } = require("v8");
 
 app.use("/stocks", stockRoutes);
 app.use("/patients", patientRoutes);
@@ -61,6 +62,7 @@ const BillSchema = new mongoose.Schema({
     {
       description: { type: String, required: false }, // Make optional
       price: { type: Number, required: false }, // Make optional
+      HSN: { type: String, required: false }, // Make optional  
       quantity: { type: Number, required: false }, // Make optional
       GST: { type: Number, required: false }, // Make optional
       baseTotal: { type: Number, required: false }, // Make optional
