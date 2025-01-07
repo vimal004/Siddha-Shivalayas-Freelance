@@ -68,14 +68,14 @@ const BillHistory = () => {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         {
-          id: billToSend._id || "0",
-          name: billToSend.name || "0",
-          date: billToSend.date || "0",
-          treatmentOrMedicine: billToSend.treatmentOrMedicine || "0",
-          subtotal: billToSend.subtotal || "0",
-          totalGST: billToSend.totalGST || "0",
-          discount: billToSend.discount || "0",
-          total: billToSend.total || "0",
+          id: billToSend._id,
+          phone: billToSend.phone, 
+          address: billToSend.address,
+          name: billToSend.name,
+          date: billToSend.date,
+          treatmentOrMedicine: billToSend.treatmentOrMedicine,
+          discount: billToSend.discount,
+          totalAmount: billToSend.total,
           items: billToSend.items || [], // Items should be an empty array if not available
         }
       );
