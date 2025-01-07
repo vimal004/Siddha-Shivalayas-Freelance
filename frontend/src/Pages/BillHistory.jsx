@@ -32,6 +32,7 @@ const BillHistory = () => {
           "https://siddha-shivalayas-backend.vercel.app/bills-history"
         );
         setBillHistory(response.data);
+        console.log("Bill history:", response.data[0]);  
       } catch (error) {
         setErrorMessage("Error fetching bill history.");
       }
