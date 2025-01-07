@@ -43,7 +43,6 @@ const BillHistory = () => {
           "https://siddha-shivalayas-backend.vercel.app/bills-history"
         );
         setBillHistory(response.data);
-        console.log("Bill history:", response.data[0]);
       } catch (error) {
         setErrorMessage("Error fetching bill history.");
       }
@@ -69,36 +68,33 @@ const BillHistory = () => {
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
     const billToSend = billHistory.find((bill) => bill._id === billId);
-    console.log("Bill to send:", billToSend);
     if (!billToSend) {
       setErrorMessage("Bill not found.");
       return;
     }
 
     try {
-      console.log("Bill to send:", billToSend);
-      // Fill missing fields with "0"
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        formData,
+        billToSend,
         { responseType: "blob" }
       );
 
-      // Step 2: Download the bill
+      // Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `generated-bill-${formData.id}.docx`);
+      link.setAttribute("download", `generated-bill-${billToSend._id}.docx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
       setSuccessMessage("Bill generated and downloaded successfully.");
     } catch (error) {
-      console.error("Error generating the bill:", error);
       setErrorMessage("Error generating the bill.");
     }
   };
+
 
   return (
     <Container maxWidth="lg" sx={{ mt: 5 }}>
