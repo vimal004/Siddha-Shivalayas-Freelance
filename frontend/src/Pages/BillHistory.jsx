@@ -84,16 +84,14 @@ const BillHistory = () => {
       );
 
       // Trigger download of the generated bill
-      const file = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      const fileURL = URL.createObjectURL(file);
-      const a = document.createElement("a");
-      a.href = fileURL;
-      a.download = `generated-bill-${billId}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // Step 2: Download the bill
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `generated-bill-${formData.id}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       setSuccessMessage("Bill generated and downloaded successfully.");
     } catch (error) {
