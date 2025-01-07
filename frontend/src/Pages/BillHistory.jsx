@@ -23,6 +23,17 @@ const BillHistory = () => {
   const [billHistory, setBillHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    address: "",
+    treatmentOrMedicine: "",
+    date: "",
+    items: [],
+    discount: 0,
+    totalAmount: 0, // New field for total amount
+  });
 
   // Fetch bill history on component mount
   useEffect(() => {
@@ -69,21 +80,10 @@ const BillHistory = () => {
       // Fill missing fields with "0"
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        {
-          id: "",
-          name: "",
-          phone: "",
-          address: "",
-          treatmentOrMedicine: "",
-          date: "",
-          items: [],
-          discount: 0,
-          totalAmount: 0, // New field for total amount
-        },
+        formData,
         { responseType: "blob" }
       );
 
-      // Trigger download of the generated bill
       // Step 2: Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
