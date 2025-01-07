@@ -11,7 +11,7 @@ const PDFDocument = require("pdfkit");
 const app = express();
 
 // Middleware
-app.use(cors());  // Enable CORS (Cross-Origin Resource Sharing)
+app.use(cors()); // Enable CORS (Cross-Origin Resource Sharing)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
 app.use(bodyParser.json());
@@ -71,14 +71,13 @@ const BillSchema = new mongoose.Schema({
   discount: { type: Number, default: 0 },
 });
 
-
 const Bill = mongoose.model("Bill", BillSchema);
 
 // Optimized Bill Generation Endpoint
 app.post("/generate-bill", async (req, res) => {
   const {
     id,
-    name, 
+    name,
     phone,
     address,
     treatmentOrMedicine,
@@ -91,7 +90,6 @@ app.post("/generate-bill", async (req, res) => {
   if (!id || !Array.isArray(items) || items.length === 0) {
     return res.status(400).send("Error: Missing required fields.");
   }
-
 
   // Validate items structure
   for (let item of items) {
@@ -238,9 +236,12 @@ app.get("/bills/:billId", async (req, res) => {
     if (fileFormat === "pdf") {
       // Generate PDF file
       const doc = new PDFDocument();
-      res.setHeader("Content-Disposition", `attachment; filename=generated-bill-${billId}.pdf`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=generated-bill-${billId}.pdf`
+      );
       res.setHeader("Content-Type", "application/pdf");
-      
+
       // Add content to PDF
       doc.fontSize(12).text(`Bill ID: ${bill.id}`);
       doc.text(`Patient Name: ${bill.name}`);
@@ -255,7 +256,10 @@ app.get("/bills/:billId", async (req, res) => {
     } else {
       // Default to DOCX generation
       const zip = new PizZip(content);
-      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
 
       // Set data for DOCX template
       doc.setData({
@@ -266,10 +270,17 @@ app.get("/bills/:billId", async (req, res) => {
         treatmentOrMedicine: bill.treatmentOrMedicine,
         date: bill.date,
         items: bill.items,
-        subtotal: bill.items.reduce((sum, item) => sum + item.baseTotal, 0).toFixed(2),
-        totalGST: bill.items.reduce((sum, item) => sum + item.gstAmount, 0).toFixed(2),
+        subtotal: bill.items
+          .reduce((sum, item) => sum + item.baseTotal, 0)
+          .toFixed(2),
+        totalGST: bill.items
+          .reduce((sum, item) => sum + item.gstAmount, 0)
+          .toFixed(2),
         discount: bill.discount.toFixed(2),
-        total: (bill.items.reduce((sum, item) => sum + item.baseTotal, 0) - bill.discount).toFixed(2),
+        total: (
+          bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
+          bill.discount
+        ).toFixed(2),
       });
 
       // Render the document
@@ -279,8 +290,14 @@ app.get("/bills/:billId", async (req, res) => {
       const buf = doc.getZip().generate({ type: "nodebuffer" });
 
       // Send the DOCX file
-      res.setHeader("Content-Disposition", `attachment; filename=generated-bill-${billId}.docx`);
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=generated-bill-${billId}.docx`
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      );
       res.send(buf);
     }
   } catch (err) {
@@ -304,8 +321,6 @@ app.delete("/bills/:billId", async (req, res) => {
     res.status(500).json({ error: "Error deleting the bill." });
   }
 });
-
-
 
 // Start server
 const PORT = process.env.PORT || 5000;
