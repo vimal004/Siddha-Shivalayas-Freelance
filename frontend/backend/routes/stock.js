@@ -52,7 +52,11 @@ router.put("/:id", async (req, res) => {
 
     Object.keys(req.body).forEach((key) => {
       if (req.body[key] !== undefined) {
-        stock[key] = req.body[key];
+        if (key === "quantity") {
+          stock[key] += req.body[key];
+        } else {
+          stock[key] = req.body[key];
+        }
       }
     });
 
