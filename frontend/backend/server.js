@@ -86,7 +86,34 @@ app.post("/generate-bill", async (req, res) => {
     discount,
   } = req.body;
 
-  // No validation required as per user request
+  // Validation: Ensure all required fields are provided
+  if (
+    !id &&
+    !name &&
+    !phone &&
+    !address &&
+    !date &&
+    !Array.isArray(items) &&
+    items.length === 0
+  ) {
+    return res.status(400).send("Error: Missing required fields.");
+  }
+
+  // Validate items structure
+  for (let item of items) {
+    if (!item.description || !item.price || !item.quantity || !item.GST) {
+      return res
+        .status(400)
+        .send(
+          "Error: Each item must have description, price, quantity, and GST."
+        );
+    }
+    if (isNaN(item.price) || isNaN(item.quantity) || isNaN(item.GST)) {
+      return res
+        .status(400)
+        .send("Error: Price, quantity, and GST must be valid numbers.");
+    }
+  }
 
   // Ensure discount is a valid number (if undefined, default to 0)
   const discountValue = isNaN(discount) ? 0 : parseFloat(discount);
