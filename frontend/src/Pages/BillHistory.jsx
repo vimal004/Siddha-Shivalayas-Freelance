@@ -64,6 +64,7 @@ const BillHistory = () => {
     }
 
     try {
+      console.log("Bill to send:", billToSend);
       // Fill missing fields with "0"
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
