@@ -76,7 +76,17 @@ const BillHistory = () => {
     try {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        billToSend,
+        {
+          id: "",
+          name: "",
+          phone: "",
+          address: "",
+          treatmentOrMedicine: "",
+          date: "",
+          items: [],
+          discount: 0,
+          totalAmount: 0,
+        },
         { responseType: "blob" }
       );
 
@@ -94,7 +104,6 @@ const BillHistory = () => {
       setErrorMessage("Error generating the bill.");
     }
   };
-
 
   return (
     <Container maxWidth="lg" sx={{ mt: 5 }}>
