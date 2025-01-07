@@ -57,7 +57,7 @@ const BillHistory = () => {
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
     const billToSend = billHistory.find((bill) => bill._id === billId);
-
+    console.log("Bill to send:", billToSend); 
     if (!billToSend) {
       setErrorMessage("Bill not found.");
       return;
@@ -69,17 +69,15 @@ const BillHistory = () => {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         {
-          id: billToSend.id,
-          name: billToSend.name,
-          phone: billToSend.phone,
-          address: billToSend.address,
-          treatmentOrMedicine: billToSend.treatmentOrMedicine,
-          date: billToSend.date,
-          items: billToSend.items, // Pass items array with calculated values to the database
-          subtotal: billToSend.subtotal,
-          totalGST: billToSend.totalGST,
-          discount: billToSend.discount,
-          total: billToSend.total,
+          id: billToSend._id,
+          name: billToSend.name ||"",
+          phone: billToSend.phone || "",  
+          address: billToSend.address || "",  
+          treatmentOrMedicine: billToSend.treatmentOrMedicine || "",
+          date: billToSend.date || "",
+          items: billToSend.items || [],
+          discount: billToSend.discount || 0,
+          totalAmount: billToSend.totalAmount || 0, // New field for total amount
         }
       );
 
