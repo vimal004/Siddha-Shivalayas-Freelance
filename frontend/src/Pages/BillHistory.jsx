@@ -23,17 +23,6 @@ const BillHistory = () => {
   const [billHistory, setBillHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    address: "",
-    treatmentOrMedicine: "",
-    date: "",
-    items: [],
-    discount: 0,
-    totalAmount: 0, // New field for total amount
-  });
 
   // Fetch bill history on component mount
   useEffect(() => {
@@ -68,7 +57,6 @@ const BillHistory = () => {
   // Handle generate bill request (to generate and download the bill)
   const handleGenerateBill = async (billId) => {
     const billToSend = billHistory.find((bill) => bill._id === billId);
-    console.log(billToSend);
     if (!billToSend) {
       setErrorMessage("Bill not found.");
       return;
@@ -77,7 +65,7 @@ const BillHistory = () => {
     try {
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        billToSend, 
+        billToSend,
         { responseType: "blob" }
       );
 
@@ -111,7 +99,6 @@ const BillHistory = () => {
           Bill History
         </Typography>
 
-        {/* Display bills as cards */}
         <Grid container spacing={4}>
           {billHistory.map((bill) => (
             <Grid item xs={12} sm={6} md={4} key={bill._id}>
@@ -259,7 +246,6 @@ const BillHistory = () => {
         </Grid>
       </Box>
 
-      {/* Error and Success Notifications */}
       <Snackbar
         open={Boolean(errorMessage)}
         autoHideDuration={3000}
