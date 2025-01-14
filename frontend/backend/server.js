@@ -71,7 +71,7 @@ const BillSchema = new mongoose.Schema({
       finalAmount: { type: Number, required: false }, // Make optional
     },
   ],
-  discount: { type: Number, default: 0 },
+  discount: { type: Number, default: 0, required: false },
   createdAt: { type: Date, default: Date.now }, // Automatically sets the bill creation date
 });
 
@@ -194,10 +194,7 @@ app.post("/generate-bill", async (req, res) => {
 // New API: Fetch all bill history
 app.get("/bills-history", async (req, res) => {
   try {
-    const bills = await Bill.find(
-      {},
-      { id: 1, name: 1, date: 1, createdAt: 1 }
-    );
+    const bills = await Bill.find();
     res.json(bills);
   } catch (error) {
     console.error("Error fetching bill history:", error);
