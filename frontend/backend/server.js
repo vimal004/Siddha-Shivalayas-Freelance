@@ -103,14 +103,12 @@ app.post("/generate-bill", async (req, res) => {
     const itemPrice = parseFloat(item.price);
     const itemQuantity = parseFloat(item.quantity);
     const gstRate = parseFloat(item.GST) / 100;
-    const HSN = item.HSN;
     const baseTotal = itemPrice * itemQuantity;
     const gstAmount = baseTotal * gstRate;
     const finalAmount = baseTotal + gstAmount;
 
     return {
       ...item,
-      HSN: HSN,
       baseTotal: baseTotal.toFixed(2),
       gstAmount: gstAmount.toFixed(2),
       finalAmount: finalAmount.toFixed(2),
