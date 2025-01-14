@@ -1,20 +1,26 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Typography,
+  useTheme,
+  alpha,
+} from "@mui/material";
 import {
   AccountCircle as AccountCircleIcon,
   People as PeopleIcon,
-  Group as GroupIcon,
-  Visibility as VisibilityIcon,
-  ReportProblem as ReportProblemIcon,
+  Inventory as InventoryIcon,
+  Receipt as ReceiptIcon,
+  History as HistoryIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-
-import BGIMG from "./img/img3.jpg"; // Adjust path as per your project structure
 
 const Home = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -22,110 +28,152 @@ const Home = () => {
     }
   }, [navigate]);
 
-  const buttonStyles = {
-    width: "300px", // Uniform width for all buttons
-    borderRadius: "8px",
-    textTransform: "none",
-    padding: "16px",
-    color: "#fff",
-    backgroundColor: "#1976d2", // Blue color for all buttons
-    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-    transition: "transform 0.3s ease",
-    "&:hover": {
-      transform: "scale(1.05)",
-      backgroundColor: "#1565c0", // Slightly darker blue on hover
+  const menuItems = [
+    {
+      title: "View Patients Details",
+      icon: <AccountCircleIcon />,
+      path: "/allpatients",
+      description: "Access and review patient information",
+      color: "#2196F3", // Blue
     },
-  };
-
-  const iconStyles = {
-    marginRight: "8px",
-    fontSize: "1.5rem",
-  };
+    {
+      title: "Manage Patient Records",
+      icon: <PeopleIcon />,
+      path: "/managepatients",
+      description: "Add, edit, or update patient records",
+      color: "#4CAF50", // Green
+    },
+    {
+      title: "Manage Product Stocks",
+      icon: <InventoryIcon />,
+      path: "/managestocks",
+      description: "Update and manage inventory",
+      color: "#FF9800", // Orange
+    },
+    {
+      title: "Generate Bill",
+      icon: <ReceiptIcon />,
+      path: "/generatebill",
+      description: "Create new bills for patients",
+      color: "#E91E63", // Pink
+    },
+    {
+      title: "View Product Stocks",
+      icon: <InventoryIcon />,
+      path: "/viewstocks",
+      description: "Check current inventory levels",
+      color: "#9C27B0", // Purple
+    },
+    {
+      title: "View Bill History",
+      icon: <HistoryIcon />,
+      path: "/billhistory",
+      description: "Access previous billing records",
+      color: "#795548", // Brown
+    },
+  ];
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundImage: `url(${BGIMG})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-        padding: "24px",
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.1
+        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        py: 8,
       }}
     >
-      <Grid container spacing={3} direction="column" alignItems="center">
-        <Grid item>
-          <Link to="/allpatients" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<AccountCircleIcon sx={iconStyles} />}
-            >
-              View Patients Details
-            </Button>
-          </Link>
+      <Container maxWidth="lg">
+        <Typography
+          variant="h3"
+          align="center"
+          sx={{
+            mb: 6,
+            fontWeight: 700,
+            color: "primary.main",
+            fontFamily: '"Inter", sans-serif',
+          }}
+        >
+          Welcome to Dashboard
+        </Typography>
+
+        <Grid container spacing={3}>
+          {menuItems.map((item) => (
+            <Grid item xs={12} sm={6} md={4} key={item.path}>
+              <Link to={item.path} style={{ textDecoration: "none" }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    textAlign: "center",
+                    borderRadius: 2,
+                    backgroundColor: "white",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      borderRadius: "50%",
+                      backgroundColor: alpha(item.color, 0.1),
+                    }}
+                  >
+                    {React.cloneElement(item.icon, {
+                      sx: { fontSize: 40, color: item.color },
+                    })}
+                  </Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 1,
+                      fontWeight: 600,
+                      color: "text.primary",
+                      fontFamily: '"Inter", sans-serif',
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      mb: 2,
+                    }}
+                  >
+                    {item.description}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      mt: "auto",
+                      bgcolor: item.color,
+                      textTransform: "none",
+                      px: 4,
+                      "&:hover": {
+                        bgcolor: alpha(item.color, 0.9),
+                      },
+                    }}
+                  >
+                    Access
+                  </Button>
+                </Box>
+              </Link>
+            </Grid>
+          ))}
         </Grid>
-        <Grid item>
-          <Link to="/managepatients" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<PeopleIcon sx={iconStyles} />}
-            >
-              Manage Patient Records
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item>
-          <Link to="/managestocks" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<GroupIcon sx={iconStyles} />}
-            >
-              Manage Product Stocks
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item>
-          <Link to="/generatebill" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<GroupIcon sx={iconStyles} />}
-            >
-              Generate Bill
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item>
-          <Link to="/viewstocks" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<VisibilityIcon sx={iconStyles} />}
-            >
-              View Product Stocks
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item>
-          <Link to="/billhistory" style={{ textDecoration: "none" }}>
-            <Button
-              variant="contained"
-              sx={buttonStyles}
-              startIcon={<VisibilityIcon sx={iconStyles} />}
-            >
-              View Bill History
-            </Button>
-          </Link>
-        </Grid>
-      </Grid>
-    </div>
+      </Container>
+    </Box>
   );
 };
 
