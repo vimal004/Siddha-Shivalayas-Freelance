@@ -15,11 +15,13 @@ import {
   Paper,
   useMediaQuery,
   useTheme,
+  Box,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const AllPatients = () => {
   const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -42,8 +44,9 @@ const AllPatients = () => {
   const filteredCustomers = customers.filter((customer) => {
     return (
       (filter.treatmentOrMedicine === "" ||
-        customer.treatmentOrMedicine ===
-          parseInt(filter.treatmentOrMedicine, 10)) &&
+        customer.treatmentOrMedicine
+          .toLowerCase()
+          .includes(filter.treatmentOrMedicine.toLowerCase())) &&
       (filter.name === "" ||
         customer.name.toLowerCase().includes(filter.name.toLowerCase()))
     );
@@ -55,10 +58,15 @@ const AllPatients = () => {
   return (
     <Container
       maxWidth="lg"
-      style={{ marginTop: "50px", display: "flex", justifyContent: "center" }}
+      sx={{
+        mt: 6,
+        mb: 4,
+        display: "flex",
+        justifyContent: "center",
+      }}
     >
-      <div
-        style={{
+      <Box
+        sx={{
           background: "#ffffff",
           boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
           padding: "24px",
@@ -66,56 +74,81 @@ const AllPatients = () => {
           width: "100%",
         }}
       >
-        <Typography variant="h4" align="center" gutterBottom>
-          <strong>Patient Details</strong>
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{
+            fontWeight: "bold",
+            fontFamily: '"Poppins", sans-serif',
+            color: "#1976d2",
+          }}
+        >
+          Patient Details
         </Typography>
-        <div
-          style={{
+
+        <Box
+          sx={{
             display: "flex",
             flexDirection: isSmallScreen ? "column" : "row",
             justifyContent: "space-between",
-            marginBottom: "16px",
+            gap: 2,
+            mb: 3,
           }}
         >
           <TextField
             name="treatmentOrMedicine"
             value={filter.treatmentOrMedicine}
             onChange={handleFilterChange}
-            label="Filter By treatmentOrMedicine"
+            label="Filter by Treatment/Medicine"
             variant="outlined"
             fullWidth
-            style={{
+            placeholder="e.g., Medicine A, Treatment B"
+            sx={{
               borderRadius: "8px",
-              marginRight: isSmallScreen ? "0" : "8px",
-              marginBottom: isSmallScreen ? "16px" : "0",
             }}
           />
           <TextField
             name="name"
             value={filter.name}
             onChange={handleFilterChange}
-            label="Search Customer By Name"
+            label="Search by Name"
             variant="outlined"
             fullWidth
-            style={{ borderRadius: "8px" }}
+            placeholder="e.g., John Doe"
+            sx={{
+              borderRadius: "8px",
+            }}
           />
-        </div>
+        </Box>
+
         {loading ? (
-          <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <Box sx={{ textAlign: "center", mt: 4 }}>
             <CircularProgress />
-          </div>
+          </Box>
         ) : error ? (
-          <div style={{ textAlign: "center", marginTop: "20px", color: "red" }}>
+          <Typography
+            variant="body1"
+            sx={{
+              textAlign: "center",
+              mt: 4,
+              color: "red",
+            }}
+          >
             Error: {error}
-          </div>
+          </Typography>
         ) : (
           <TableContainer component={Paper}>
             <Table>
-              <TableHead style={{ backgroundColor: "#f5f5f5" }}>
+              <TableHead
+                sx={{
+                  backgroundColor: "#f5f5f5",
+                }}
+              >
                 <TableRow>
                   <TableCell>ID</TableCell>
-                  <TableCell>Customer Name</TableCell>
-                  <TableCell>Phone Number</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Phone</TableCell>
                   <TableCell>Address</TableCell>
                   <TableCell>Treatment/Medicine</TableCell>
                   <TableCell>Date</TableCell>
@@ -124,11 +157,24 @@ const AllPatients = () => {
               <TableBody>
                 {filteredCustomers.length > 0 ? (
                   filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
+                    <TableRow
+                      key={customer.id}
+                      sx={{
+                        "&:nth-of-type(odd)": {
+                          backgroundColor: "#f9f9f9",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#f1f1f1",
+                        },
+                      }}
+                    >
                       <TableCell>
                         <Link
                           to={`/customers/${customer.id}`}
-                          style={{ color: "#3f51b5", textDecoration: "none" }}
+                          style={{
+                            color: "#1976d2",
+                            textDecoration: "none",
+                          }}
                         >
                           {customer.id}
                         </Link>
@@ -142,7 +188,7 @@ const AllPatients = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} style={{ textAlign: "center" }}>
+                    <TableCell colSpan={6} sx={{ textAlign: "center" }}>
                       No Patient Record Found
                     </TableCell>
                   </TableRow>
@@ -151,7 +197,7 @@ const AllPatients = () => {
             </Table>
           </TableContainer>
         )}
-      </div>
+      </Box>
     </Container>
   );
 };
