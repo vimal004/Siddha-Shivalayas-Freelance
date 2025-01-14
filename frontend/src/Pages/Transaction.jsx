@@ -7,12 +7,62 @@ import {
   Grid,
   Typography,
   Container,
+  Box,
+  CircularProgress,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { useNavigate } from "react-router-dom";
 import { Autocomplete } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const Transaction = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    address: "",
+    date: "",
+    items: [],
+    discount: 0,
+    totalAmount: 0,
+  });
+  const [stocks, setStocks] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const id = window.location.pathname.split("/")[2];
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
+      .then((response) => {
+        setStocks(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
+      .then((response) => {
+        setFormData({ ...formData, ...response.data });
+      })
+      .catch((error) => console.error(error));
+  }, [id]);
+
   const handleItemSelection = (index, selectedStock) => {
     const updatedItems = [...formData.items];
     updatedItems[index] = {
@@ -24,87 +74,17 @@ const Transaction = () => {
     };
     setFormData({ ...formData, items: updatedItems });
   };
-  let id = window.location.pathname.split("/")[2];
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    address: "",
-    treatmentOrMedicine: "",
-    date: "",
-    items: [],
-    discount: 0,
-    totalAmount: 0, // New field for total amount
-  });
-  const [stocks, setstocks] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); 
-
-  useEffect(() => {
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
-      .then((response) => {
-        setstocks(response.data);
-        console.log(stocks);
-      })
-      .catch((error) => console.error(error));
-  }, []);
-
-  useEffect(() => {
-    console.log(stocks);
-  }, [stocks]);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    axios
-      .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
-      .then((response) => {
-        setFormData({ ...formData, ...response.data });
-      })
-      .catch((error) => console.error(error));
-  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
-    if (field === "quantity") {
-      const selectedStock = stocks.find(
-        (stock) => stock.productName === updatedItems[index].description
-      );
-      if (selectedStock && value > selectedStock.quantity) {
-        setErrorMessage("Insufficient stock available");
-        return;
-      }
-    }
     updatedItems[index][field] = value;
     setFormData({ ...formData, items: updatedItems });
   };
-
-  useEffect(() => {
-    const total = formData.items.reduce((acc, item) => {
-      const price = parseFloat(item.price || 0);
-      const quantity = parseInt(item.quantity || 0, 10);
-      const gst = parseFloat(item.GST || 0) / 100;
-      const itemTotal = price * quantity * (1 - 0); // Including GST in the item total
-      return acc + itemTotal;
-    }, 0);
-    const discountedTotal = total - (total * formData.discount) / 100;
-    setFormData((prevData) => ({ ...prevData, totalAmount: discountedTotal }));
-  }, [formData.items, formData.discount]);
 
   const addItem = () => {
     setFormData({
@@ -121,16 +101,28 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
+  const calculateTotal = () => {
+    const total = formData.items.reduce((acc, item) => {
+      const price = parseFloat(item.price || 0);
+      const quantity = parseInt(item.quantity || 0, 10);
+      const gst = parseFloat(item.GST || 0) / 100;
+      return acc + price * quantity * (1 + gst);
+    }, 0);
+    return total - (total * formData.discount) / 100;
+  };
+
+  useEffect(() => {
+    const totalAmount = calculateTotal();
+    setFormData((prevData) => ({ ...prevData, totalAmount }));
+  }, [formData.items, formData.discount]);
+
   const handleDownloadBill = async () => {
     try {
-      // Step 1: Generate the bill
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         formData,
         { responseType: "blob" }
       );
-
-      // Step 2: Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -139,231 +131,175 @@ const Transaction = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Step 3: Update the stock quantities after the bill is downloaded
-      const updateStockPromises = formData.items.map(async (item) => {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
-
-        if (selectedStock) {
-          const updatedQuantity = selectedStock.quantity - item.quantity;
-
-          // Ensure the quantity is not negative
-          if (updatedQuantity < 0) {
-            throw new Error("Insufficient stock for one or more items.");
-          }
-
-          console.log("Updating Stock ID:", selectedStock.stockId); // Verify stockId here
-
-          // Update the stock quantity in the database using stockId
-          return axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
-            { quantity: updatedQuantity }
-          );
-        }
-      });
-
-      // Wait for all stock updates to complete
-      await Promise.all(updateStockPromises);
-
-      // Success message
-      setSuccessMessage("Bill generated and stock updated successfully.");
+      setSuccessMessage("Bill generated successfully!");
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      setErrorMessage("Error generating the bill.");
     }
   };
 
-
   return (
-    <Container maxWidth="lg" style={{ marginTop: "50px" }}>
-      <div
-        style={{
-          background: "#ffffff",
+    <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
+      <Box
+        sx={{
+          background: "#fff",
           boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          padding: "40px",
-          borderRadius: "12px",
+          borderRadius: "8px",
+          p: 4,
         }}
       >
-        <Typography variant="h4" align="center" gutterBottom>
-          <strong>Generate Bill</strong>
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: "bold", color: "#1976d2" }}
+        >
+          Generate Bill
         </Typography>
-
-        <form>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Patient ID"
-                name="id"
-                value={formData.id}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Patient Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Date"
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Items
-              </Typography>
-              {formData.items.map((item, index) => (
-                <Grid
-                  container
-                  spacing={2}
-                  key={index}
-                  alignItems="center"
-                  margin={"2px"}
+        {loading ? (
+          <Box sx={{ textAlign: "center", mt: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <form>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Patient ID"
+                  name="id"
+                  value={formData.id}
+                  onChange={handleChange}
+                  variant="outlined"
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Patient Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Phone Number"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Items
+                </Typography>
+                {formData.items.map((item, index) => (
+                  <Grid container spacing={2} key={index}>
+                    <Grid item xs={12} sm={4}>
+                      <Autocomplete
+                        options={stocks}
+                        getOptionLabel={(option) => option.productName}
+                        onChange={(e, selectedStock) =>
+                          handleItemSelection(index, selectedStock)
+                        }
+                        renderInput={(params) => (
+                          <TextField {...params} label="Product" fullWidth />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={6} sm={2}>
+                      <TextField
+                        label="HSN"
+                        value={item.HSN}
+                        onChange={(e) =>
+                          handleItemChange(index, "HSN", e.target.value)
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={6} sm={2}>
+                      <TextField
+                        label="GST"
+                        value={item.GST}
+                        onChange={(e) =>
+                          handleItemChange(index, "GST", e.target.value)
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={6} sm={2}>
+                      <TextField
+                        label="Quantity"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleItemChange(index, "quantity", e.target.value)
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={6} sm={2}>
+                      <TextField
+                        label="Price"
+                        value={item.price}
+                        onChange={(e) =>
+                          handleItemChange(index, "price", e.target.value)
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                ))}
+                <Button
+                  variant="contained"
+                  onClick={addItem}
+                  sx={{ mt: 2 }}
+                  fullWidth
                 >
-                  <Grid item xs={12} sm={3}>
-                    <Autocomplete
-                      options={stocks}
-                      getOptionLabel={(option) => option.productName}
-                      onChange={(event, selectedStock) =>
-                        handleItemSelection(index, selectedStock)
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Name"
-                          variant="outlined"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={6} sm={2}>
-                    <TextField
-                      label="HSN"
-                      value={item.HSN || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "HSN", e.target.value)
-                      }
-                      variant="outlined"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={6} sm={2}>
-                    <TextField
-                      label="GST"
-                      value={item.GST || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "GST", e.target.value)
-                      }
-                      variant="outlined"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={6} sm={2}>
-                    <TextField
-                      label="Quantity"
-                      value={item.quantity || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "quantity", e.target.value)
-                      }
-                      variant="outlined"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={6} sm={2}>
-                    <TextField
-                      label="Price"
-                      value={item.price || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "price", e.target.value)
-                      }
-                      variant="outlined"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={1}>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => removeItem(index)}
-                      fullWidth
-                    >
-                      Remove
-                    </Button>
-                  </Grid>
-                </Grid>
-              ))}
-              <Button
-                variant="contained"
-                onClick={addItem}
-                style={{ marginTop: "16px" }}
-              >
-                Add Item
-              </Button>
+                  Add Item
+                </Button>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Discount"
+                  name="discount"
+                  value={formData.discount}
+                  onChange={handleChange}
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sx={{ textAlign: "right" }}>
+                <Typography variant="h6">
+                  Total Amount: ₹{formData.totalAmount.toFixed(2)}
+                </Typography>
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Discount"
-                name="discount"
-                value={formData.discount}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" align="right">
-                Total Amount: ₹{formData.totalAmount.toFixed(2)}
-              </Typography>
-            </Grid>
-          </Grid>
-          <Grid container justifyContent="center" style={{ marginTop: "24px" }}>
             <Button
               variant="contained"
               color="primary"
+              fullWidth
+              sx={{ mt: 4 }}
               onClick={handleDownloadBill}
             >
               Download Bill
             </Button>
-          </Grid>
-        </form>
-
+          </form>
+        )}
         <Snackbar
           open={Boolean(errorMessage)}
           autoHideDuration={3000}
@@ -382,7 +318,7 @@ const Transaction = () => {
             {successMessage}
           </MuiAlert>
         </Snackbar>
-      </div>
+      </Box>
     </Container>
   );
 };
