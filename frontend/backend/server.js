@@ -205,6 +205,15 @@ app.get("/bills-history", async (req, res) => {
   }
 });
 
+app.delete("/bills", async (req, res) => {
+  try {
+    const response = await Bill.deleteMany();
+    res.send(response);
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 // New API: Fetch a specific bill by ID
 app.get("/bills/:billId", async (req, res) => {
   const { billId } = req.params;
