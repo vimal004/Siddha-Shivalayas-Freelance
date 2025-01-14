@@ -2,36 +2,22 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Button,
-  Snackbar,
   Container,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  Box,
-  Paper,
+  TextField,
+  Grid,
 } from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
 
 const BillHistory = () => {
   const [billHistory, setBillHistory] = useState([]);
-  const [formData, setFormData] = useState({
-    id: "001",
-    name: "vimal",
-    phone: "7603832537",
-    address: "lmao",
-    treatmentOrMedicine: "nah",
-    date: "",
-    items: [],
-    discount: 0,
-    totalAmount: 0, // New field for total amount
-  });
+  const [filteredBills, setFilteredBills] = useState([]);
+  const [searchName, setSearchName] = useState("");
+  const [searchDate, setSearchDate] = useState("");
 
   useEffect(() => {
     const fetchBillHistory = async () => {
@@ -40,7 +26,7 @@ const BillHistory = () => {
           "https://siddha-shivalayas-backend.vercel.app/bills-history"
         );
         setBillHistory(response.data);
-        console.log(response.data[0]);
+        setFilteredBills(response.data); // Initialize filtered bills
       } catch (error) {
         console.error("Error fetching bill history:", error);
       }
@@ -48,57 +34,79 @@ const BillHistory = () => {
     fetchBillHistory();
   }, []);
 
-  const del = () => {
-    axios
-      .delete("https://siddha-shivalayas-backend.vercel.app/bills")
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((er) => {
-        console.log(er);
-      });
-  };
+  useEffect(() => {
+    const filtered = billHistory.filter((bill) => {
+      const matchesName = bill.name
+        .toLowerCase()
+        .includes(searchName.toLowerCase());
+      const matchesDate = searchDate
+        ? new Date(bill.createdAt).toLocaleDateString("en-CA") === searchDate
+        : true;
+      return matchesName && matchesDate;
+    });
+    setFilteredBills(filtered);
+  }, [searchName, searchDate, billHistory]);
 
-  const handleDownloadBill = async () => {
+  const handleDeleteAll = async () => {
     try {
-      // Step 1: Generate the bill
-      const response = await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        formData,
-        { responseType: "blob" }
-      );
-      // Step 2: Download the bill
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `generated-bill-${formData.id}.docx`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Success message
-      setSuccessMessage("Bill retrieved successfully");
-    } catch (err) {
-      console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      await axios.delete("https://siddha-shivalayas-backend.vercel.app/bills");
+      setBillHistory([]);
+      setFilteredBills([]);
+      console.log("All bills deleted successfully");
+    } catch (error) {
+      console.error("Error deleting bills:", error);
     }
   };
 
   return (
     <Container>
-      <Typography variant="h4">Bill History</Typography>
-      <button onClick={del}>delete</button>
+      <Typography variant="h4" gutterBottom margin={3}>
+        Bill History
+      </Typography>
+
+      <Grid container spacing={2} marginBottom={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Search by Patient Name"
+            variant="outlined"
+            fullWidth
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Search by Bill Date (YYYY-MM-DD)"
+            variant="outlined"
+            fullWidth
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={searchDate}
+            onChange={(e) => setSearchDate(e.target.value)}
+          />
+        </Grid>
+      </Grid>
+
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleDeleteAll}
+        style={{ marginBottom: "20px" }}
+      >
+        Delete All Bills
+      </Button>
+
       <Table>
         <TableHead>
           <TableRow>
             <TableCell>Bill ID</TableCell>
             <TableCell>Patient Name</TableCell>
             <TableCell>Bill Date</TableCell>
-            <TableCell>Download Links</TableCell>
+            <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {billHistory.map((bill) => (
+          {filteredBills.map((bill) => (
             <TableRow key={bill.id}>
               <TableCell>{bill._id}</TableCell>
               <TableCell>{bill.name}</TableCell>
@@ -109,7 +117,6 @@ const BillHistory = () => {
                   href={bill.downloadLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={handleDownloadBill}
                 >
                   Download Bill
                 </Button>
