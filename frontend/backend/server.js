@@ -51,18 +51,19 @@ try {
 }
 
 // Bill Schema (Model for storing bills)
+
 const BillSchema = new mongoose.Schema({
   id: { type: String, required: true },
-  name: { type: String, required: false }, // Make optional
-  phone: { type: String, required: false }, // Make optional
-  address: { type: String, required: false }, // Make optional
-  treatmentOrMedicine: { type: String, required: false }, // Make optional
-  date: { type: Date, required: false }, // Make optional
+  name: { type: String, required: false },
+  phone: { type: String, required: false },
+  address: { type: String, required: false },
+  treatmentOrMedicine: { type: String, required: false },
+  date: { type: Date, required: false },
   items: [
     {
       description: { type: String, required: false }, // Make optional
       price: { type: Number, required: false }, // Make optional
-      HSN: { type: String, required: false }, // Make optional  
+      HSN: { type: String, required: false }, // Make optional
       quantity: { type: Number, required: false }, // Make optional
       GST: { type: Number, required: false }, // Make optional
       baseTotal: { type: Number, required: false }, // Make optional
@@ -71,6 +72,7 @@ const BillSchema = new mongoose.Schema({
     },
   ],
   discount: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }, // Automatically sets the bill creation date
 });
 
 const Bill = mongoose.model("Bill", BillSchema);
@@ -108,7 +110,7 @@ app.post("/generate-bill", async (req, res) => {
 
     return {
       ...item,
-      HSN: HSN, 
+      HSN: HSN,
       baseTotal: baseTotal.toFixed(2),
       gstAmount: gstAmount.toFixed(2),
       finalAmount: finalAmount.toFixed(2),
@@ -192,8 +194,11 @@ app.post("/generate-bill", async (req, res) => {
 // New API: Fetch all bill history
 app.get("/bills-history", async (req, res) => {
   try {
-    const bills = await Bill.find(); // Fetch all bills from MongoDB
-    res.json(bills); // Send all bills as a response
+    const bills = await Bill.find(
+      {},
+      { id: 1, name: 1, date: 1, createdAt: 1 }
+    );
+    res.json(bills);
   } catch (error) {
     console.error("Error fetching bill history:", error);
     res.status(500).json({ error: "Error fetching bill history." });
