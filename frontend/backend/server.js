@@ -100,22 +100,31 @@ app.post("/generate-bill", async (req, res) => {
 
   // Process items and calculate totals
   const itemTotals = items.map((item) => {
-    const itemPrice = parseFloat(item.price || 0);
-    const itemQuantity = parseFloat(item.quantity || 0);
+    const itemPrice = parseFloat(item.price);
+    const itemQuantity = parseFloat(item.quantity);
+    const gstRate = parseFloat(item.GST) / 100;
     const baseTotal = itemPrice * itemQuantity;
+    const gstAmount = baseTotal * gstRate;
+    const finalAmount = baseTotal + gstAmount;
 
     return {
       ...item,
       baseTotal: baseTotal.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      finalAmount: finalAmount.toFixed(2),
     };
   });
 
-  // Calculate subtotal and final total
+  // Calculate subtotal, total GST, and final total
   const subtotal = itemTotals.reduce(
     (sum, item) => sum + parseFloat(item.baseTotal),
     0
   );
-  const finalTotal = (subtotal - discountValue).toFixed(2);
+  const totalGST = itemTotals.reduce(
+    (sum, item) => sum + parseFloat(item.gstAmount),
+    0
+  );
+  const finalTotal = (subtotal + totalGST - discountValue).toFixed(2);
 
   // Save the bill to the database
   const newBill = new Bill({
@@ -127,6 +136,7 @@ app.post("/generate-bill", async (req, res) => {
     date,
     items: itemTotals, // Pass items array with calculated values to the database
     subtotal: subtotal.toFixed(2),
+    totalGST: totalGST.toFixed(2),
     discount: discountValue.toFixed(2),
     total: finalTotal,
   });
@@ -152,6 +162,7 @@ app.post("/generate-bill", async (req, res) => {
       date: date || new Date().toISOString(),
       items: itemTotals || [],
       subtotal: subtotal.toFixed(2) || "0.00",
+      totalGST: totalGST.toFixed(2) || "0.00",
       discount: discountValue.toFixed(2) || "0.00",
       total: finalTotal || "0.00",
     });
@@ -205,6 +216,9 @@ app.get("/bills/download/:billId", async (req, res) => {
     const bill = await Bill.findOne({ id: billId });
     if (!bill) return res.status(404).send("Bill not found");
 
+    const templatePath = path.resolve(__dirname, "bill_template.docx");
+    const content = fs.readFileSync(templatePath, "binary");
+
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
@@ -220,12 +234,15 @@ app.get("/bills/download/:billId", async (req, res) => {
       date: bill.date,
       items: bill.items,
       subtotal: bill.items
-        .reduce((sum, item) => sum + parseFloat(item.baseTotal), 0)
+        .reduce((sum, item) => sum + item.baseTotal, 0)
         .toFixed(2),
-      discount: parseFloat(bill.discount).toFixed(2),
+      totalGST: bill.items
+        .reduce((sum, item) => sum + item.gstAmount, 0)
+        .toFixed(2),
+      discount: bill.discount.toFixed(2),
       total: (
-        bill.items.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0) -
-        parseFloat(bill.discount)
+        bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
+        bill.discount
       ).toFixed(2),
     });
 
