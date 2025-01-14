@@ -212,95 +212,57 @@ app.delete("/bills", async (req, res) => {
 });
 
 // New API: Fetch a specific bill by ID
-app.get("/bills/:billId", async (req, res) => {
+app.get("/bills/download/:billId", async (req, res) => {
   const { billId } = req.params;
-  const { fileFormat } = req.query; // query parameter for file format (docx or pdf)
-
   try {
     const bill = await Bill.findOne({ id: billId });
-    if (!bill) {
-      return res.status(404).json({ error: "Bill not found" });
-    }
+    if (!bill) return res.status(404).send("Bill not found");
 
-    // Load the template file for DOCX
     const templatePath = path.resolve(__dirname, "bill_template.docx");
-    let content;
-    try {
-      content = fs.readFileSync(templatePath, "binary");
-    } catch (err) {
-      return res.status(500).send("Template file not found.");
-    }
+    const content = fs.readFileSync(templatePath, "binary");
 
-    if (fileFormat === "pdf") {
-      // Generate PDF file
-      const doc = new PDFDocument();
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=generated-bill-${billId}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
 
-      // Add content to PDF
-      doc.fontSize(12).text(`Bill ID: ${bill.id}`);
-      doc.text(`Patient Name: ${bill.name}`);
-      doc.text(`Phone: ${bill.phone}`);
-      doc.text(`Address: ${bill.address}`);
-      doc.text(`Treatment/Medicine: ${bill.treatmentOrMedicine}`);
-      doc.text(`Date: ${bill.date}`);
-      // Add more bill details here...
+    doc.setData({
+      id: bill.id,
+      name: bill.name,
+      phone: bill.phone,
+      address: bill.address,
+      treatmentOrMedicine: bill.treatmentOrMedicine,
+      date: bill.date,
+      items: bill.items,
+      subtotal: bill.items
+        .reduce((sum, item) => sum + item.baseTotal, 0)
+        .toFixed(2),
+      totalGST: bill.items
+        .reduce((sum, item) => sum + item.gstAmount, 0)
+        .toFixed(2),
+      discount: bill.discount.toFixed(2),
+      total: (
+        bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
+        bill.discount
+      ).toFixed(2),
+    });
 
-      doc.pipe(res);
-      doc.end();
-    } else {
-      // Default to DOCX generation
-      const zip = new PizZip(content);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
+    doc.render();
+    const buf = doc.getZip().generate({ type: "nodebuffer" });
 
-      // Set data for DOCX template
-      doc.setData({
-        id: bill.id,
-        name: bill.name,
-        phone: bill.phone,
-        address: bill.address,
-        treatmentOrMedicine: bill.treatmentOrMedicine,
-        date: bill.date,
-        items: bill.items,
-        subtotal: bill.items
-          .reduce((sum, item) => sum + item.baseTotal, 0)
-          .toFixed(2),
-        totalGST: bill.items
-          .reduce((sum, item) => sum + item.gstAmount, 0)
-          .toFixed(2),
-        discount: bill.discount.toFixed(2),
-        total: (
-          bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
-          bill.discount
-        ).toFixed(2),
-      });
-
-      // Render the document
-      doc.render();
-
-      // Generate the document buffer
-      const buf = doc.getZip().generate({ type: "nodebuffer" });
-
-      // Send the DOCX file
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=generated-bill-${billId}.docx`
-      );
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      );
-      res.send(buf);
-    }
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=bill-${billId}.docx`
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.send(buf);
   } catch (err) {
-    console.error("Error during bill generation:", err);
-    res.status(500).send("Internal server error during bill generation");
+    console.error("Error generating bill:", err);
+    res.status(500).send("Internal server error");
   }
 });
 

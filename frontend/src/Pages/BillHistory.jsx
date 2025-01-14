@@ -25,8 +25,14 @@ const BillHistory = () => {
         const response = await axios.get(
           "https://siddha-shivalayas-backend.vercel.app/bills-history"
         );
-        setBillHistory(response.data);
-        setFilteredBills(response.data); // Initialize filtered bills
+
+        const updatedBills = response.data.map((bill) => ({
+          ...bill,
+          downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill.id}`,
+        }));
+        console.log(updatedBills);
+        setBillHistory(updatedBills);
+        setFilteredBills(updatedBills); // Initialize filtered bills
       } catch (error) {
         console.error("Error fetching bill history:", error);
       }
