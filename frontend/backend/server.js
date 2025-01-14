@@ -124,7 +124,7 @@ app.post("/generate-bill", async (req, res) => {
     (sum, item) => sum + parseFloat(item.gstAmount),
     0
   );
-  const finalTotal = (subtotal - discountValue).toFixed(2);
+  const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(2);
 
   // Save the bill to the database
   const newBill = new Bill({
