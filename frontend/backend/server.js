@@ -231,7 +231,7 @@ app.get("/bills/download/:billId", async (req, res) => {
       phone: bill.phone,
       address: bill.address,
       treatmentOrMedicine: bill.treatmentOrMedicine,
-      date: bill.date,
+      date: bill.createdAt,
       items: bill.items,
       subtotal: bill.items
         .reduce((sum, item) => sum + item.baseTotal, 0)
