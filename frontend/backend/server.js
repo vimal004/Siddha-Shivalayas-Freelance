@@ -242,7 +242,9 @@ app.get("/bills/download/:billId", async (req, res) => {
       discount: bill.discount.toFixed(2),
       total: (
         bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
-        bill.discount
+        (bill.items.reduce((sum, item) => sum + item.baseTotal, 0) *
+          bill.discount) /
+          100
       ).toFixed(2),
     });
 
