@@ -337,7 +337,6 @@ const Transaction = () => {
                 Add Item
               </Button>
             </Grid>
-            ;
             <Grid item xs={12}>
               <TextField
                 label="Discount"
