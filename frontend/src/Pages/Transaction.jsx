@@ -9,6 +9,8 @@ import {
   Container,
   Box,
   CircularProgress,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { Autocomplete } from "@mui/material";
@@ -16,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 
 const Transaction = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -26,6 +30,7 @@ const Transaction = () => {
     discount: 0,
     totalAmount: 0,
   });
+
   const [stocks, setStocks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -139,187 +144,219 @@ const Transaction = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
-      <Box
-        sx={{
-          background: "#fff",
-          boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          borderRadius: "8px",
-          p: 4,
-        }}
-      >
-        <Typography
-          variant="h4"
-          align="center"
-          gutterBottom
-          sx={{ fontWeight: "bold", color: "#1976d2" }}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.1
+        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        py: 8,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            background: "white",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            borderRadius: 2,
+            p: 4,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            },
+          }}
         >
-          Generate Bill
-        </Typography>
-        {loading ? (
-          <Box sx={{ textAlign: "center", mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <form>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Patient ID"
-                  name="id"
-                  value={formData.id}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Patient Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Phone Number"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Items
-                </Typography>
-                {formData.items.map((item, index) => (
-                  <Grid container spacing={2} key={index}>
-                    <Grid item xs={12} sm={4}>
-                      <Autocomplete
-                        options={stocks}
-                        getOptionLabel={(option) => option.productName}
-                        onChange={(e, selectedStock) =>
-                          handleItemSelection(index, selectedStock)
-                        }
-                        renderInput={(params) => (
-                          <TextField {...params} label="Product" fullWidth />
-                        )}
-                      />
+          <Typography
+            variant="h4"
+            align="center"
+            sx={{
+              mb: 4,
+              fontWeight: 700,
+              color: "primary.main",
+              fontFamily: '"Inter", sans-serif',
+            }}
+          >
+            Generate Bill
+          </Typography>
+
+          {loading ? (
+            <Box sx={{ textAlign: "center", mt: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <form>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Patient ID"
+                    name="id"
+                    value={formData.id}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Patient Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Phone Number"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Items
+                  </Typography>
+                  {formData.items.map((item, index) => (
+                    <Grid container spacing={2} key={index} marginBottom={2}>
+                      <Grid item xs={12} sm={4}>
+                        <Autocomplete
+                          options={stocks}
+                          getOptionLabel={(option) => option.productName}
+                          onChange={(e, selectedStock) =>
+                            handleItemSelection(index, selectedStock)
+                          }
+                          renderInput={(params) => (
+                            <TextField {...params} label="Product" fullWidth />
+                          )}
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={2}>
+                        <TextField
+                          label="HSN"
+                          value={item.HSN}
+                          onChange={(e) =>
+                            handleItemChange(index, "HSN", e.target.value)
+                          }
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={2}>
+                        <TextField
+                          label="GST"
+                          value={item.GST}
+                          onChange={(e) =>
+                            handleItemChange(index, "GST", e.target.value)
+                          }
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={2}>
+                        <TextField
+                          label="Quantity"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleItemChange(index, "quantity", e.target.value)
+                          }
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={2}>
+                        <TextField
+                          label="Price"
+                          value={item.price}
+                          onChange={(e) =>
+                            handleItemChange(index, "price", e.target.value)
+                          }
+                          fullWidth
+                        />
+                      </Grid>
                     </Grid>
-                    <Grid item xs={6} sm={2}>
-                      <TextField
-                        label="HSN"
-                        value={item.HSN}
-                        onChange={(e) =>
-                          handleItemChange(index, "HSN", e.target.value)
-                        }
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={6} sm={2}>
-                      <TextField
-                        label="GST"
-                        value={item.GST}
-                        onChange={(e) =>
-                          handleItemChange(index, "GST", e.target.value)
-                        }
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={6} sm={2}>
-                      <TextField
-                        label="Quantity"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          handleItemChange(index, "quantity", e.target.value)
-                        }
-                        fullWidth
-                      />
-                    </Grid>
-                    <Grid item xs={6} sm={2}>
-                      <TextField
-                        label="Price"
-                        value={item.price}
-                        onChange={(e) =>
-                          handleItemChange(index, "price", e.target.value)
-                        }
-                        fullWidth
-                      />
-                    </Grid>
-                  </Grid>
-                ))}
-                <Button
-                  variant="contained"
-                  onClick={addItem}
-                  sx={{ mt: 2 }}
-                  fullWidth
-                >
-                  Add Item
-                </Button>
+                  ))}
+                  <Button
+                    variant="contained"
+                    onClick={addItem}
+                    sx={{ mt: 2 }}
+                    fullWidth
+                  >
+                    Add Item
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Discount"
+                    name="discount"
+                    value={formData.discount}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sx={{ textAlign: "right" }}>
+                  <Typography variant="h6">
+                    Total Amount: ₹{formData.totalAmount.toFixed(2)}
+                  </Typography>
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Discount"
-                  name="discount"
-                  value={formData.discount}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sx={{ textAlign: "right" }}>
-                <Typography variant="h6">
-                  Total Amount: ₹{formData.totalAmount.toFixed(2)}
-                </Typography>
-              </Grid>
-            </Grid>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              sx={{ mt: 4 }}
-              onClick={handleDownloadBill}
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ mt: 4 }}
+                onClick={handleDownloadBill}
+              >
+                Download Bill
+              </Button>
+            </form>
+          )}
+
+          <Snackbar
+            open={Boolean(errorMessage)}
+            autoHideDuration={3000}
+            onClose={() => setErrorMessage("")}
+          >
+            <MuiAlert
+              elevation={6}
+              variant="filled"
+              severity="error"
+              onClose={() => setErrorMessage("")}
             >
-              Download Bill
-            </Button>
-          </form>
-        )}
-        <Snackbar
-          open={Boolean(errorMessage)}
-          autoHideDuration={3000}
-          onClose={() => setErrorMessage("")}
-        >
-          <MuiAlert elevation={6} variant="filled" severity="error">
-            {errorMessage}
-          </MuiAlert>
-        </Snackbar>
-        <Snackbar
-          open={Boolean(successMessage)}
-          autoHideDuration={3000}
-          onClose={() => setSuccessMessage("")}
-        >
-          <MuiAlert elevation={6} variant="filled" severity="success">
-            {successMessage}
-          </MuiAlert>
-        </Snackbar>
-      </Box>
-    </Container>
+              {errorMessage}
+            </MuiAlert>
+          </Snackbar>
+
+          <Snackbar
+            open={Boolean(successMessage)}
+            autoHideDuration={3000}
+            onClose={() => setSuccessMessage("")}
+          >
+            <MuiAlert
+              elevation={6}
+              variant="filled"
+              severity="success"
+              onClose={() => setSuccessMessage("")}
+            >
+              {successMessage}
+            </MuiAlert>
+          </Snackbar>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
