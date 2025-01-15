@@ -19,10 +19,11 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import BGIMG from "../img/bg.jpg";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme, alpha } from "@mui/material/styles";
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -63,7 +64,7 @@ const LoginForm = () => {
   };
 
   return (
-    <PageWrapper>
+    <PageWrapper theme={theme}>
       <Container maxWidth="sm">
         <LoginCard>
           <Box mb={4} textAlign="center">
@@ -183,7 +184,7 @@ const LoginForm = () => {
 };
 
 // Styled Components
-const PageWrapper = styled("div")({
+const PageWrapper = styled("div")(({ theme }) => ({
   backgroundImage: `url(${BGIMG})`,
   backgroundSize: "cover",
   backgroundPosition: "center",
@@ -192,7 +193,11 @@ const PageWrapper = styled("div")({
   justifyContent: "center",
   alignItems: "center",
   padding: "20px",
-});
+  background: `linear-gradient(135deg, ${alpha(
+    theme.palette.primary.main,
+    0.2
+  )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+}));
 
 const LoginCard = styled(Box)(({ theme }) => ({
   background: "rgba(255, 255, 255, 0.98)",
