@@ -11,10 +11,12 @@ import {
   CircularProgress,
   useTheme,
   alpha,
+  IconButton,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { Autocomplete } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import DeleteIcon from "@mui/icons-material/Delete"; // Import the delete icon
 
 const Transaction = () => {
   const navigate = useNavigate();
@@ -123,6 +125,19 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
+      // Check if any item quantity exceeds available stock
+      for (const item of formData.items) {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+
+        if (selectedStock && item.quantity > selectedStock.quantity) {
+          throw new Error(
+            `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
+          );
+        }
+      }
+
       // Step 1: Update stock quantities
       for (const item of formData.items) {
         const selectedStock = stocks.find(
@@ -132,18 +147,13 @@ const Transaction = () => {
         if (selectedStock) {
           const updatedQuantity = selectedStock.quantity - item.quantity;
 
-          // Ensure the quantity is not negative
-          if (updatedQuantity < 0) {
-            throw new Error("Insufficient stock for one or more items.");
-          }
-
           // Update the stock quantity in the database using stockId
           await axios.put(
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
             {
               quantity: updatedQuantity,
-              updateMode: "set",  
-             }
+              updateMode: "set",
+            }
           );
         }
       }
@@ -171,6 +181,7 @@ const Transaction = () => {
       setErrorMessage(err.message || "Error processing the request");
     }
   };
+
   return (
     <Box
       sx={{
@@ -313,6 +324,14 @@ const Transaction = () => {
                           }
                           fullWidth
                         />
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <IconButton
+                          onClick={() => removeItem(index)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
                       </Grid>
                     </Grid>
                   ))}
