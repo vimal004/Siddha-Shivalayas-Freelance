@@ -111,7 +111,7 @@ const Transaction = () => {
       const price = parseFloat(item.price || 0);
       const quantity = parseInt(item.quantity || 0, 10);
       const gst = parseFloat(item.GST || 0) / 100;
-      return acc + price * quantity * (1 + gst);
+      return acc + price * quantity;
     }, 0);
     return total - (total * formData.discount) / 100;
   };
