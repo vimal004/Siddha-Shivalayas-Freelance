@@ -12,6 +12,11 @@ import {
   Box,
   useTheme,
   alpha,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
@@ -37,6 +42,7 @@ const StockForm = () => {
     gst: "",
   });
 
+  const [updateMode, setUpdateMode] = useState("add"); // Default to "add" mode
   const [stocks, setStocks] = useState([]);
   const [created, setCreated] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -115,9 +121,10 @@ const StockForm = () => {
   const handleUpdate = async () => {
     setLoadingUpdate(true);
     try {
+      const payload = { ...formData, updateMode }; // Include update mode in the payload
       await axios.put(
         `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`,
-        formData
+        payload
       );
       setUpdated(true);
       setSuccess(true);
@@ -216,6 +223,27 @@ const StockForm = () => {
                 </Grid>
               ))}
             </Grid>
+
+            {/* Update Mode Selection */}
+            <FormControl component="fieldset" sx={{ mt: 2 }}>
+              <FormLabel component="legend">Update Mode</FormLabel>
+              <RadioGroup
+                row
+                value={updateMode}
+                onChange={(e) => setUpdateMode(e.target.value)}
+              >
+                <FormControlLabel
+                  value="add"
+                  control={<Radio />}
+                  label="Add to Existing Quantity"
+                />
+                <FormControlLabel
+                  value="set"
+                  control={<Radio />}
+                  label="Set Actual Quantity"
+                />
+              </RadioGroup>
+            </FormControl>
 
             <Grid item xs={12} sx={{ mt: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
