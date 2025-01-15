@@ -183,7 +183,11 @@ const AllPatients = () => {
                       <TableCell>{customer.phone}</TableCell>
                       <TableCell>{customer.address}</TableCell>
                       <TableCell>{customer.treatmentOrMedicine}</TableCell>
-                      <TableCell>{customer.date}</TableCell>
+                      <TableCell>
+                        {customer.date
+                          ? new Date(customer.date).toLocaleDateString("en-CA")
+                          : ""}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
