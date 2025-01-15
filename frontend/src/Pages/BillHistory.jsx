@@ -31,7 +31,7 @@ const BillHistory = () => {
         );
         const updatedBills = response.data.map((bill) => ({
           ...bill,
-          downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill.id}`,
+          downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
         }));
         setBillHistory(updatedBills);
         setFilteredBills(updatedBills);

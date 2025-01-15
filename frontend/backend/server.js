@@ -213,7 +213,7 @@ app.delete("/bills", async (req, res) => {
 app.get("/bills/download/:billId", async (req, res) => {
   const { billId } = req.params;
   try {
-    const bill = await Bill.findOne({ id: billId });
+    const bill = await Bill.findOne({ _id: billId });
     if (!bill) return res.status(404).send("Bill not found");
 
     const templatePath = path.resolve(__dirname, "bill_template.docx");
