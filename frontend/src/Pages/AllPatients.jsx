@@ -72,7 +72,7 @@ const AllPatients = () => {
             background: "white",
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             borderRadius: 2,
-            p: 4,
+            p: isSmallScreen ? 2 : 4,
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
@@ -80,7 +80,7 @@ const AllPatients = () => {
           }}
         >
           <Typography
-            variant="h4"
+            variant={isSmallScreen ? "h5" : "h4"}
             align="center"
             sx={{
               mb: 4,
@@ -145,100 +145,102 @@ const AllPatients = () => {
               Error: {error}
             </Typography>
           ) : (
-            <TableContainer
-              component={Paper}
-              sx={{
-                borderRadius: "16px",
-                boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
-                overflow: "hidden",
-              }}
-            >
-              <Table>
-                <TableHead
-                  sx={{
-                    background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
-                  }}
-                >
-                  <TableRow>
-                    {[
-                      "ID",
-                      "Name",
-                      "Phone",
-                      "Address",
-                      "Treatment/Medicine",
-                      "Date",
-                    ].map((header) => (
-                      <TableCell
-                        key={header}
-                        sx={{
-                          color: "white",
-                          fontWeight: "bold",
-                          fontSize: "1rem",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {header}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredCustomers.length > 0 ? (
-                    filteredCustomers.map((customer, index) => (
-                      <TableRow
-                        key={customer.id}
-                        sx={{
-                          backgroundColor:
-                            index % 2 === 0
-                              ? "rgba(25, 118, 210, 0.05)"
-                              : "white",
-                          "&:hover": {
-                            backgroundColor: alpha(
-                              theme.palette.primary.main,
-                              0.15
-                            ),
-                          },
-                        }}
-                      >
+            <Box sx={{ overflowX: "auto" }}>
+              <TableContainer
+                component={Paper}
+                sx={{
+                  borderRadius: "16px",
+                  boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+                  minWidth: isSmallScreen ? "600px" : "100%", // Ensures table doesn't collapse
+                }}
+              >
+                <Table>
+                  <TableHead
+                    sx={{
+                      background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
+                    }}
+                  >
+                    <TableRow>
+                      {[
+                        "ID",
+                        "Name",
+                        "Phone",
+                        "Address",
+                        "Treatment/Medicine",
+                        "Date",
+                      ].map((header) => (
                         <TableCell
+                          key={header}
                           sx={{
+                            color: "white",
                             fontWeight: "bold",
-                            color: theme.palette.primary.dark,
+                            fontSize: isSmallScreen ? "0.875rem" : "1rem",
+                            textTransform: "uppercase",
                           }}
                         >
-                          <Link
-                            to={`/customers/${customer.id}`}
-                            style={{
-                              textDecoration: "none",
-                              color: theme.palette.primary.main,
+                          {header}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredCustomers.length > 0 ? (
+                      filteredCustomers.map((customer, index) => (
+                        <TableRow
+                          key={customer.id}
+                          sx={{
+                            backgroundColor:
+                              index % 2 === 0
+                                ? "rgba(25, 118, 210, 0.05)"
+                                : "white",
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.15
+                              ),
+                            },
+                          }}
+                        >
+                          <TableCell
+                            sx={{
+                              fontWeight: "bold",
+                              color: theme.palette.primary.dark,
                             }}
                           >
-                            {customer.id}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{customer.name}</TableCell>
-                        <TableCell>{customer.phone}</TableCell>
-                        <TableCell>{customer.address}</TableCell>
-                        <TableCell>{customer.treatmentOrMedicine}</TableCell>
-                        <TableCell>
-                          {customer.date
-                            ? new Date(customer.date).toLocaleDateString(
-                                "en-CA"
-                              )
-                            : ""}
+                            <Link
+                              to={`/customers/${customer.id}`}
+                              style={{
+                                textDecoration: "none",
+                                color: theme.palette.primary.main,
+                              }}
+                            >
+                              {customer.id}
+                            </Link>
+                          </TableCell>
+                          <TableCell>{customer.name}</TableCell>
+                          <TableCell>{customer.phone}</TableCell>
+                          <TableCell>{customer.address}</TableCell>
+                          <TableCell>{customer.treatmentOrMedicine}</TableCell>
+                          <TableCell>
+                            {customer.date
+                              ? new Date(customer.date).toLocaleDateString(
+                                  "en-CA"
+                                )
+                              : ""}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} sx={{ textAlign: "center" }}>
+                          No Patient Record Found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} sx={{ textAlign: "center" }}>
-                        No Patient Record Found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
         </Box>
       </Container>

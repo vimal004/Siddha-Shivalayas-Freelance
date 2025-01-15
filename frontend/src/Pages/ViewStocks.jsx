@@ -15,12 +15,14 @@ import {
   Box,
   useTheme,
   alpha,
+  useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const ViewStocks = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -52,7 +54,7 @@ const ViewStocks = () => {
             background: "white",
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             borderRadius: 2,
-            p: 4,
+            p: isSmallScreen ? 2 : 4,
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
@@ -60,7 +62,7 @@ const ViewStocks = () => {
           }}
         >
           <Typography
-            variant="h4"
+            variant={isSmallScreen ? "h5" : "h4"}
             align="center"
             sx={{
               mb: 4,
@@ -81,157 +83,89 @@ const ViewStocks = () => {
               Error: {error}
             </Box>
           ) : (
-            <TableContainer
-              component={Paper}
-              sx={{
-                background: "white",
-                borderRadius: 3,
-                overflow: "hidden",
-                boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <Table>
-                <TableHead
-                  sx={{
-                    backgroundImage: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
-                  }}
-                >
-                  <TableRow>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Product ID
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Product Name
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Quantity
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Price
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Discount
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      GST
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {groups.length > 0 ? (
-                    groups.map((group, index) => (
-                      <TableRow
-                        key={group.stockId}
-                        sx={{
-                          backgroundColor:
-                            index % 2 === 0
-                              ? "rgba(25, 118, 210, 0.05)"
-                              : "white",
-                          "&:hover": {
-                            backgroundColor: alpha(
-                              theme.palette.primary.main,
-                              0.15
-                            ),
-                          },
-                        }}
-                      >
+            <Box sx={{ overflowX: "auto" }}>
+              <TableContainer
+                component={Paper}
+                sx={{
+                  background: "white",
+                  borderRadius: 3,
+                  boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+                  minWidth: isSmallScreen ? "600px" : "100%", // Ensures table doesn't collapse
+                }}
+              >
+                <Table>
+                  <TableHead
+                    sx={{
+                      backgroundImage: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
+                    }}
+                  >
+                    <TableRow>
+                      {[
+                        "Product ID",
+                        "Product Name",
+                        "Quantity",
+                        "Price",
+                        "Discount",
+                        "GST",
+                      ].map((header) => (
                         <TableCell
+                          key={header}
                           sx={{
+                            color: "white",
                             fontWeight: "bold",
-                            color: theme.palette.primary.dark,
+                            fontSize: isSmallScreen ? "0.875rem" : "1rem",
+                            textTransform: "uppercase",
                           }}
                         >
-                          {group.stockId}
+                          {header}
                         </TableCell>
-                        <TableCell
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {groups.length > 0 ? (
+                      groups.map((group, index) => (
+                        <TableRow
+                          key={group.stockId}
                           sx={{
-                            color: theme.palette.text.primary,
+                            backgroundColor:
+                              index % 2 === 0
+                                ? "rgba(25, 118, 210, 0.05)"
+                                : "white",
+                            "&:hover": {
+                              backgroundColor: alpha(
+                                theme.palette.primary.main,
+                                0.15
+                              ),
+                            },
                           }}
                         >
-                          {group.productName}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            color: theme.palette.text.secondary,
-                          }}
-                        >
-                          {group.quantity}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            color: theme.palette.text.primary,
-                          }}
-                        >
-                          ₹{group.price.toFixed(2)}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            color: theme.palette.text.secondary,
-                          }}
-                        >
-                          {group.discount}%
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            color: theme.palette.text.primary,
-                          }}
-                        >
-                          {group.gst}%
+                          <TableCell
+                            sx={{
+                              fontWeight: "bold",
+                              color: theme.palette.primary.dark,
+                            }}
+                          >
+                            {group.stockId}
+                          </TableCell>
+                          <TableCell>{group.productName}</TableCell>
+                          <TableCell>{group.quantity}</TableCell>
+                          <TableCell>₹{group.price.toFixed(2)}</TableCell>
+                          <TableCell>{group.discount}%</TableCell>
+                          <TableCell>{group.gst}%</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} sx={{ textAlign: "center" }}>
+                          No Product Stock Record Found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} sx={{ textAlign: "center" }}>
-                        No Product Stock Record Found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
         </Box>
       </Container>

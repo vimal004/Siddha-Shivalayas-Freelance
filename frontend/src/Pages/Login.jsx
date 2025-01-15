@@ -18,7 +18,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import BGIMG from "../img/img3.jpg";
+import BGIMG from "../img/bg.jpg";
 import { styled } from "@mui/material/styles";
 
 const LoginForm = () => {

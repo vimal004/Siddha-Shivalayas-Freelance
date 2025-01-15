@@ -3,7 +3,6 @@ import Header from "./Header";
 import Home from "./Home";
 import Transaction from "./Pages/Transaction";
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import Defaulters from "./Pages/Defaulters";
 import ViewStocks from "./Pages/ViewStocks";
 import StockForm from "./Pages/StockForm";
 import LoginForm from "./Pages/Login";
@@ -48,10 +47,6 @@ const router = createBrowserRouter([
       {
         path: "/managestocks",
         element: <StockForm />,
-      },
-      {
-        path: "/defaulters",
-        element: <Defaulters />,
       },
       {
         path: "/viewstocks",
