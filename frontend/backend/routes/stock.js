@@ -50,13 +50,19 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ message: "Quantity cannot be negative" });
     }
 
+    // Check if the request specifies the update mode
+    if (req.body.updateMode === "add") {
+      // Addition mode: Add the provided quantity to the existing quantity
+      stock.quantity += Number(req.body.quantity);
+    } else if (req.body.updateMode === "set") {
+      // Set mode: Replace the existing quantity with the provided value
+      stock.quantity = Number(req.body.quantity);
+    }
+
+    // Update other fields if provided
     Object.keys(req.body).forEach((key) => {
-      if (req.body[key] !== undefined) {
-        if (key === "quantity") {
-          stock[key] += Number(req.body[key]);
-        } else {
-          stock[key] = req.body[key];
-        }
+      if (req.body[key] !== undefined && key !== "quantity" && key !== "updateMode") {
+        stock[key] = req.body[key];
       }
     });
 
