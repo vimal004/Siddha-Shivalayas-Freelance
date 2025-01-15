@@ -208,7 +208,7 @@ const StockForm = () => {
           <form onSubmit={handleCreate}>
             <Grid container spacing={2}>
               {Object.keys(formData).map((key) => (
-                <Grid item xs={12} key={key}>
+                <Grid item xs={12} sm={6} md={4} key={key}>
                   <TextField
                     label={key
                       .replace(/([A-Z])/g, " $1")

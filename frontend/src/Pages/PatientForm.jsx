@@ -198,7 +198,7 @@ const PatientForm = () => {
 
           <form onSubmit={handleCreate}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   label="Patient ID"
                   name="id"
@@ -211,7 +211,7 @@ const PatientForm = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   label="Patient Name"
                   name="name"
@@ -223,7 +223,7 @@ const PatientForm = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   label="Phone Number"
                   name="phone"
@@ -235,7 +235,7 @@ const PatientForm = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={6}>
                 <TextField
                   label="Address"
                   name="address"
@@ -247,7 +247,7 @@ const PatientForm = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={6} md={6}>
                 <TextField
                   label="Date"
                   name="date"
