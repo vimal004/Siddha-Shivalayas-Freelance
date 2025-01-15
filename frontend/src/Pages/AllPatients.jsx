@@ -70,21 +70,21 @@ const AllPatients = () => {
           background: "#ffffff",
           boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
           padding: "24px",
-          borderRadius: "8px",
+          borderRadius: "16px",
           width: "100%",
         }}
       >
         <Typography
           variant="h4"
           align="center"
-          gutterBottom
           sx={{
-            fontWeight: "bold",
+            mb: 4,
+            fontWeight: 700,
+            color: "primary.main",
             fontFamily: '"Poppins", sans-serif',
-            color: "#1976d2",
           }}
         >
-          Patient Details
+          Patient Records
         </Typography>
 
         <Box
@@ -103,9 +103,10 @@ const AllPatients = () => {
             label="Filter by Treatment/Medicine"
             variant="outlined"
             fullWidth
-            placeholder="e.g., Medicine A, Treatment B"
+            placeholder="e.g., Surgery, Medicine A"
             sx={{
               borderRadius: "8px",
+              backgroundColor: "#f9f9f9",
             }}
           />
           <TextField
@@ -118,6 +119,7 @@ const AllPatients = () => {
             placeholder="e.g., John Doe"
             sx={{
               borderRadius: "8px",
+              backgroundColor: "#f9f9f9",
             }}
           />
         </Box>
@@ -138,42 +140,69 @@ const AllPatients = () => {
             Error: {error}
           </Typography>
         ) : (
-          <TableContainer component={Paper}>
+          <TableContainer
+            component={Paper}
+            sx={{
+              borderRadius: "16px",
+              boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+              overflow: "hidden",
+            }}
+          >
             <Table>
               <TableHead
                 sx={{
-                  backgroundColor: "#f5f5f5",
+                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
                 }}
               >
                 <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Phone</TableCell>
-                  <TableCell>Address</TableCell>
-                  <TableCell>Treatment/Medicine</TableCell>
-                  <TableCell>Date</TableCell>
+                  {[
+                    "ID",
+                    "Name",
+                    "Phone",
+                    "Address",
+                    "Treatment/Medicine",
+                    "Date",
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredCustomers.length > 0 ? (
-                  filteredCustomers.map((customer) => (
+                  filteredCustomers.map((customer, index) => (
                     <TableRow
                       key={customer.id}
                       sx={{
-                        "&:nth-of-type(odd)": {
-                          backgroundColor: "#f9f9f9",
-                        },
+                        backgroundColor:
+                          index % 2 === 0
+                            ? "rgba(25, 118, 210, 0.05)"
+                            : "white",
                         "&:hover": {
-                          backgroundColor: "#f1f1f1",
+                          backgroundColor: "rgba(25, 118, 210, 0.15)",
                         },
                       }}
                     >
-                      <TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          color: theme.palette.primary.main,
+                        }}
+                      >
                         <Link
                           to={`/customers/${customer.id}`}
                           style={{
-                            color: "#1976d2",
                             textDecoration: "none",
+                            color: theme.palette.primary.main,
                           }}
                         >
                           {customer.id}

@@ -66,10 +66,10 @@ const ViewStocks = () => {
               mb: 4,
               fontWeight: 700,
               color: "primary.main",
-              fontFamily: '"Inter", sans-serif',
+              fontFamily: '"Poppins", sans-serif',
             }}
           >
-            Stocks
+            Product Stocks
           </Typography>
 
           {loading ? (
@@ -81,28 +81,145 @@ const ViewStocks = () => {
               Error: {error}
             </Box>
           ) : (
-            <TableContainer component={Paper}>
+            <TableContainer
+              component={Paper}
+              sx={{
+                background: "white",
+                borderRadius: 3,
+                overflow: "hidden",
+                boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+              }}
+            >
               <Table>
-                <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+                <TableHead
+                  sx={{
+                    backgroundImage: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
+                  }}
+                >
                   <TableRow>
-                    <TableCell>Product ID</TableCell>
-                    <TableCell>Product Name</TableCell>
-                    <TableCell>Quantity</TableCell>
-                    <TableCell>Price</TableCell>
-                    <TableCell>Discount</TableCell>
-                    <TableCell>GST</TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Product ID
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Product Name
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Quantity
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Price
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Discount
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "white",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      GST
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {groups.length > 0 ? (
-                    groups.map((group) => (
-                      <TableRow key={group.stockId}>
-                        <TableCell>{group.stockId}</TableCell>
-                        <TableCell>{group.productName}</TableCell>
-                        <TableCell>{group.quantity}</TableCell>
-                        <TableCell>{group.price}</TableCell>
-                        <TableCell>{group.discount}</TableCell>
-                        <TableCell>{group.gst}</TableCell>
+                    groups.map((group, index) => (
+                      <TableRow
+                        key={group.stockId}
+                        sx={{
+                          backgroundColor:
+                            index % 2 === 0
+                              ? "rgba(25, 118, 210, 0.05)"
+                              : "white",
+                          "&:hover": {
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.15
+                            ),
+                          },
+                        }}
+                      >
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            color: theme.palette.primary.dark,
+                          }}
+                        >
+                          {group.stockId}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                          }}
+                        >
+                          {group.productName}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
+                          {group.quantity}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                          }}
+                        >
+                          ₹{group.price.toFixed(2)}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.secondary,
+                          }}
+                        >
+                          {group.discount}%
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: theme.palette.text.primary,
+                          }}
+                        >
+                          {group.gst}%
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
