@@ -15,17 +15,24 @@ import {
   useTheme,
   alpha,
   Snackbar,
+  TableContainer,
+  Paper,
+  useMediaQuery,
+  Card,
+  CardContent,
 } from "@mui/material";
-
 import MuiAlert from "@mui/material/Alert";
 
 const BillHistory = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   const [billHistory, setBillHistory] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]);
   const [searchName, setSearchName] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); 
+  const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
@@ -65,12 +72,50 @@ const BillHistory = () => {
       await axios.delete("https://siddha-shivalayas-backend.vercel.app/bills");
       setBillHistory([]);
       setFilteredBills([]);
-      setSuccessMessage("All bills deleted successfully."); 
+      setSuccessMessage("All bills deleted successfully.");
     } catch (error) {
       console.error("Error deleting bills:", error);
       setErrorMessage("Error deleting bills. Please try again later.");
     }
   };
+
+  const MobileCard = ({ bill }) => (
+    <Card sx={{ mb: 2, boxShadow: 2 }}>
+      <CardContent>
+        <Typography variant="subtitle2" color="text.secondary">
+          Bill ID
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          {bill._id}
+        </Typography>
+
+        <Typography variant="subtitle2" color="text.secondary">
+          Patient Name
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          {bill.name}
+        </Typography>
+
+        <Typography variant="subtitle2" color="text.secondary">
+          Bill Date
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          {new Date(bill.createdAt).toLocaleString()}
+        </Typography>
+
+        <Button
+          variant="contained"
+          href={bill.downloadLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          fullWidth
+          sx={{ mt: 1 }}
+        >
+          Download Bill
+        </Button>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Box
@@ -80,7 +125,7 @@ const BillHistory = () => {
           theme.palette.primary.main,
           0.1
         )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-        py: 8,
+        py: { xs: 4, sm: 6, md: 8 },
       }}
     >
       <Container maxWidth="lg">
@@ -89,7 +134,7 @@ const BillHistory = () => {
             background: "white",
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             borderRadius: 2,
-            p: 4,
+            p: { xs: 2, sm: 3, md: 4 },
             transition: "all 0.3s ease",
             "&:hover": {
               boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
@@ -97,10 +142,10 @@ const BillHistory = () => {
           }}
         >
           <Typography
-            variant="h4"
+            variant={isMobile ? "h5" : "h4"}
             align="center"
             sx={{
-              mb: 4,
+              mb: { xs: 2, sm: 3, md: 4 },
               fontWeight: 700,
               color: "primary.main",
               fontFamily: '"Inter", sans-serif',
@@ -117,6 +162,7 @@ const BillHistory = () => {
                 fullWidth
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
+                size={isMobile ? "small" : "medium"}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -128,6 +174,7 @@ const BillHistory = () => {
                 InputLabelProps={{ shrink: true }}
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
+                size={isMobile ? "small" : "medium"}
               />
             </Grid>
           </Grid>
@@ -136,43 +183,55 @@ const BillHistory = () => {
             variant="contained"
             color="error"
             onClick={handleDeleteAll}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, width: { xs: "100%", sm: "auto" } }}
           >
             Delete All Bills
           </Button>
 
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Bill ID</TableCell>
-                <TableCell>Patient Name</TableCell>
-                <TableCell>Bill Date</TableCell>
-                <TableCell>Download Links</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+          {isMobile ? (
+            <Box sx={{ mt: 2 }}>
               {filteredBills.map((bill) => (
-                <TableRow key={bill.id}>
-                  <TableCell>{bill._id}</TableCell>
-                  <TableCell>{bill.name}</TableCell>
-                  <TableCell>
-                    {new Date(bill.createdAt).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      href={bill.downloadLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download Bill
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <MobileCard key={bill._id} bill={bill} />
               ))}
-            </TableBody>
-          </Table>
+            </Box>
+          ) : (
+            <TableContainer component={Paper} sx={{ mb: 2, overflow: "auto" }}>
+              <Table sx={{ minWidth: isTablet ? 500 : 650 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Bill ID</TableCell>
+                    <TableCell>Patient Name</TableCell>
+                    <TableCell>Bill Date</TableCell>
+                    <TableCell>Download Links</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredBills.map((bill) => (
+                    <TableRow key={bill._id}>
+                      <TableCell>{bill._id}</TableCell>
+                      <TableCell>{bill.name}</TableCell>
+                      <TableCell>
+                        {new Date(bill.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          href={bill.downloadLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          size={isTablet ? "small" : "medium"}
+                        >
+                          Download Bill
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Box>
+
         <Snackbar
           open={Boolean(errorMessage)}
           autoHideDuration={3000}
