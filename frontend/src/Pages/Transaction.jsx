@@ -123,11 +123,39 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
+      // Step 1: Update stock quantities
+      for (const item of formData.items) {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+
+        if (selectedStock) {
+          const updatedQuantity = selectedStock.quantity - item.quantity;
+
+          // Ensure the quantity is not negative
+          if (updatedQuantity < 0) {
+            throw new Error("Insufficient stock for one or more items.");
+          }
+
+          // Update the stock quantity in the database using stockId
+          await axios.put(
+            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+            {
+              quantity: updatedQuantity,
+              updateMode: "set",  
+             }
+          );
+        }
+      }
+
+      // Step 2: Generate the bill
       const response = await axios.post(
         "https://siddha-shivalayas-backend.vercel.app/generate-bill",
         formData,
         { responseType: "blob" }
       );
+
+      // Step 3: Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -136,13 +164,13 @@ const Transaction = () => {
       link.click();
       document.body.removeChild(link);
 
-      setSuccessMessage("Bill generated successfully!");
+      // Success message
+      setSuccessMessage("Stocks updated and bill generated successfully!");
     } catch (err) {
       console.error(err);
-      setErrorMessage("Error generating the bill.");
+      setErrorMessage(err.message || "Error processing the request");
     }
   };
-
   return (
     <Box
       sx={{

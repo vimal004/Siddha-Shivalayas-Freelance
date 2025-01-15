@@ -140,7 +140,7 @@ const BillHistory = () => {
                 <TableCell>Bill ID</TableCell>
                 <TableCell>Patient Name</TableCell>
                 <TableCell>Bill Date</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell>Download Links</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
