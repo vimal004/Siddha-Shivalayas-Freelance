@@ -90,6 +90,22 @@ const Transaction = () => {
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
     updatedItems[index][field] = value;
+
+    // Check if the field being updated is "quantity"
+    if (field === "quantity") {
+      const selectedStock = stocks.find(
+        (stock) => stock.productName === updatedItems[index].description
+      );
+
+      if (selectedStock && parseInt(value, 10) > selectedStock.quantity) {
+        setErrorMessage(
+          `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
+        );
+      } else {
+        setErrorMessage(""); // Clear the error message if the quantity is valid
+      }
+    }
+
     setFormData({ ...formData, items: updatedItems });
   };
 
@@ -313,6 +329,27 @@ const Transaction = () => {
                             handleItemChange(index, "quantity", e.target.value)
                           }
                           fullWidth
+                          error={
+                            !!stocks.find(
+                              (stock) =>
+                                stock.productName === item.description &&
+                                parseInt(item.quantity, 10) > stock.quantity
+                            )
+                          }
+                          helperText={
+                            stocks.find(
+                              (stock) =>
+                                stock.productName === item.description &&
+                                parseInt(item.quantity, 10) > stock.quantity
+                            )
+                              ? `Insufficient stock. Available: ${
+                                  stocks.find(
+                                    (stock) =>
+                                      stock.productName === item.description
+                                  ).quantity
+                                }`
+                              : ""
+                          }
                         />
                       </Grid>
                       <Grid item xs={6} sm={2}>
