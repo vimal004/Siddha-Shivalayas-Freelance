@@ -14,7 +14,10 @@ import {
   Box,
   useTheme,
   alpha,
+  Snackbar,
 } from "@mui/material";
+
+import MuiAlert from "@mui/material/Alert";
 
 const BillHistory = () => {
   const theme = useTheme();
@@ -22,6 +25,8 @@ const BillHistory = () => {
   const [filteredBills, setFilteredBills] = useState([]);
   const [searchName, setSearchName] = useState("");
   const [searchDate, setSearchDate] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); 
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchBillHistory = async () => {
@@ -60,8 +65,10 @@ const BillHistory = () => {
       await axios.delete("https://siddha-shivalayas-backend.vercel.app/bills");
       setBillHistory([]);
       setFilteredBills([]);
+      setSuccessMessage("All bills deleted successfully."); 
     } catch (error) {
       console.error("Error deleting bills:", error);
+      setErrorMessage("Error deleting bills. Please try again later.");
     }
   };
 
@@ -166,6 +173,35 @@ const BillHistory = () => {
             </TableBody>
           </Table>
         </Box>
+        <Snackbar
+          open={Boolean(errorMessage)}
+          autoHideDuration={3000}
+          onClose={() => setErrorMessage("")}
+        >
+          <MuiAlert
+            elevation={6}
+            variant="filled"
+            severity="error"
+            onClose={() => setErrorMessage("")}
+          >
+            {errorMessage}
+          </MuiAlert>
+        </Snackbar>
+
+        <Snackbar
+          open={Boolean(successMessage)}
+          autoHideDuration={3000}
+          onClose={() => setSuccessMessage("")}
+        >
+          <MuiAlert
+            elevation={6}
+            variant="filled"
+            severity="success"
+            onClose={() => setSuccessMessage("")}
+          >
+            {successMessage}
+          </MuiAlert>
+        </Snackbar>
       </Container>
     </Box>
   );
