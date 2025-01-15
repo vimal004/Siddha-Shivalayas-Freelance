@@ -9,12 +9,16 @@ import {
   Typography,
   Container,
   Autocomplete,
+  Box,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
 
 const StockForm = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -33,7 +37,7 @@ const StockForm = () => {
     gst: "",
   });
 
-  const [stocks, setStocks] = useState([]); // To store stock data for autocomplete
+  const [stocks, setStocks] = useState([]);
   const [created, setCreated] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [updated, setUpdated] = useState(false);
@@ -43,7 +47,6 @@ const StockForm = () => {
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
-  // Fetch all stocks for autocomplete
   useEffect(() => {
     const fetchStocks = async () => {
       try {
@@ -72,15 +75,12 @@ const StockForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleAutocompleteChange = (event, value) => {
     if (value) {
-      setFormData(value); // Prefill the form with selected stock data
+      setFormData(value);
     } else {
       resetForm();
     }
@@ -152,191 +152,159 @@ const StockForm = () => {
   const isStockIdEntered = formData.stockId.trim() !== "";
 
   return (
-    <Container maxWidth="md" style={{ marginTop: "50px" }}>
-      <div
-        style={{
-          background: "#ffffff",
-          boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          padding: "24px",
-          borderRadius: "8px",
-          width: "100%",
-        }}
-      >
-        <Typography variant="h4" align="center" gutterBottom>
-          <strong>Stock Form</strong>
-        </Typography>
-
-        {/* Autocomplete for stock ID */}
-        <Autocomplete
-          options={stocks}
-          getOptionLabel={(option) => option.stockId || ""}
-          style={{ marginBottom: "20px" }}
-          onChange={handleAutocompleteChange}
-          renderInput={(params) => (
-            <TextField {...params} label="Search Stock by ID" fullWidth />
-          )}
-        />
-
-        <form onSubmit={handleCreate}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label="Stock ID"
-                name="stockId"
-                value={formData.stockId}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Product Name"
-                name="productName"
-                value={formData.productName}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Quantity"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Price"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="HSN Code"
-                name="hsnCode"
-                value={formData.hsnCode}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Discount"
-                name="discount"
-                value={formData.discount}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="GST"
-                name="gst"
-                value={formData.gst}
-                onChange={handleChange}
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12}>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disableElevation
-                disabled={!isStockIdEntered || loadingCreate}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingCreate ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Create"
-                )}
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                disableElevation
-                disabled={!isStockIdEntered || loadingUpdate}
-                onClick={handleUpdate}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingUpdate ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Update"
-                )}
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                disableElevation
-                disabled={!isStockIdEntered || loadingDelete}
-                onClick={handleDelete}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingDelete ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Delete"
-                )}
-              </Button>
-            </div>
-          </Grid>
-        </form>
-
-        {/* Snackbar for success message */}
-        <Snackbar open={success} autoHideDuration={3000}>
-          <MuiAlert
-            severity="success"
-            onClose={() => setSuccess(false)}
-            variant="filled"
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.1
+        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        py: 8,
+      }}
+    >
+      <Container maxWidth="md">
+        <Box
+          sx={{
+            background: "white",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            borderRadius: 2,
+            p: 4,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            },
+          }}
+        >
+          <Typography
+            variant="h4"
+            align="center"
+            sx={{
+              mb: 4,
+              fontWeight: 700,
+              color: "primary.main",
+              fontFamily: '"Inter", sans-serif',
+            }}
           >
-            {created
-              ? "Created successfully!"
-              : updated
-              ? "Updated successfully!"
-              : deleted
-              ? "Deleted successfully!"
-              : ""}
-          </MuiAlert>
-        </Snackbar>
+            Stock Form
+          </Typography>
 
-        {/* Snackbar for error message */}
-        <Snackbar open={!!errorMessage} autoHideDuration={3000}>
-          <MuiAlert severity="error" onClose={() => setErrorMessage("")} variant="filled">
-            {errorMessage}
-          </MuiAlert>
-        </Snackbar>
-      </div>
-    </Container>
+          <Autocomplete
+            options={stocks}
+            getOptionLabel={(option) => option.stockId || ""}
+            sx={{ mb: 3 }}
+            onChange={handleAutocompleteChange}
+            renderInput={(params) => (
+              <TextField {...params} label="Search Stock by ID" fullWidth />
+            )}
+          />
+
+          <form onSubmit={handleCreate}>
+            <Grid container spacing={2}>
+              {Object.keys(formData).map((key) => (
+                <Grid item xs={12} key={key}>
+                  <TextField
+                    label={key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    name={key}
+                    value={formData[key]}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    required={key === "stockId"}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+
+            <Grid item xs={12} sx={{ mt: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disableElevation
+                  disabled={!isStockIdEntered || loadingCreate}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingCreate ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Create"
+                  )}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  disableElevation
+                  disabled={!isStockIdEntered || loadingUpdate}
+                  onClick={handleUpdate}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingUpdate ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Update"
+                  )}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  disableElevation
+                  disabled={!isStockIdEntered || loadingDelete}
+                  onClick={handleDelete}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingDelete ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Delete"
+                  )}
+                </Button>
+              </Box>
+            </Grid>
+          </form>
+
+          <Snackbar open={success} autoHideDuration={3000}>
+            <MuiAlert
+              severity="success"
+              onClose={() => setSuccess(false)}
+              variant="filled"
+            >
+              {created
+                ? "Created successfully!"
+                : updated
+                ? "Updated successfully!"
+                : deleted
+                ? "Deleted successfully!"
+                : ""}
+            </MuiAlert>
+          </Snackbar>
+
+          <Snackbar open={!!errorMessage} autoHideDuration={3000}>
+            <MuiAlert
+              severity="error"
+              onClose={() => setErrorMessage("")}
+              variant="filled"
+            >
+              {errorMessage}
+            </MuiAlert>
+          </Snackbar>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

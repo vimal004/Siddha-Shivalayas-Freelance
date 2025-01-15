@@ -9,12 +9,17 @@ import {
   Typography,
   Container,
   Autocomplete,
+  Box,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useNavigate } from "react-router-dom";
 
 const PatientForm = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -144,183 +149,210 @@ const PatientForm = () => {
   const isIdEntered = formData.id.trim() !== "";
 
   return (
-    <Container maxWidth="md" style={{ marginTop: "50px" }}>
-      <div
-        style={{
-          background: "#ffffff",
-          boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          padding: "24px",
-          borderRadius: "8px",
-          width: "100%",
-        }}
-      >
-        <Typography variant="h4" align="center" gutterBottom>
-          <strong>Patient Form</strong>
-        </Typography>
-
-        {/* Autocomplete for patient ID */}
-        <Autocomplete
-          options={patients}
-          getOptionLabel={(option) => option.id || ""}
-          style={{ marginBottom: "20px" }}
-          onChange={handleAutocompleteChange}
-          renderInput={(params) => (
-            <TextField {...params} label="Search Patient by ID" fullWidth />
-          )}
-        />
-
-        <form onSubmit={handleCreate}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label="Patient ID"
-                name="id"
-                value={formData.id}
-                onChange={(e) =>
-                  setFormData({ ...formData, id: e.target.value })
-                }
-                variant="outlined"
-                fullWidth
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Patient Name"
-                name="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Address"
-                name="address"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                variant="outlined"
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Date"
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
-                variant="outlined"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12}>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disableElevation
-                disabled={!isIdEntered || loadingCreate}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingCreate ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Create"
-                )}
-              </Button>
-              <Button
-                variant="contained"
-                color="warning"
-                disableElevation
-                disabled={!isIdEntered || loadingUpdate}
-                onClick={handleUpdate}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingUpdate ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Update"
-                )}
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                disableElevation
-                disabled={!isIdEntered || loadingDelete}
-                onClick={handleDelete}
-                style={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  margin: "8px",
-                }}
-              >
-                {loadingDelete ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Delete"
-                )}
-              </Button>
-            </div>
-          </Grid>
-        </form>
-
-        {/* Snackbar for success message */}
-        <Snackbar open={success} autoHideDuration={3000}>
-          <MuiAlert
-            severity="success"
-            onClose={() => setSuccess(false)}
-            variant="filled"
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.1
+        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        py: 8,
+      }}
+    >
+      <Container maxWidth="md">
+        <Box
+          sx={{
+            background: "white",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            borderRadius: 2,
+            p: 4,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            },
+          }}
+        >
+          <Typography
+            variant="h4"
+            align="center"
+            sx={{
+              mb: 4,
+              fontWeight: 700,
+              color: "primary.main",
+              fontFamily: '"Inter", sans-serif',
+            }}
           >
-            {created
-              ? "Created successfully!"
-              : updated
-              ? "Updated successfully!"
-              : deleted
-              ? "Deleted successfully!"
-              : ""}
-          </MuiAlert>
-        </Snackbar>
+            Patient Form
+          </Typography>
 
-        {/* Snackbar for error message */}
-        <Snackbar open={!!errorMessage} autoHideDuration={3000}>
-          <MuiAlert severity="error" onClose={() => setErrorMessage("")} variant="filled">
-            {errorMessage}
-          </MuiAlert>
-        </Snackbar>
-      </div>
-    </Container>
+          {/* Autocomplete for patient ID */}
+          <Autocomplete
+            options={patients}
+            getOptionLabel={(option) => option.id || ""}
+            sx={{ mb: 3 }}
+            onChange={handleAutocompleteChange}
+            renderInput={(params) => (
+              <TextField {...params} label="Search Patient by ID" fullWidth />
+            )}
+          />
+
+          <form onSubmit={handleCreate}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  label="Patient ID"
+                  name="id"
+                  value={formData.id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, id: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Patient Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Phone Number"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Date"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid item xs={12} sx={{ mt: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disableElevation
+                  disabled={!isIdEntered || loadingCreate}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingCreate ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Create"
+                  )}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  disableElevation
+                  disabled={!isIdEntered || loadingUpdate}
+                  onClick={handleUpdate}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingUpdate ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Update"
+                  )}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  disableElevation
+                  disabled={!isIdEntered || loadingDelete}
+                  onClick={handleDelete}
+                  sx={{
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    px: 4,
+                  }}
+                >
+                  {loadingDelete ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Delete"
+                  )}
+                </Button>
+              </Box>
+            </Grid>
+          </form>
+
+          {/* Snackbar for success message */}
+          <Snackbar open={success} autoHideDuration={3000}>
+            <MuiAlert
+              severity="success"
+              onClose={() => setSuccess(false)}
+              variant="filled"
+            >
+              {created
+                ? "Created successfully!"
+                : updated
+                ? "Updated successfully!"
+                : deleted
+                ? "Deleted successfully!"
+                : ""}
+            </MuiAlert>
+          </Snackbar>
+
+          {/* Snackbar for error message */}
+          <Snackbar open={!!errorMessage} autoHideDuration={3000}>
+            <MuiAlert
+              severity="error"
+              onClose={() => setErrorMessage("")}
+              variant="filled"
+            >
+              {errorMessage}
+            </MuiAlert>
+          </Snackbar>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
