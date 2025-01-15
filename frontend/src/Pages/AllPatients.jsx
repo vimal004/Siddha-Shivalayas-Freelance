@@ -13,14 +13,17 @@ import {
   TableHead,
   TableRow,
   Paper,
-  useMediaQuery,
-  useTheme,
   Box,
+  useTheme,
+  alpha,
+  useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const AllPatients = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -52,186 +55,194 @@ const AllPatients = () => {
     );
   });
 
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
   return (
-    <Container
-      maxWidth="lg"
+    <Box
       sx={{
-        mt: 6,
-        mb: 4,
-        display: "flex",
-        justifyContent: "center",
+        minHeight: "100vh",
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.1
+        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        py: 8,
       }}
     >
-      <Box
-        sx={{
-          background: "#ffffff",
-          boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.1)",
-          padding: "24px",
-          borderRadius: "16px",
-          width: "100%",
-        }}
-      >
-        <Typography
-          variant="h4"
-          align="center"
-          sx={{
-            mb: 4,
-            fontWeight: 700,
-            color: "primary.main",
-            fontFamily: '"Poppins", sans-serif',
-          }}
-        >
-          Patient Records
-        </Typography>
-
+      <Container maxWidth="lg">
         <Box
           sx={{
-            display: "flex",
-            flexDirection: isSmallScreen ? "column" : "row",
-            justifyContent: "space-between",
-            gap: 2,
-            mb: 3,
+            background: "white",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            borderRadius: 2,
+            p: 4,
+            transition: "all 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            },
           }}
         >
-          <TextField
-            name="treatmentOrMedicine"
-            value={filter.treatmentOrMedicine}
-            onChange={handleFilterChange}
-            label="Filter by Treatment/Medicine"
-            variant="outlined"
-            fullWidth
-            placeholder="e.g., Surgery, Medicine A"
-            sx={{
-              borderRadius: "8px",
-              backgroundColor: "#f9f9f9",
-            }}
-          />
-          <TextField
-            name="name"
-            value={filter.name}
-            onChange={handleFilterChange}
-            label="Search by Name"
-            variant="outlined"
-            fullWidth
-            placeholder="e.g., John Doe"
-            sx={{
-              borderRadius: "8px",
-              backgroundColor: "#f9f9f9",
-            }}
-          />
-        </Box>
-
-        {loading ? (
-          <Box sx={{ textAlign: "center", mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
           <Typography
-            variant="body1"
+            variant="h4"
+            align="center"
             sx={{
-              textAlign: "center",
-              mt: 4,
-              color: "red",
+              mb: 4,
+              fontWeight: 700,
+              color: "primary.main",
+              fontFamily: '"Poppins", sans-serif',
             }}
           >
-            Error: {error}
+            Patient Records
           </Typography>
-        ) : (
-          <TableContainer
-            component={Paper}
+
+          <Box
             sx={{
-              borderRadius: "16px",
-              boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
-              overflow: "hidden",
+              display: "flex",
+              flexDirection: isSmallScreen ? "column" : "row",
+              justifyContent: "space-between",
+              gap: 2,
+              mb: 3,
             }}
           >
-            <Table>
-              <TableHead
-                sx={{
-                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
-                }}
-              >
-                <TableRow>
-                  {[
-                    "ID",
-                    "Name",
-                    "Phone",
-                    "Address",
-                    "Treatment/Medicine",
-                    "Date",
-                  ].map((header) => (
-                    <TableCell
-                      key={header}
-                      sx={{
-                        color: "white",
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {header}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredCustomers.length > 0 ? (
-                  filteredCustomers.map((customer, index) => (
-                    <TableRow
-                      key={customer.id}
-                      sx={{
-                        backgroundColor:
-                          index % 2 === 0
-                            ? "rgba(25, 118, 210, 0.05)"
-                            : "white",
-                        "&:hover": {
-                          backgroundColor: "rgba(25, 118, 210, 0.15)",
-                        },
-                      }}
-                    >
+            <TextField
+              name="treatmentOrMedicine"
+              value={filter.treatmentOrMedicine}
+              onChange={handleFilterChange}
+              label="Filter by Treatment/Medicine"
+              variant="outlined"
+              fullWidth
+              placeholder="e.g., Surgery, Medicine A"
+              sx={{
+                borderRadius: "8px",
+                backgroundColor: "#f9f9f9",
+              }}
+            />
+            <TextField
+              name="name"
+              value={filter.name}
+              onChange={handleFilterChange}
+              label="Search by Name"
+              variant="outlined"
+              fullWidth
+              placeholder="e.g., John Doe"
+              sx={{
+                borderRadius: "8px",
+                backgroundColor: "#f9f9f9",
+              }}
+            />
+          </Box>
+
+          {loading ? (
+            <Box sx={{ textAlign: "center", mt: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Typography
+              variant="body1"
+              sx={{
+                textAlign: "center",
+                mt: 4,
+                color: "red",
+              }}
+            >
+              Error: {error}
+            </Typography>
+          ) : (
+            <TableContainer
+              component={Paper}
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+                overflow: "hidden",
+              }}
+            >
+              <Table>
+                <TableHead
+                  sx={{
+                    background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.dark})`,
+                  }}
+                >
+                  <TableRow>
+                    {[
+                      "ID",
+                      "Name",
+                      "Phone",
+                      "Address",
+                      "Treatment/Medicine",
+                      "Date",
+                    ].map((header) => (
                       <TableCell
+                        key={header}
                         sx={{
+                          color: "white",
                           fontWeight: "bold",
-                          color: theme.palette.primary.main,
+                          fontSize: "1rem",
+                          textTransform: "uppercase",
                         }}
                       >
-                        <Link
-                          to={`/customers/${customer.id}`}
-                          style={{
-                            textDecoration: "none",
-                            color: theme.palette.primary.main,
+                        {header}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredCustomers.length > 0 ? (
+                    filteredCustomers.map((customer, index) => (
+                      <TableRow
+                        key={customer.id}
+                        sx={{
+                          backgroundColor:
+                            index % 2 === 0
+                              ? "rgba(25, 118, 210, 0.05)"
+                              : "white",
+                          "&:hover": {
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.15
+                            ),
+                          },
+                        }}
+                      >
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            color: theme.palette.primary.dark,
                           }}
                         >
-                          {customer.id}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{customer.name}</TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>{customer.address}</TableCell>
-                      <TableCell>{customer.treatmentOrMedicine}</TableCell>
-                      <TableCell>
-                        {customer.date
-                          ? new Date(customer.date).toLocaleDateString("en-CA")
-                          : ""}
+                          <Link
+                            to={`/customers/${customer.id}`}
+                            style={{
+                              textDecoration: "none",
+                              color: theme.palette.primary.main,
+                            }}
+                          >
+                            {customer.id}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{customer.name}</TableCell>
+                        <TableCell>{customer.phone}</TableCell>
+                        <TableCell>{customer.address}</TableCell>
+                        <TableCell>{customer.treatmentOrMedicine}</TableCell>
+                        <TableCell>
+                          {customer.date
+                            ? new Date(customer.date).toLocaleDateString(
+                                "en-CA"
+                              )
+                            : ""}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} sx={{ textAlign: "center" }}>
+                        No Patient Record Found
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ textAlign: "center" }}>
-                      No Patient Record Found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Box>
-    </Container>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
