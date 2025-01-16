@@ -63,6 +63,8 @@ const Header = () => {
           width="100%"
           flexDirection={isSm ? "row" : "column"}
           gap={2}
+          marginTop={1}
+          marginBottom={1}
         >
           <HeaderLogoAndTitle isSm={isSm} isHome={isHome}>
             <Link
@@ -229,7 +231,7 @@ const LogoutButton = styled(Button)(({ theme }) => ({
   boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
   transition: "all 0.2s ease",
   border: "none",
-  marginBottom: "10px",  
+  //marginBottom: "10px",  
   "&:hover": {
     background: "linear-gradient(45deg, #1565c0, #1976d2)",
     transform: "translateY(-2px)",
