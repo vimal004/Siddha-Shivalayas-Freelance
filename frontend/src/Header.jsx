@@ -221,7 +221,7 @@ const LogoutButton = styled(Button)(({ theme }) => ({
   background: "linear-gradient(45deg, #1976d2, #2196f3)",
   color: "white",
   padding: "10px 24px",
-  borderRadius: "12px",
+  borderRadius: "6px",
   textTransform: "none",
   fontSize: "0.95rem",
   fontWeight: 600,
@@ -229,6 +229,7 @@ const LogoutButton = styled(Button)(({ theme }) => ({
   boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
   transition: "all 0.2s ease",
   border: "none",
+  marginBottom: "10px",  
   "&:hover": {
     background: "linear-gradient(45deg, #1565c0, #1976d2)",
     transform: "translateY(-2px)",
