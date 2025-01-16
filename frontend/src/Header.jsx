@@ -8,6 +8,9 @@ import {
   Button,
   useMediaQuery,
   useTheme,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -16,6 +19,7 @@ import {
   ReceiptLong as ReceiptIcon,
   History as HistoryIcon,
   LogoutOutlined as LogoutIcon,
+  Menu as MenuIcon,
 } from "@mui/icons-material";
 import logo from "./img/Logo.svg";
 import { styled } from "@mui/system";
@@ -26,14 +30,32 @@ const Header = () => {
   const location = useLocation();
   const isHome = location.pathname === "/" || location.pathname === "/home";
 
+  const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     window.location.href = "/";
   };
 
+  const handleMenuClick = (event) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const navigationLinks = [
+    { to: "/allpatients", icon: <PeopleAltIcon />, label: "View Patients" },
+    { to: "/managepatients", icon: <PersonIcon />, label: "Manage Patients" },
+    { to: "/managestocks", icon: <InventoryIcon />, label: "Manage Stocks" },
+    { to: "/viewstocks", icon: <InventoryIcon />, label: "View Stocks" },
+    { to: "/billhistory", icon: <HistoryIcon />, label: "Bill History" },
+  ];
+
   return (
     <StyledAppBar position="static" elevation={0}>
-      <Toolbar sx={{ minHeight: { xs: 80 } }}>
+      <Toolbar sx={{ minHeight: { xs: 80, sm: 80 } }}>
         <Box
           display="flex"
           alignItems="center"
@@ -80,43 +102,65 @@ const Header = () => {
           )}
 
           {!isHome && (
-            <Navigation isSm={isSm}>
-              <NavButton
-                component={Link}
-                to="/allpatients"
-                startIcon={<PeopleAltIcon />}
+            <Box>
+              {isSm ? (
+                <Navigation isSm={isSm}>
+                  {navigationLinks.map((link, index) => (
+                    <NavButton
+                      key={index}
+                      component={Link}
+                      to={link.to}
+                      startIcon={link.icon}
+                    >
+                      {link.label}
+                    </NavButton>
+                  ))}
+                </Navigation>
+              ) : (
+                <IconButton
+                  size="large"
+                  aria-label="menu"
+                  onClick={handleMenuClick}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              <Menu
+                anchorEl={menuAnchorEl}
+                open={Boolean(menuAnchorEl)}
+                onClose={handleMenuClose}
+                PaperProps={{
+                  style: {
+                    backgroundColor: "rgba(255, 255, 255, 0.98)",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  },
+                }}
               >
-                View Patients
-              </NavButton>
-              <NavButton
-                component={Link}
-                to="/managepatients"
-                startIcon={<PersonIcon />}
-              >
-                Manage Patients
-              </NavButton>
-              <NavButton
-                component={Link}
-                to="/managestocks"
-                startIcon={<InventoryIcon />}
-              >
-                Manage Stocks
-              </NavButton>
-              <NavButton
-                component={Link}
-                to="/viewstocks"
-                startIcon={<InventoryIcon />}
-              >
-                View Stocks
-              </NavButton>
-              <NavButton
-                component={Link}
-                to="/billhistory"
-                startIcon={<HistoryIcon />}
-              >
-                Bill History
-              </NavButton>
-            </Navigation>
+                {navigationLinks.map((link, index) => (
+                  <MenuItem
+                    key={index}
+                    component={Link}
+                    to={link.to}
+                    onClick={handleMenuClose}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontFamily: '"Poppins", sans-serif',
+                      fontWeight: 500,
+                      color: "#2c3e50",
+                      "&:hover": {
+                        backgroundColor: "rgba(25, 118, 210, 0.08)",
+                      },
+                    }}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
           )}
         </Box>
       </Toolbar>
@@ -145,9 +189,8 @@ const Logo = styled("img")({
     transform: "scale(1.05)",
   },
 });
-
 const Navigation = styled("nav")(({ isSm }) => ({
-  display: isSm ? "flex" : "block",
+  display: isSm ? "flex" : "none",
   alignItems: "center",
   textAlign: isSm ? "initial" : "center",
   gap: "8px",
