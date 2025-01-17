@@ -249,6 +249,18 @@ const PatientForm = () => {
               </Grid>
               <Grid item xs={12} sm={6} md={6}>
                 <TextField
+                  label="treatmentOrMedicine"
+                  name="treatmentOrMedicine"
+                  value={formData.treatmentOrMedicine}
+                  onChange={(e) =>
+                    setFormData({ ...formData, treatmentOrMedicine: e.target.value })
+                  }
+                  variant="outlined"
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={6}>
+                <TextField
                   label="Date"
                   name="date"
                   type="date"

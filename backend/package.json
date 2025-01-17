@@ -16,6 +16,7 @@
     "docxtemplater": "^3.51.0",
     "express": "^4.21.1",
     "fs": "^0.0.1-security",
+    "libreoffice-convert": "^1.6.0",
     "mongoose": "^8.7.1",
     "nodemon": "^3.1.7",
     "pdfkit": "^0.15.1",
