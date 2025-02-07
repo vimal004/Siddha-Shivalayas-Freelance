@@ -102,7 +102,7 @@ app.post("/generate-bill", async (req, res) => {
   const itemTotals = items.map((item) => {
     const itemPrice = parseFloat(item.price);
     const itemQuantity = parseFloat(item.quantity);
-    const gstRate = parseFloat(item.GST) / 100;
+    const gstRate = parseFloat(item.GST || 0) / 100;
     const baseTotal = itemPrice * itemQuantity;
     const gstAmount = baseTotal * gstRate;
     const finalAmount = baseTotal;
