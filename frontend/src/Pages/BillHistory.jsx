@@ -35,6 +35,14 @@ const BillHistory = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  const totalCost = (bill) => {
+    let total = bill.items.reduce((acc, item) => {
+      return acc + item.price * item.quantity;
+    }, 0);
+    total -= (bill.discount / 100) * total;
+    return `₹${total.toFixed(2)}`;
+  };
+
   useEffect(() => {
     const fetchBillHistory = async () => {
       try {
@@ -47,6 +55,11 @@ const BillHistory = () => {
         }));
         setBillHistory(updatedBills);
         setFilteredBills(updatedBills);
+        console.log(
+          "Bill history fetched successfully:",
+          updatedBills[0].items
+        );
+        console.log("Bill history fetched successfully:", updatedBills[0]);
       } catch (error) {
         console.error("Error fetching bill history:", error);
       }
@@ -83,7 +96,7 @@ const BillHistory = () => {
     <Card sx={{ mb: 2, boxShadow: 2 }}>
       <CardContent>
         <Typography variant="subtitle2" color="text.secondary">
-          Bill ID
+          Invoice ID
         </Typography>
         <Typography variant="body1" gutterBottom>
           {bill._id}
@@ -203,6 +216,7 @@ const BillHistory = () => {
                     <TableCell>Patient Name</TableCell>
                     <TableCell>Bill Date</TableCell>
                     <TableCell>Download Links</TableCell>
+                    <TableCell>Total Cost</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -224,6 +238,7 @@ const BillHistory = () => {
                           Download Bill
                         </Button>
                       </TableCell>
+                      <TableCell>{totalCost(bill)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
