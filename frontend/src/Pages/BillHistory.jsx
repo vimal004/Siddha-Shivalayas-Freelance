@@ -351,12 +351,13 @@ const BillHistory = () => {
               <TableCell>Edit</TableCell>
               <TableCell>Delete</TableCell>
               <TableCell>Preview</TableCell>
+              <TableCell>Download</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredBills.map((bill, index) => (
               <TableRow key={index}>
-                <TableCell>{"B"+(index + 1)}</TableCell>
+                <TableCell>{"B" + (index + 1)}</TableCell>
                 <TableCell>{bill.name}</TableCell>
                 <TableCell>
                   {new Date(bill.createdAt).toLocaleString()}
@@ -376,9 +377,20 @@ const BillHistory = () => {
                     Delete
                   </Button>
                 </TableCell>
+
                 <TableCell>
                   <Button onClick={() => togglePreview(bill._id)}>
                     {previewedBillId === bill._id ? "Hide" : "Preview"}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="contained"
+                    href={bill.downloadLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Download
                   </Button>
                 </TableCell>
               </TableRow>
