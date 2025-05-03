@@ -37,6 +37,16 @@ const ViewStocks = () => {
     error,
   } = useFetchData("https://siddha-shivalayas-backend.vercel.app/stocks");
 
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const filteredStocks = groups.filter((group) =>
+    group.productName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const printnames = (e) => {
+    console.log(e.target.value);
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <Box
       sx={{
@@ -73,6 +83,11 @@ const ViewStocks = () => {
           >
             Product Stocks
           </Typography>
+
+          <input
+            placeholder="Search by Product Name"
+            onChange={printnames}
+          ></input>
 
           {loading ? (
             <Box sx={{ textAlign: "center", mt: 4 }}>
@@ -123,8 +138,8 @@ const ViewStocks = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {groups.length > 0 ? (
-                      groups.map((group, index) => (
+                    {filteredStocks.length > 0 ? (
+                      filteredStocks.map((group, index) => (
                         <TableRow
                           key={group.stockId}
                           sx={{
