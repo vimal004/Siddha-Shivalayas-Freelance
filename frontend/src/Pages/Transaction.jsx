@@ -238,7 +238,7 @@ const Transaction = () => {
         { responseType: "blob" }
       );
 
-      setSuccessMessage("Stocks updated successfully!");
+      setSuccessMessage("Transaction saved successfully!");
     } catch (err) {
       console.error(err);
       setErrorMessage(err.message || "Error processing the request");

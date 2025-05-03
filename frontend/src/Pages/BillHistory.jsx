@@ -20,6 +20,7 @@ import {
   useMediaQuery,
   Card,
   CardContent,
+  Tab,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 
@@ -165,6 +166,20 @@ const BillHistory = () => {
     );
   };
 
+  const deleteBill = (billId) => async () => {
+    try {
+      await axios.delete(
+        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
+      );
+      setBillHistory((prev) => prev.filter((bill) => bill._id !== billId));
+      setFilteredBills((prev) => prev.filter((bill) => bill._id !== billId));
+      setSuccessMessage("Bill deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting bill:", error);
+      setErrorMessage("Error deleting bill. Please try again later.");
+    }
+  };
+
   useEffect(() => {
     const fetchBillHistory = async () => {
       try {
@@ -290,6 +305,8 @@ const BillHistory = () => {
                   <TableCell>Download Link</TableCell>
                   <TableCell>Total Cost</TableCell>
                   <TableCell>Preview</TableCell>
+                  <TableCell>Delete Bill</TableCell>
+                  <TableCell>Edit Bill</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -321,6 +338,14 @@ const BillHistory = () => {
                         >
                           {previewedBillId === bill._id ? "Hide" : "Preview"}
                         </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button onClick={deleteBill(bill._id)}>
+                          Delete Bill
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button>Edit Bill</Button>
                       </TableCell>
                     </TableRow>
                     {previewedBillId === bill._id && (
