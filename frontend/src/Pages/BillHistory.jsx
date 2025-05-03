@@ -27,6 +27,7 @@ import MuiAlert from "@mui/material/Alert";
 const BillHistory = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [billToDelete, setBillToDelete] = useState(null);
 
   const [billHistory, setBillHistory] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]);
@@ -373,7 +374,7 @@ const BillHistory = () => {
                   <Button onClick={() => setEditingBill(bill)}>Edit</Button>
                 </TableCell>
                 <TableCell>
-                  <Button color="error" onClick={deleteBill(bill._id)}>
+                  <Button color="error" onClick={() => setBillToDelete(bill)}>
                     Delete
                   </Button>
                 </TableCell>
@@ -424,6 +425,28 @@ const BillHistory = () => {
           {errorMessage}
         </MuiAlert>
       </Snackbar>
+
+      <Dialog open={!!billToDelete} onClose={() => setBillToDelete(null)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the bill for{" "}
+            <strong>{billToDelete?.name}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBillToDelete(null)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={async () => {
+              await deleteBill(billToDelete._id)();
+              setBillToDelete(null);
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {editingBill && (
         <EditBillModal
