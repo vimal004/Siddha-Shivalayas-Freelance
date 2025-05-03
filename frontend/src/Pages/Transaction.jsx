@@ -397,6 +397,191 @@ const Transaction = () => {
                   </Typography>
                 </Grid>
               </Grid>
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Bill Preview
+                </Typography>
+                <Box sx={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          Product
+                        </th>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          HSN
+                        </th>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          GST (%)
+                        </th>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          Qty
+                        </th>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          Price
+                        </th>
+                        <th
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.items.map((item, index) => {
+                        const quantity = parseInt(item.quantity || 0, 10);
+                        const price = parseFloat(item.price || 0);
+                        const total = quantity * price;
+                        return (
+                          <tr key={index}>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              {item.description}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              {item.HSN}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              {item.GST}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              {item.quantity}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              ₹{price.toFixed(2)}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ccc",
+                                padding: "8px",
+                              }}
+                            >
+                              ₹{total.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "8px",
+                            textAlign: "right",
+                          }}
+                        >
+                          Subtotal
+                        </td>
+                        <td
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          ₹
+                          {formData.items
+                            .reduce(
+                              (acc, item) =>
+                                acc +
+                                parseFloat(item.price || 0) *
+                                  parseInt(item.quantity || 0, 10),
+                              0
+                            )
+                            .toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "8px",
+                            textAlign: "right",
+                          }}
+                        >
+                          Discount ({formData.discount || 0}%)
+                        </td>
+                        <td
+                          style={{ border: "1px solid #ccc", padding: "8px" }}
+                        >
+                          -₹
+                          {(
+                            (formData.items.reduce(
+                              (acc, item) =>
+                                acc +
+                                parseFloat(item.price || 0) *
+                                  parseInt(item.quantity || 0, 10),
+                              0
+                            ) *
+                              (formData.discount || 0)) /
+                            100
+                          ).toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "8px",
+                            textAlign: "right",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          Total
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "8px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ₹{formData.totalAmount.toFixed(2)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </Box>
+              </Grid>
+
               <Button
                 variant="contained"
                 color="primary"
