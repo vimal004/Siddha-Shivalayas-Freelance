@@ -34,6 +34,11 @@ const BillHistory = () => {
   const [searchDate, setSearchDate] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [previewedBillId, setPreviewedBillId] = useState(null);
+
+  const togglePreview = (billId) => {
+    setPreviewedBillId(previewedBillId === billId ? null : billId);
+  };
 
   const totalCost = (bill) => {
     let total = bill.items.reduce((acc, item) => {
@@ -41,6 +46,123 @@ const BillHistory = () => {
     }, 0);
     total -= (bill.discount / 100) * total;
     return `₹${total.toFixed(2)}`;
+  };
+
+  const BillPreview = ({ bill }) => {
+    const subtotal = bill.items.reduce(
+      (acc, item) => acc + item.quantity * item.price,
+      0
+    );
+    const discountAmount = (subtotal * (bill.discount || 0)) / 100;
+    const total = subtotal - discountAmount;
+
+    return (
+      <Box sx={{ overflowX: "auto", mt: 2 }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            marginBottom: "1rem",
+          }}
+        >
+          <thead>
+            <tr>
+              {["Product", "HSN", "GST (%)", "Qty", "Price", "Total"].map(
+                (header) => (
+                  <th
+                    key={header}
+                    style={{ border: "1px solid #ccc", padding: "8px" }}
+                  >
+                    {header}
+                  </th>
+                )
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {bill.items.map((item, index) => {
+              const quantity = parseInt(item.quantity || 0, 10);
+              const price = parseFloat(item.price || 0);
+              const total = quantity * price;
+              return (
+                <tr key={index}>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.description}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.HSN}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.GST}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.quantity}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    ₹{price.toFixed(2)}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    ₹{total.toFixed(2)}
+                  </td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td
+                colSpan={5}
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "8px",
+                  textAlign: "right",
+                }}
+              >
+                Subtotal
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                ₹{subtotal.toFixed(2)}
+              </td>
+            </tr>
+            <tr>
+              <td
+                colSpan={5}
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "8px",
+                  textAlign: "right",
+                }}
+              >
+                Discount ({bill.discount || 0}%)
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                -₹{discountAmount.toFixed(2)}
+              </td>
+            </tr>
+            <tr>
+              <td
+                colSpan={5}
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "8px",
+                  textAlign: "right",
+                  fontWeight: "bold",
+                }}
+              >
+                Total
+              </td>
+              <td
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "8px",
+                  fontWeight: "bold",
+                }}
+              >
+                ₹{total.toFixed(2)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </Box>
+    );
   };
 
   useEffect(() => {
@@ -55,11 +177,6 @@ const BillHistory = () => {
         }));
         setBillHistory(updatedBills);
         setFilteredBills(updatedBills);
-        console.log(
-          "Bill history fetched successfully:",
-          updatedBills[0].items
-        );
-        console.log("Bill history fetched successfully:", updatedBills[0]);
       } catch (error) {
         console.error("Error fetching bill history:", error);
       }
@@ -91,44 +208,6 @@ const BillHistory = () => {
       setErrorMessage("Error deleting bills. Please try again later.");
     }
   };
-
-  const MobileCard = ({ bill }) => (
-    <Card sx={{ mb: 2, boxShadow: 2 }}>
-      <CardContent>
-        <Typography variant="subtitle2" color="text.secondary">
-          Invoice ID
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          {bill._id}
-        </Typography>
-
-        <Typography variant="subtitle2" color="text.secondary">
-          Patient Name
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          {bill.name}
-        </Typography>
-
-        <Typography variant="subtitle2" color="text.secondary">
-          Bill Date
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          {new Date(bill.createdAt).toLocaleString()}
-        </Typography>
-
-        <Button
-          variant="contained"
-          href={bill.downloadLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          fullWidth
-          sx={{ mt: 1 }}
-        >
-          Download Bill
-        </Button>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <Box
@@ -201,27 +280,22 @@ const BillHistory = () => {
             Delete All Bills
           </Button>
 
-          {isMobile ? (
-            <Box sx={{ mt: 2 }}>
-              {filteredBills.map((bill) => (
-                <MobileCard key={bill._id} bill={bill} />
-              ))}
-            </Box>
-          ) : (
-            <TableContainer component={Paper} sx={{ mb: 2, overflow: "auto" }}>
-              <Table sx={{ minWidth: isTablet ? 500 : 650 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Bill ID</TableCell>
-                    <TableCell>Patient Name</TableCell>
-                    <TableCell>Bill Date</TableCell>
-                    <TableCell>Download Links</TableCell>
-                    <TableCell>Total Cost</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredBills.map((bill) => (
-                    <TableRow key={bill._id}>
+          <TableContainer component={Paper} sx={{ mb: 2, overflow: "auto" }}>
+            <Table sx={{ minWidth: isTablet ? 500 : 650 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Bill ID</TableCell>
+                  <TableCell>Patient Name</TableCell>
+                  <TableCell>Bill Date</TableCell>
+                  <TableCell>Download Link</TableCell>
+                  <TableCell>Total Cost</TableCell>
+                  <TableCell>Preview</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredBills.map((bill) => (
+                  <React.Fragment key={bill._id}>
+                    <TableRow>
                       <TableCell>{bill._id}</TableCell>
                       <TableCell>{bill.name}</TableCell>
                       <TableCell>
@@ -235,47 +309,63 @@ const BillHistory = () => {
                           rel="noopener noreferrer"
                           size={isTablet ? "small" : "medium"}
                         >
-                          Download Bill
+                          Download
                         </Button>
                       </TableCell>
                       <TableCell>{totalCost(bill)}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                          size={isTablet ? "small" : "medium"}
+                          onClick={() => togglePreview(bill._id)}
+                        >
+                          {previewedBillId === bill._id ? "Hide" : "Preview"}
+                        </Button>
+                      </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
+                    {previewedBillId === bill._id && (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <BillPreview bill={bill} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-        <Snackbar
-          open={Boolean(errorMessage)}
-          autoHideDuration={3000}
-          onClose={() => setErrorMessage("")}
-        >
-          <MuiAlert
-            elevation={6}
-            variant="filled"
-            severity="error"
+          <Snackbar
+            open={Boolean(errorMessage)}
+            autoHideDuration={3000}
             onClose={() => setErrorMessage("")}
           >
-            {errorMessage}
-          </MuiAlert>
-        </Snackbar>
+            <MuiAlert
+              elevation={6}
+              variant="filled"
+              severity="error"
+              onClose={() => setErrorMessage("")}
+            >
+              {errorMessage}
+            </MuiAlert>
+          </Snackbar>
 
-        <Snackbar
-          open={Boolean(successMessage)}
-          autoHideDuration={3000}
-          onClose={() => setSuccessMessage("")}
-        >
-          <MuiAlert
-            elevation={6}
-            variant="filled"
-            severity="success"
+          <Snackbar
+            open={Boolean(successMessage)}
+            autoHideDuration={3000}
             onClose={() => setSuccessMessage("")}
           >
-            {successMessage}
-          </MuiAlert>
-        </Snackbar>
+            <MuiAlert
+              elevation={6}
+              variant="filled"
+              severity="success"
+              onClose={() => setSuccessMessage("")}
+            >
+              {successMessage}
+            </MuiAlert>
+          </Snackbar>
+        </Box>
       </Container>
     </Box>
   );
