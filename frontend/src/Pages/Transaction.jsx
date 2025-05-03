@@ -198,6 +198,53 @@ const Transaction = () => {
     }
   };
 
+  const handleSaveTransaction = async () => {
+    try {
+      // Check if any item quantity exceeds available stock
+      for (const item of formData.items) {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+
+        if (selectedStock && item.quantity > selectedStock.quantity) {
+          throw new Error(
+            `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
+          );
+        }
+      }
+
+      // Step 1: Update stock quantities
+      for (const item of formData.items) {
+        const selectedStock = stocks.find(
+          (stock) => stock.productName === item.description
+        );
+
+        if (selectedStock) {
+          const updatedQuantity = selectedStock.quantity - item.quantity;
+
+          // Update the stock quantity in the database using stockId
+          await axios.put(
+            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+            {
+              quantity: updatedQuantity,
+              updateMode: "set",
+            }
+          );
+        }
+      }
+      const response = await axios.post(
+        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
+        formData,
+        { responseType: "blob" }
+      );
+
+      setSuccessMessage("Stocks updated successfully!");
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err.message || "Error processing the request");
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -585,11 +632,19 @@ const Transaction = () => {
               <Button
                 variant="contained"
                 color="primary"
-                fullWidth
-                sx={{ mt: 4 }}
+                sx={{ mt: 4, mr: 2 }}
                 onClick={handleDownloadBill}
               >
                 Download Bill
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                
+                sx={{ mt: 4 }}
+                onClick={handleSaveTransaction}
+              >
+                Save Transaction
               </Button>
             </form>
           )}
