@@ -282,6 +282,26 @@ app.delete("/bills/:billId", async (req, res) => {
   }
 });
 
+app.put("/bills/:billId", async (req, res) => {
+  const { billId } = req.params;
+  const { items, discount } = req.body;
+
+  try {
+    const updatedBill = await Bill.findByIdAndUpdate(billId, {
+      items,
+      discount,
+    });
+
+    if (!updatedBill) {
+      return res.status(404).json({ error: "Bill not found" });
+    }
+    res.json({ message: "Bill updated successfully." });
+  } catch (error) {
+    console.error("Error updating the bill:", error);
+    res.status(500).json({ error: "Error updating the bill." });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
