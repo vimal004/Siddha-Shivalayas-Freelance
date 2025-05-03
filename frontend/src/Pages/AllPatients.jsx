@@ -17,6 +17,7 @@ import {
   useTheme,
   alpha,
   useMediaQuery,
+  Select,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -105,10 +106,10 @@ const AllPatients = () => {
               name="treatmentOrMedicine"
               value={filter.treatmentOrMedicine}
               onChange={handleFilterChange}
-              label="Filter by Treatment/Medicine"
+              label="Filter by Treatment/Medicine/Consultation"
               variant="outlined"
               fullWidth
-              placeholder="e.g., Surgery, Medicine A"
+              placeholder=""
               sx={{
                 borderRadius: "8px",
                 backgroundColor: "#f9f9f9",
