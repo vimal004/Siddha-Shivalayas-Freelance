@@ -76,7 +76,7 @@ const BillHistory = () => {
 
   const deleteBill = (billId) => async () => {
     try {
-      console.log("Deleting bill with ID:", billId);  
+      console.log("Deleting bill with ID:", billId);
       await axios.delete(
         `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
       );
@@ -354,9 +354,9 @@ const BillHistory = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBills.map((bill) => (
-              <TableRow key={bill._id}>
-                <TableCell>{bill._id}</TableCell>
+            {filteredBills.map((bill, index) => (
+              <TableRow key={index}>
+                <TableCell>{"B"+(index + 1)}</TableCell>
                 <TableCell>{bill.name}</TableCell>
                 <TableCell>
                   {new Date(bill.createdAt).toLocaleString()}
