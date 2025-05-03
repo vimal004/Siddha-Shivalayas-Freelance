@@ -15,6 +15,7 @@ import {
   Box,
   useTheme,
   alpha,
+  TextField,
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -84,10 +85,28 @@ const ViewStocks = () => {
             Product Stocks
           </Typography>
 
-          <input
-            placeholder="Search by Product Name"
-            onChange={printnames}
-          ></input>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: isSmallScreen ? "column" : "row",
+              justifyContent: "space-between",
+              gap: 2,
+              mb: 3,
+            }}
+          >
+            <TextField
+              label="Search by Product Name"
+              variant="outlined"
+              value={searchTerm}
+              onChange={printnames}
+              fullWidth
+              placeholder="Medicine Name"
+              sx={{
+                borderRadius: "8px",
+                backgroundColor: "#f9f9f9",
+              }}
+            />
+          </Box>
 
           {loading ? (
             <Box sx={{ textAlign: "center", mt: 4 }}>
