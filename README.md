@@ -1,4 +1,4 @@
-                                                                   # Siddha-Shivalayas: Billing and Patient Management System
+# Siddha-Shivalayas: Billing and Patient Management System
 
 ## Overview
 
