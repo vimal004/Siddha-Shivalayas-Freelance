@@ -361,7 +361,11 @@ const BillHistory = () => {
                 <TableCell>{"B" + (index + 1)}</TableCell>
                 <TableCell>{bill.name}</TableCell>
                 <TableCell>
-                  {new Date(bill.createdAt).toLocaleString()}
+                  {new Date(bill.date).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
                 </TableCell>
                 <TableCell>
                   ₹

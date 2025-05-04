@@ -239,6 +239,7 @@ const Transaction = () => {
       );
 
       setSuccessMessage("Transaction saved successfully!");
+      console.log("Transaction saved successfully:", formData);
     } catch (err) {
       console.error(err);
       setErrorMessage(err.message || "Error processing the request");
