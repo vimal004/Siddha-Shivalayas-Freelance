@@ -1,104 +1,87 @@
-Siddha-Shivalayas: Billing and Patient Management System
-Overview
+# Siddha-Shivalayas: Billing and Patient Management System
 
-Siddha-Shivalayas is a full-stack web application developed to streamline operations at the Siddha Shivalayas Clinic. It provides an efficient solution for managing patient records, tracking clinic inventory, and generating bills, enhancing administrative productivity and user experience. Built with modern web technologies, this project showcases a robust backend API, an intuitive frontend interface, and document generation capabilities.
-Features
-✅ Patient Management
+## Overview
 
-    Create, read, update, and delete (CRUD) patient records.
+**Siddha-Shivalayas** is a full-stack web application developed to streamline operations at the Siddha Shivalayas Clinic. It provides an efficient solution for managing patient records, tracking clinic inventory, and generating bills, enhancing administrative productivity and user experience. Built with modern web technologies, this project showcases a robust backend API, an intuitive frontend interface, and document generation capabilities.
 
-    View patient details and history.
+---
 
-📦 Stock Management
+## Features
 
-    Manage clinic inventory with CRUD operations.
+### ✅ Patient Management
+- Create, read, update, and delete (CRUD) patient records.
+- View patient details and history.
 
-    Track stock levels and update quantities.
+### 📦 Stock Management
+- Manage clinic inventory with CRUD operations.
+- Track stock levels and update quantities.
 
-🧾 Bill Generation
+### 🧾 Bill Generation
+- Generate bills in PDF and DOCX formats.
+- View and manage billing history.
 
-    Generate bills in PDF and DOCX formats.
+### 🔐 User Authentication
+- Secure login system for clinic staff (to be enhanced with JWT).
+- Role-based access control (planned feature).
 
-    View and manage billing history.
+### 💻 User Interface
+- Responsive and intuitive frontend built with React and Material-UI.
+- Easy navigation for managing patients, stocks, and bills.
 
-🔐 User Authentication
+### 📤 Data Export
+- Export data to Excel for reporting.
+- Generate PDF reports using `html2canvas` and `jspdf`.
 
-    Secure login system for clinic staff (to be enhanced with JWT).
+---
 
-    Role-based access control (planned feature).
+## Technologies Used
 
-💻 User Interface
+### Backend
+- **Node.js**: Runtime environment for server-side logic.
+- **Express.js**: Framework for building RESTful APIs.
+- **Mongoose**: ODM for MongoDB database interactions.
 
-    Responsive and intuitive frontend built with React and Material-UI.
+### Frontend
+- **React.js**: Library for building user interfaces.
+- **Vite**: Build tool for fast development and production builds.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Material-UI**: Component library for consistent UI design.
+- **React Router**: For client-side routing.
 
-    Easy navigation for managing patients, stocks, and bills.
+### Database
+- **MongoDB**: NoSQL database for storing patient and stock data.
 
-📤 Data Export
+### Document Generation
+- **docxtemplater**: For generating DOCX files.
+- **pdfkit**: For creating PDF documents.
+- **jspdf**: For additional PDF generation support.
+- **html2canvas**: For rendering HTML to canvas for PDF exports.
 
-    Export data to Excel for reporting.
+### Data Handling
+- **xlsx**: For Excel file generation and data export.
 
-    Generate PDF reports using html2canvas and jspdf.
+### Development Tools
+- **ESLint**: For code linting and maintaining code quality.
+- **dotenv**: For managing environment variables.
 
-Technologies Used
-Backend
+---
 
-    Node.js: Runtime environment for server-side logic.
-
-    Express.js: Framework for building RESTful APIs.
-
-    Mongoose: ODM for MongoDB database interactions.
-
-Frontend
-
-    React.js: Library for building user interfaces.
-
-    Vite: Build tool for fast development and production builds.
-
-    Tailwind CSS: Utility-first CSS framework for styling.
-
-    Material-UI: Component library for consistent UI design.
-
-    React Router: For client-side routing.
-
-Database
-
-    MongoDB: NoSQL database for storing patient and stock data.
-
-Document Generation
-
-    docxtemplater: For generating DOCX files.
-
-    pdfkit: For creating PDF documents.
-
-    jspdf: For additional PDF generation support.
-
-    html2canvas: For rendering HTML to canvas for PDF exports.
-
-Data Handling
-
-    xlsx: For Excel file generation and data export.
-
-Development Tools
-
-    ESLint: For code linting and maintaining code quality.
-
-    dotenv: For managing environment variables.
-
-Prerequisites
+## Prerequisites
 
 Ensure you have the following installed:
 
-    Node.js (v16 or higher)
+- Node.js (v16 or higher)
+- npm (v8 or higher)
+- MongoDB (local or cloud instance, e.g., MongoDB Atlas)
+- Git
 
-    npm (v8 or higher)
+---
 
-    MongoDB (local or cloud instance, e.g., MongoDB Atlas)
+## Installation
 
-    Git
+### Clone the Repository
 
-Installation
-Clone the Repository
-
+```bash
 git clone https://github.com/vimal004/Siddha-Shivalayas.git
 cd Siddha-Shivalayas
 
