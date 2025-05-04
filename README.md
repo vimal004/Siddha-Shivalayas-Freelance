@@ -1,4 +1,4 @@
-# Siddha-Shivalayas: Billing and Patient Management System
+                                                                   # Siddha-Shivalayas: Billing and Patient Management System
 
 ## Overview
 
@@ -194,45 +194,6 @@ Siddha-Shivalayas/
 │   ├── package.json
 ├── README.md
 
-Contributing
-
-Contributions are welcome!
-To contribute:
-
-    Fork the repository.
-
-    Create a new branch:
-
-git checkout -b feature/your-feature
-
-Commit your changes:
-
-git commit -m "Add your feature"
-
-Push to your branch:
-
-    git push origin feature/your-feature
-
-    Open a pull request.
-
-Please ensure your code follows the project’s coding standards and includes appropriate tests.
-Troubleshooting
-❌ MongoDB Connection Error
-
-    Check MONGODB_URI in .env.
-
-    Ensure MongoDB is running or Atlas instance is accessible.
-
-❌ Frontend Not Loading
-
-    Make sure the backend is running at http://localhost:5000.
-
-    Run npm install in frontend/.
-
-❌ CORS Issues
-
-    Enable CORS in server.js with proper origins.
-
 Future Enhancements
 
     JWT-based authentication
@@ -252,4 +213,4 @@ Contact
 
 Developer: Vimal
 GitHub: vimal004
-Email: [Your email here]
+Email: 2004.vimal@gmail.com
