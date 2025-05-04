@@ -1,5 +1,7 @@
 # Siddha-Shivalayas: Billing and Patient Management System
 
+> ⚠️ **Note:** This project is a **dummy replica** of the original system used at the Siddha Shivalayas Clinic. The actual production version is hosted privately on the clinic’s server and is not publicly accessible.
+
 ## Overview
 
 **Siddha-Shivalayas** is a full-stack web application developed to streamline operations at the Siddha Shivalayas Clinic. It provides an efficient solution for managing patient records, tracking clinic inventory, and generating bills, enhancing administrative productivity and user experience. Built with modern web technologies, this project showcases a robust backend API, an intuitive frontend interface, and document generation capabilities.
