@@ -320,6 +320,22 @@ const Transaction = () => {
                     fullWidth
                   />
                 </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Date"
+                    name="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    InputLabelProps={{
+                      shrink: true, // Ensures the label doesn't overlap with the date value
+                    }}
+                  />
+                </Grid>
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Address"
@@ -640,7 +656,6 @@ const Transaction = () => {
               <Button
                 variant="contained"
                 color="primary"
-                
                 sx={{ mt: 4 }}
                 onClick={handleSaveTransaction}
               >
