@@ -12,6 +12,13 @@ import {
   useTheme,
   alpha,
   IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  Paper,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { Autocomplete } from "@mui/material";
@@ -33,13 +40,36 @@ const Transaction = () => {
     totalAmount: 0,
   });
 
+  const [filteredBills, setFilteredBills] = useState([]);
   const [stocks, setStocks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [billHistory, setBillHistory] = useState([]);
+  const [previewedBillId, setPreviewedBillId] = useState(null);
+  const [editingBill, setEditingBill] = useState(null);
+  const [billToDelete, setBillToDelete] = useState(null);
+
+  const togglePreview = (billId) => {
+    setPreviewedBillId(previewedBillId === billId ? null : billId);
+  };
 
   const id = window.location.pathname.split("/")[2];
 
+  const deleteBill = (billId) => async () => {
+    try {
+      console.log("Deleting bill with ID:", billId);
+      await axios.delete(
+        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
+      );
+      fetchBillHistory();
+      setSuccessMessage("Bill deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting bill:", error);
+      setErrorMessage("Error deleting bill. Please try again later.");
+    }
+  };
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -245,6 +275,38 @@ const Transaction = () => {
       setErrorMessage(err.message || "Error processing the request");
     }
   };
+
+  const fetchBillHistory = async () => {
+    try {
+      const response = await axios.get(
+        "https://siddha-shivalayas-backend.vercel.app/bills-history"
+      );
+      const updatedBills = response.data.map((bill) => ({
+        ...bill,
+        downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
+      }));
+      setBillHistory(updatedBills);
+      setFilteredBills(updatedBills);
+    } catch (error) {
+      console.error("Error fetching bill history:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBillHistory();
+  }, []);
+
+  useEffect(() => {
+    let filtered = billHistory.filter((bill) => {
+      const matchesName = bill.name
+        .toLowerCase()
+        .includes(formData.name.toLowerCase());
+      return matchesName;
+    });
+    console.log("Filtered Bills:", filtered);
+    setFilteredBills(filtered);
+    console.log("Filtered Bills State:", filteredBills);
+  }, [filteredBills]);
 
   return (
     <Box
@@ -696,6 +758,74 @@ const Transaction = () => {
           </Snackbar>
         </Box>
       </Container>
+      <TableContainer
+        component={Paper}
+        marginTop={4}
+        marginBottom={4}
+        marginLeft={4}
+        marginRight={4}
+      >
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Bill ID</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Total</TableCell>
+              <TableCell>Edit</TableCell>
+              <TableCell>Delete</TableCell>
+              <TableCell>Preview</TableCell>
+              <TableCell>Download</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredBills.map((bill, index) => (
+              <TableRow key={index}>
+                <TableCell>{"B" + (index + 1)}</TableCell>
+                <TableCell>{bill.name}</TableCell>
+                <TableCell>
+                  {new Date(bill.date).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </TableCell>
+                <TableCell>
+                  ₹
+                  {bill.items.reduce(
+                    (acc, item) => acc + item.price * item.quantity,
+                    0
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="error" onClick={() => setBillToDelete(bill)}>
+                    Delete
+                  </Button>
+                </TableCell>
+
+                <TableCell>
+                  <Button onClick={() => togglePreview(bill._id)}>
+                    {previewedBillId === bill._id ? "Hide" : "Preview"}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="contained"
+                    href={bill.downloadLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Download
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 };
