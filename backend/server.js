@@ -53,7 +53,7 @@ try {
 // Bill Schema (Model for storing bills)
 
 const BillSchema = new mongoose.Schema({
-  id: { type: String, required: true },
+  id: { type: String, required: false },
   name: { type: String, required: false },
   phone: { type: String, required: false },
   address: { type: String, required: false },
