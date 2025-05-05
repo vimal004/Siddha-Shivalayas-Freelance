@@ -197,11 +197,11 @@ const StockForm = () => {
 
           <Autocomplete
             options={stocks}
-            getOptionLabel={(option) => option.stockId || ""}
+            getOptionLabel={(option) => option.productName || ""}
             sx={{ mb: 3 }}
             onChange={handleAutocompleteChange}
             renderInput={(params) => (
-              <TextField {...params} label="Search Stock by ID" fullWidth />
+              <TextField {...params} label="Search Stock by Name" fullWidth />
             )}
           />
 
