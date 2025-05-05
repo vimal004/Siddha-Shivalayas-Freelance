@@ -69,7 +69,7 @@ const Transaction = () => {
       setErrorMessage("Error deleting bill. Please try again later.");
     }
   };
-  
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -756,76 +756,79 @@ const Transaction = () => {
               {successMessage}
             </MuiAlert>
           </Snackbar>
+          <TableContainer
+            component={Paper}
+            sx={{
+              mt: 6,
+              borderRadius: 2,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            }}
+          >
+            <Table>
+              <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: "bold" }}>Bill ID</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Total</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Edit</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Delete</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Preview</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Download</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredBills.map((bill, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{"B" + (index + 1)}</TableCell>
+                    <TableCell>{bill.name}</TableCell>
+                    <TableCell>
+                      {new Date(bill.date).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      ₹
+                      {bill.items.reduce(
+                        (acc, item) => acc + item.price * item.quantity,
+                        0
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        color="error"
+                        onClick={() => setBillToDelete(bill)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button onClick={() => togglePreview(bill._id)}>
+                        {previewedBillId === bill._id ? "Hide" : "Preview"}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        href={bill.downloadLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
       </Container>
-      <TableContainer
-        component={Paper}
-        marginTop={4}
-        marginBottom={4}
-        marginLeft={4}
-        marginRight={4}
-      >
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Bill ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Edit</TableCell>
-              <TableCell>Delete</TableCell>
-              <TableCell>Preview</TableCell>
-              <TableCell>Download</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredBills.map((bill, index) => (
-              <TableRow key={index}>
-                <TableCell>{"B" + (index + 1)}</TableCell>
-                <TableCell>{bill.name}</TableCell>
-                <TableCell>
-                  {new Date(bill.date).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </TableCell>
-                <TableCell>
-                  ₹
-                  {bill.items.reduce(
-                    (acc, item) => acc + item.price * item.quantity,
-                    0
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                </TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => setBillToDelete(bill)}>
-                    Delete
-                  </Button>
-                </TableCell>
-
-                <TableCell>
-                  <Button onClick={() => togglePreview(bill._id)}>
-                    {previewedBillId === bill._id ? "Hide" : "Preview"}
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    href={bill.downloadLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Download
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
     </Box>
   );
 };
