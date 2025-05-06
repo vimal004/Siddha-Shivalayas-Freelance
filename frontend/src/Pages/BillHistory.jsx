@@ -128,6 +128,26 @@ const BillHistory = () => {
       }
     };
 
+    const handleUpdate = async () => {
+      setLoadingUpdate(true);
+      try {
+        const payload = { ...formData, updateMode }; // Include update mode in the payload
+        await axios.put(
+          `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`,
+          payload
+        );
+        setUpdated(true);
+        setSuccess(true);
+        resetForm();
+      } catch (error) {
+        console.error("Error updating stock:", error);
+        setSuccess(false);
+        setErrorMessage("Stock update failed");
+      } finally {
+        setLoadingUpdate(false);
+      }
+    };
+
     return (
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
         <DialogTitle>Edit Bill</DialogTitle>
