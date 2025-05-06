@@ -18,6 +18,10 @@ import {
   TableContainer,
   Paper,
   TableHead,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   TableRow,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
@@ -828,6 +832,27 @@ const Transaction = () => {
             </Table>
           </TableContainer>
         </Box>
+        <Dialog open={!!billToDelete} onClose={() => setBillToDelete(null)}>
+          <DialogTitle>Confirm Deletion</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete the bill for{" "}
+              <strong>{billToDelete?.name}</strong>?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBillToDelete(null)}>Cancel</Button>
+            <Button
+              color="error"
+              onClick={async () => {
+                await deleteBill(billToDelete._id)();
+                setBillToDelete(null);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );
