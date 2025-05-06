@@ -7,8 +7,6 @@ const Docxtemplater = require("docxtemplater");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
-const Stock = require("./models/stock"); // Assuming you have a Stock model defined in models/stock.js  
-const Patient = require("./models/patient"); // Assuming you have a Patient model defined in models/patient.js  
 
 const app = express();
 
@@ -286,45 +284,18 @@ app.delete("/bills/:billId", async (req, res) => {
 
 app.put("/bills/:billId", async (req, res) => {
   const { billId } = req.params;
-  const { items: newItems, discount } = req.body;
+  const { items, discount } = req.body;
 
   try {
-    const existingBill = await Bill.findById(billId);
-    if (!existingBill) {
+    const updatedBill = await Bill.findByIdAndUpdate(billId, {
+      items,
+      discount,
+    });
+
+    if (!updatedBill) {
       return res.status(404).json({ error: "Bill not found" });
     }
-
-    const oldItems = existingBill.items;
-
-    // Step 1: Revert stock using old items
-    for (const item of oldItems) {
-      const stock = await Stock.findOne({ productName: item.description });
-      if (stock) {
-        stock.quantity += item.quantity; // return old quantity
-        await stock.save();
-      }
-    }
-
-    // Step 2: Apply stock using new items
-    for (const item of newItems) {
-      const stock = await Stock.findOne({ productName: item.description });
-      if (stock) {
-        if (stock.quantity < item.quantity) {
-          return res.status(400).json({
-            error: `Insufficient stock for ${item.description}`,
-          });
-        }
-        stock.quantity -= item.quantity; // deduct new quantity
-        await stock.save();
-      }
-    }
-
-    // Step 3: Update the bill
-    existingBill.items = newItems;
-    existingBill.discount = discount;
-    await existingBill.save();
-
-    res.json({ message: "Bill updated and stock adjusted successfully." });
+    res.json({ message: "Bill updated successfully." });
   } catch (error) {
     console.error("Error updating the bill:", error);
     res.status(500).json({ error: "Error updating the bill." });
