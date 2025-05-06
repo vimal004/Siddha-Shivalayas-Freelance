@@ -310,7 +310,9 @@ const Transaction = () => {
     console.log("Filtered Bills:", filtered);
     setFilteredBills(filtered);
     console.log("Filtered Bills State:", filteredBills);
-  }, [filteredBills]);
+  }, []);
+
+  useEffect(() => {}, [filteredBills]);
 
   const BillPreview = ({ bill }) => {
     const subtotal = bill.items.reduce(
@@ -407,6 +409,133 @@ const Transaction = () => {
           </tbody>
         </table>
       </Box>
+    );
+  };
+
+  const EditBillModal = ({ bill, open, onClose }) => {
+    const [items, setItems] = useState(bill.items || []);
+    const [discount, setDiscount] = useState(bill.discount || 0);
+
+    const handleItemChange = (index, field, value) => {
+      const updatedItems = [...items];
+      updatedItems[index][field] =
+        field === "quantity" || field === "price" || field === "GST"
+          ? parseFloat(value)
+          : value;
+      setItems(updatedItems);
+    };
+
+    const handleAddItem = () => {
+      setItems([
+        ...items,
+        { description: "", HSN: "", GST: 0, quantity: 1, price: 0 },
+      ]);
+    };
+
+    const handleRemoveItem = (index) => {
+      setItems(items.filter((_, i) => i !== index));
+    };
+
+    const handleSave = async () => {
+      try {
+        await axios.put(
+          `https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`,
+          { items, discount }
+        );
+        onClose();
+        fetchBillHistory();
+        setSuccessMessage("Bill updated successfully.");
+      } catch (err) {
+        console.error("Failed to update bill", err);
+        setErrorMessage("Failed to update bill");
+      }
+    };
+
+    return (
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <DialogTitle>Edit Bill</DialogTitle>
+        <DialogContent>
+          {items.map((item, index) => (
+            <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
+              <Grid item xs={3}>
+                <TextField
+                  label="Description"
+                  value={item.description}
+                  onChange={(e) =>
+                    handleItemChange(index, "description", e.target.value)
+                  }
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <TextField
+                  label="HSN"
+                  value={item.HSN}
+                  onChange={(e) =>
+                    handleItemChange(index, "HSN", e.target.value)
+                  }
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <TextField
+                  label="GST"
+                  type="number"
+                  value={item.GST}
+                  onChange={(e) =>
+                    handleItemChange(index, "GST", e.target.value)
+                  }
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <TextField
+                  label="Qty"
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleItemChange(index, "quantity", e.target.value)
+                  }
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <TextField
+                  label="Price"
+                  type="number"
+                  value={item.price}
+                  onChange={(e) =>
+                    handleItemChange(index, "price", e.target.value)
+                  }
+                  fullWidth
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <Button color="error" onClick={() => handleRemoveItem(index)}>
+                  X
+                </Button>
+              </Grid>
+            </Grid>
+          ))}
+          <Button onClick={handleAddItem} sx={{ mt: 2 }}>
+            Add Item
+          </Button>
+          <TextField
+            label="Discount (%)"
+            type="number"
+            value={discount}
+            onChange={(e) => setDiscount(parseFloat(e.target.value))}
+            fullWidth
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
   };
 
@@ -956,6 +1085,13 @@ const Transaction = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        {editingBill && (
+          <EditBillModal
+            bill={editingBill}
+            open={!!editingBill}
+            onClose={() => setEditingBill(null)}
+          />
+        )}
       </Container>
     </Box>
   );
