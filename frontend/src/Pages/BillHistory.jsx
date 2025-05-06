@@ -68,7 +68,7 @@ const BillHistory = () => {
         .toLowerCase()
         .includes(searchName.toLowerCase());
       const matchesDate = searchDate
-        ? new Date(bill.createdAt).toLocaleDateString("en-CA") === searchDate
+        ? new Date(bill.date).toLocaleDateString("en-CA") === searchDate
         : true;
       return matchesName && matchesDate;
     });
