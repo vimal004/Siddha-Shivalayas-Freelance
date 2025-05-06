@@ -28,6 +28,7 @@ import MuiAlert from "@mui/material/Alert";
 import { Autocomplete } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete"; // Import the delete icon
+import { use } from "react";
 
 const Transaction = () => {
   const navigate = useNavigate();
@@ -310,7 +311,7 @@ const Transaction = () => {
     console.log("Filtered Bills:", filtered);
     setFilteredBills(filtered);
     console.log("Filtered Bills State:", filteredBills);
-  }, []);
+  }, [billHistory]);
 
   useEffect(() => {}, [filteredBills]);
 
