@@ -312,6 +312,104 @@ const Transaction = () => {
     console.log("Filtered Bills State:", filteredBills);
   }, [filteredBills]);
 
+  const BillPreview = ({ bill }) => {
+    const subtotal = bill.items.reduce(
+      (acc, item) => acc + item.quantity * item.price,
+      0
+    );
+    const discountAmount = (subtotal * (bill.discount || 0)) / 100;
+    const total = subtotal - discountAmount;
+
+    return (
+      <Box sx={{ overflowX: "auto", mt: 2 }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            marginBottom: "1rem",
+          }}
+        >
+          <thead>
+            <tr>
+              {["Product", "HSN", "GST (%)", "Qty", "Price", "Total"].map(
+                (header) => (
+                  <th
+                    key={header}
+                    style={{ border: "1px solid #ccc", padding: "8px" }}
+                  >
+                    {header}
+                  </th>
+                )
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {bill.items.map((item, index) => {
+              const quantity = parseInt(item.quantity || 0, 10);
+              const price = parseFloat(item.price || 0);
+              const total = quantity * price;
+              return (
+                <tr key={index}>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.description}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.HSN}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.GST}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.quantity}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {item.price}
+                  </td>
+                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                    {total}
+                  </td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td
+                colSpan={5}
+                style={{ border: "1px solid #ccc", padding: "8px" }}
+              >
+                Subtotal
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                ₹{subtotal}
+              </td>
+            </tr>
+            <tr>
+              <td
+                colSpan={5}
+                style={{ border: "1px solid #ccc", padding: "8px" }}
+              >
+                Discount ({bill.discount || 0}%)
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                ₹{discountAmount.toFixed(2)}
+              </td>
+            </tr>
+            <tr>
+              <td
+                colSpan={5}
+                style={{ border: "1px solid #ccc", padding: "8px" }}
+              >
+                Total
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+                ₹{total.toFixed(2)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </Box>
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -831,6 +929,11 @@ const Transaction = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          {previewedBillId && (
+            <BillPreview
+              bill={billHistory.find((bill) => bill._id === previewedBillId)}
+            />
+          )}
         </Box>
         <Dialog open={!!billToDelete} onClose={() => setBillToDelete(null)}>
           <DialogTitle>Confirm Deletion</DialogTitle>
