@@ -301,7 +301,7 @@ const Transaction = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = billHistory.filter((bill) => {
+    const filtered = billHistory.filter((bill) => {
       const matchesName = bill.name
         .toLowerCase()
         .includes(formData.name.toLowerCase());
