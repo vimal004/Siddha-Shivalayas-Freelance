@@ -996,6 +996,9 @@ const Transaction = () => {
               boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             }}
           >
+            <Typography variant="h6" gutterBottom>
+              Bill History of {formData.name}  
+            </Typography>
             <Table>
               <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
                 <TableRow>
