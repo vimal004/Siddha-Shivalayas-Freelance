@@ -20,7 +20,7 @@
     "form-data": "^4.0.1",
     "fs": "^0.0.1-security",
     "ilovepdf-sdk": "^0.0.5",
-    "libreoffice-convert": "^1.6.0",
+    "libreoffice-convert": "^1.7.0",
     "mongoose": "^8.7.1",
     "nodemon": "^3.1.7",
     "pdfkit": "^0.15.1",
