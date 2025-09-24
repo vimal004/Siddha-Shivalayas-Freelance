@@ -8,11 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 
-// NEW: Import modules for conversion
-const libre = require('libreoffice-convert');
-const util = require('util');
-libre.convertAsync = util.promisify(libre.convert); // Promisify the convert function
-
 const app = express();
 
 // Middleware
@@ -157,18 +152,18 @@ app.post('/generate-bill', async (req, res) => {
     // Render the document only once after setting all data
     doc.render();
 
-    // Generate the docx document buffer
+    // Generate the document buffer
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // NEW: Convert the docx buffer to a PDF buffer
-    const pdfBuf = await libre.convertAsync(buf, '.pdf', undefined);
-
-    // NEW: Send the generated PDF as a downloadable response
+    // Send the generated document as a downloadable response
     res.setHeader('Content-Disposition', `attachment; filename=generated-bill-${id}.pdf`);
-    res.setHeader('Content-Type', 'application/pdf'); // Changed content type
-    res.send(pdfBuf); // Send the PDF buffer
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    res.send(buf);
   } catch (err) {
-    console.error('Error during bill generation or conversion:', err);
+    console.error('Error during bill generation:', err);
     return res.status(500).send('Internal server error during bill generation');
   }
 });
@@ -193,7 +188,7 @@ app.delete('/bills', async (req, res) => {
   }
 });
 
-// New API: Fetch a specific bill by ID and download as PDF
+// New API: Fetch a specific bill by ID
 app.get('/bills/download/:billId', async (req, res) => {
   const { billId } = req.params;
   try {
@@ -229,15 +224,14 @@ app.get('/bills/download/:billId', async (req, res) => {
     doc.render();
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // NEW: Convert the docx buffer to a PDF buffer
-    const pdfBuf = await libre.convertAsync(buf, '.pdf', undefined);
-
-    // NEW: Send the generated PDF as a downloadable response
-    res.setHeader('Content-Disposition', `attachment; filename=bill-${billId}.pdf`);
-    res.setHeader('Content-Type', 'application/pdf'); // Changed content type
-    res.send(pdfBuf); // Send PDF buffer
+    res.setHeader('Content-Disposition', `attachment; filename=bill-${billId}.docx`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    res.send(buf);
   } catch (err) {
-    console.error('Error generating or converting bill:', err);
+    console.error('Error generating bill:', err);
     res.status(500).send('Internal server error');
   }
 });
