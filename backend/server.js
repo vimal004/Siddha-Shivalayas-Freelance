@@ -1,3 +1,4 @@
+// Start of the updated file
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -6,12 +7,13 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const fs = require('fs');
 const path = require('path');
-const PDFDocument = require('pdfkit');
+const libre = require('libreoffice-convert');
+const util = require('util');
 
 const app = express();
 
 // Middleware
-app.use(cors()); // Enable CORS (Cross-Origin Resource Sharing)
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
 app.use(bodyParser.json());
@@ -28,7 +30,6 @@ mongoose
 // Routes
 const stockRoutes = require('./routes/stock');
 const patientRoutes = require('./routes/patient');
-const { getHeapSnapshot } = require('v8');
 
 app.use('/stocks', stockRoutes);
 app.use('/patients', patientRoutes);
@@ -44,11 +45,10 @@ try {
   content = fs.readFileSync(templatePath, 'binary');
 } catch (err) {
   console.error('Error loading template file:', err);
-  process.exit(1); // Exit the process if template loading fails
+  process.exit(1);
 }
 
 // Bill Schema (Model for storing bills)
-
 const BillSchema = new mongoose.Schema({
   id: { type: String, required: false },
   name: { type: String, required: false },
@@ -58,18 +58,18 @@ const BillSchema = new mongoose.Schema({
   date: { type: Date, required: false },
   items: [
     {
-      description: { type: String, required: false }, // Make optional
-      price: { type: Number, required: false }, // Make optional
-      HSN: { type: String, required: false }, // Make optional
-      quantity: { type: Number, required: false }, // Make optional
-      GST: { type: Number, required: false }, // Make optional
-      baseTotal: { type: Number, required: false }, // Make optional
-      gstAmount: { type: Number, required: false }, // Make optional
-      finalAmount: { type: Number, required: false }, // Make optional
+      description: { type: String, required: false },
+      price: { type: Number, required: false },
+      HSN: { type: String, required: false },
+      quantity: { type: Number, required: false },
+      GST: { type: Number, required: false },
+      baseTotal: { type: Number, required: false },
+      gstAmount: { type: Number, required: false },
+      finalAmount: { type: Number, required: false },
     },
   ],
   discount: { type: Number, default: 0, required: false },
-  createdAt: { type: Date, default: Date.now }, // Automatically sets the bill creation date
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Bill = mongoose.model('Bill', BillSchema);
@@ -78,15 +78,11 @@ const Bill = mongoose.model('Bill', BillSchema);
 app.post('/generate-bill', async (req, res) => {
   const { id, name, phone, address, treatmentOrMedicine, date, items, discount } = req.body;
 
-  // Validation: Ensure all required fields are provided
   if (!id || !Array.isArray(items) || items.length === 0) {
     return res.status(400).send('Error: Missing required fields.');
   }
 
-  // Ensure discount is a valid number (if undefined, default to 0)
   const discountValue = isNaN(discount) ? 0 : parseFloat(discount);
-
-  // Process items and calculate totals
   const itemTotals = items.map(item => {
     const itemPrice = parseFloat(item.price);
     const itemQuantity = parseFloat(item.quantity);
@@ -103,12 +99,10 @@ app.post('/generate-bill', async (req, res) => {
     };
   });
 
-  // Calculate subtotal, total GST, and final total
   const subtotal = itemTotals.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0);
   const totalGST = itemTotals.reduce((sum, item) => sum + parseFloat(item.gstAmount), 0);
   const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(2);
 
-  // Save the bill to the database
   const newBill = new Bill({
     id,
     name,
@@ -116,7 +110,7 @@ app.post('/generate-bill', async (req, res) => {
     address,
     treatmentOrMedicine,
     date,
-    items: itemTotals, // Pass items array with calculated values to the database
+    items: itemTotals,
     subtotal: subtotal.toFixed(2),
     totalGST: totalGST.toFixed(2),
     discount: discountValue.toFixed(2),
@@ -124,17 +118,14 @@ app.post('/generate-bill', async (req, res) => {
   });
 
   try {
-    // Save the new bill to MongoDB
     await newBill.save();
 
-    // Create a new Docxtemplater instance for each request
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
     });
 
-    // Set data for Docxtemplater
     doc.setData({
       id: id || 'N/A',
       name: name || 'N/A',
@@ -149,21 +140,17 @@ app.post('/generate-bill', async (req, res) => {
       total: finalTotal || '0.00',
     });
 
-    // Render the document only once after setting all data
     doc.render();
+    const docxBuf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // Generate the document buffer
-    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+    const convertAsync = util.promisify(libre.convert);
+    const pdfBuf = await convertAsync(docxBuf, '.pdf', undefined);
 
-    // Send the generated document as a downloadable response
     res.setHeader('Content-Disposition', `attachment; filename=generated-bill-${id}.pdf`);
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    );
-    res.send(buf);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.send(pdfBuf);
   } catch (err) {
-    console.error('Error during bill generation:', err);
+    console.error('Error during bill generation or conversion:', err);
     return res.status(500).send('Internal server error during bill generation');
   }
 });
@@ -188,7 +175,7 @@ app.delete('/bills', async (req, res) => {
   }
 });
 
-// New API: Fetch a specific bill by ID
+// New API: Fetch a specific bill by ID and download as PDF
 app.get('/bills/download/:billId', async (req, res) => {
   const { billId } = req.params;
   try {
@@ -204,32 +191,42 @@ app.get('/bills/download/:billId', async (req, res) => {
       linebreaks: true,
     });
 
+    // Recalculate totals as they might not be stored directly in the database in all cases
+    const subtotal = bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const totalGST = bill.items.reduce(
+      (sum, item) => sum + (item.price * item.quantity * (item.GST || 0)) / 100,
+      0
+    );
+    const finalTotal = subtotal - (subtotal * bill.discount) / 100;
+
     doc.setData({
       id: bill.id,
       name: bill.name,
       phone: bill.phone,
       address: bill.address,
       treatmentOrMedicine: bill.treatmentOrMedicine,
-      date: bill.createdAt,
-      items: bill.items,
-      subtotal: bill.items.reduce((sum, item) => sum + item.baseTotal, 0).toFixed(2),
-      totalGST: bill.items.reduce((sum, item) => sum + item.gstAmount, 0).toFixed(2),
+      date: bill.createdAt.toISOString().split('T')[0], // format date for readability
+      items: bill.items.map(item => ({
+        ...item._doc, // Use _doc to access the raw Mongoose object
+        baseTotal: (item.price * item.quantity).toFixed(2),
+        gstAmount: ((item.price * item.quantity * (item.GST || 0)) / 100).toFixed(2),
+        finalAmount: (item.price * item.quantity).toFixed(2),
+      })),
+      subtotal: subtotal.toFixed(2),
+      totalGST: totalGST.toFixed(2),
       discount: bill.discount.toFixed(2),
-      total: (
-        bill.items.reduce((sum, item) => sum + item.baseTotal, 0) -
-        (bill.items.reduce((sum, item) => sum + item.baseTotal, 0) * bill.discount) / 100
-      ).toFixed(2),
+      total: finalTotal.toFixed(2),
     });
 
     doc.render();
-    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+    const docxBuf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    res.setHeader('Content-Disposition', `attachment; filename=bill-${billId}.docx`);
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    );
-    res.send(buf);
+    const convertAsync = util.promisify(libre.convert);
+    const pdfBuf = await convertAsync(docxBuf, '.pdf', undefined);
+
+    res.setHeader('Content-Disposition', `attachment; filename=bill-${billId}.pdf`);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.send(pdfBuf);
   } catch (err) {
     console.error('Error generating bill:', err);
     res.status(500).send('Internal server error');
