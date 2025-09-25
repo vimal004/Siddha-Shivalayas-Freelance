@@ -3,23 +3,27 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "body-parser": "^1.20.2",
+    "axios": "^1.7.9",
+    "body-parser": "^1.20.3",
+    "child_process": "^1.0.2",
     "cors": "^2.8.5",
-    "docxtemplater": "^3.47.0",
-    "express": "^4.19.2",
+    "docx-pdf": "^0.0.1",
+    "docxtemplater": "^3.51.0",
+    "express": "^4.21.1",
+    "form-data": "^4.0.1",
+    "fs": "^0.0.1-security",
+    "ilovepdf-sdk": "^0.0.5",
     "libreoffice-convert": "^1.5.1",
-    "mongoose": "^8.3.4",
-    "pizzip": "^3.1.6"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.7"
+    "mongoose": "^8.7.1",
+    "nodemon": "^3.1.7",
+    "pdfkit": "^0.15.1",
+    "pizzip": "^3.1.7"
   }
 }
