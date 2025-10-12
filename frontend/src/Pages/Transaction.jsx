@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   TextField,
   Button,
@@ -23,23 +23,23 @@ import {
   DialogContent,
   DialogActions,
   TableRow,
-} from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
-import { Autocomplete } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import DeleteIcon from "@mui/icons-material/Delete"; // Import the delete icon
-import { use } from "react";
+} from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
+import { Autocomplete } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import DeleteIcon from '@mui/icons-material/Delete'; // Import the delete icon
+import { use } from 'react';
 
 const Transaction = () => {
   const navigate = useNavigate();
   const theme = useTheme();
 
   const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    address: "",
-    date: "",
+    id: '',
+    name: '',
+    phone: '',
+    address: '',
+    date: '',
     items: [],
     discount: 0,
     totalAmount: 0,
@@ -47,50 +47,48 @@ const Transaction = () => {
 
   const [filteredBills, setFilteredBills] = useState([]);
   const [stocks, setStocks] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [billHistory, setBillHistory] = useState([]);
   const [previewedBillId, setPreviewedBillId] = useState(null);
   const [editingBill, setEditingBill] = useState(null);
   const [billToDelete, setBillToDelete] = useState(null);
 
-  const togglePreview = (billId) => {
+  const togglePreview = billId => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
   };
 
-  const id = window.location.pathname.split("/")[2];
+  const id = window.location.pathname.split('/')[2];
 
-  const deleteBill = (billId) => async () => {
+  const deleteBill = billId => async () => {
     try {
-      console.log("Deleting bill with ID:", billId);
-      await axios.delete(
-        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
-      );
+      console.log('Deleting bill with ID:', billId);
+      await axios.delete(`https://siddha-shivalayas-backend.vercel.app/bills/${billId}`);
       fetchBillHistory();
-      setSuccessMessage("Bill deleted successfully.");
+      setSuccessMessage('Bill deleted successfully.');
     } catch (error) {
-      console.error("Error deleting bill:", error);
-      setErrorMessage("Error deleting bill. Please try again later.");
+      console.error('Error deleting bill:', error);
+      setErrorMessage('Error deleting bill. Please try again later.');
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
-      navigate("/");
+      navigate('/');
     }
   }, [navigate]);
 
   useEffect(() => {
     setLoading(true);
     axios
-      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
-      .then((response) => {
+      .get('https://siddha-shivalayas-backend.vercel.app/stocks')
+      .then(response => {
         setStocks(response.data);
         setLoading(false);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error(error);
         setLoading(false);
       });
@@ -99,10 +97,10 @@ const Transaction = () => {
   useEffect(() => {
     axios
       .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
-      .then((response) => {
+      .then(response => {
         setFormData({ ...formData, ...response.data });
       })
-      .catch((error) => console.error(error));
+      .catch(error => console.error(error));
   }, [id]);
 
   const handleItemSelection = (index, selectedStock) => {
@@ -117,7 +115,7 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -127,9 +125,9 @@ const Transaction = () => {
     updatedItems[index][field] = value;
 
     // Check if the field being updated is "quantity"
-    if (field === "quantity") {
+    if (field === 'quantity') {
       const selectedStock = stocks.find(
-        (stock) => stock.productName === updatedItems[index].description
+        stock => stock.productName === updatedItems[index].description
       );
 
       if (selectedStock && parseInt(value, 10) > selectedStock.quantity) {
@@ -137,7 +135,7 @@ const Transaction = () => {
           `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
         );
       } else {
-        setErrorMessage(""); // Clear the error message if the quantity is valid
+        setErrorMessage(''); // Clear the error message if the quantity is valid
       }
     }
 
@@ -147,14 +145,11 @@ const Transaction = () => {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [
-        ...formData.items,
-        { description: "", HSN: "", GST: "", quantity: "", price: "" },
-      ],
+      items: [...formData.items, { description: '', HSN: '', GST: '', quantity: '', price: '' }],
     });
   };
 
-  const removeItem = (index) => {
+  const removeItem = index => {
     const updatedItems = formData.items.filter((_, i) => i !== index);
     setFormData({ ...formData, items: updatedItems });
   };
@@ -171,16 +166,14 @@ const Transaction = () => {
 
   useEffect(() => {
     const totalAmount = calculateTotal();
-    setFormData((prevData) => ({ ...prevData, totalAmount }));
+    setFormData(prevData => ({ ...prevData, totalAmount }));
   }, [formData.items, formData.discount]);
 
   const handleDownloadBill = async () => {
     try {
       // Check if any item quantity exceeds available stock
       for (const item of formData.items) {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
+        const selectedStock = stocks.find(stock => stock.productName === item.description);
 
         if (selectedStock && item.quantity > selectedStock.quantity) {
           throw new Error(
@@ -191,9 +184,7 @@ const Transaction = () => {
 
       // Step 1: Update stock quantities
       for (const item of formData.items) {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
+        const selectedStock = stocks.find(stock => stock.productName === item.description);
 
         if (selectedStock) {
           const updatedQuantity = selectedStock.quantity - item.quantity;
@@ -203,7 +194,7 @@ const Transaction = () => {
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
             {
               quantity: updatedQuantity,
-              updateMode: "set",
+              updateMode: 'set',
             }
           );
         }
@@ -211,25 +202,26 @@ const Transaction = () => {
 
       // Step 2: Generate the bill
       const response = await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
+        'https://siddha-shivalayas-backend.vercel.app/generate-bill',
         formData,
-        { responseType: "blob" }
+        { responseType: 'blob' }
       );
 
       // Step 3: Download the bill
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", `generated-bill-${formData.id}.docx`);
+      // Change the file extension to .pdf
+      link.setAttribute('download', `generated-bill-${formData.id}.pdf`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
       // Success message
-      setSuccessMessage("Stocks updated and bill generated successfully!");
+      setSuccessMessage('Stocks updated and bill generated successfully!');
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      setErrorMessage(err.message || 'Error processing the request');
     }
   };
 
@@ -237,9 +229,7 @@ const Transaction = () => {
     try {
       // Check if any item quantity exceeds available stock
       for (const item of formData.items) {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
+        const selectedStock = stocks.find(stock => stock.productName === item.description);
 
         if (selectedStock && item.quantity > selectedStock.quantity) {
           throw new Error(
@@ -250,9 +240,7 @@ const Transaction = () => {
 
       // Step 1: Update stock quantities
       for (const item of formData.items) {
-        const selectedStock = stocks.find(
-          (stock) => stock.productName === item.description
-        );
+        const selectedStock = stocks.find(stock => stock.productName === item.description);
 
         if (selectedStock) {
           const updatedQuantity = selectedStock.quantity - item.quantity;
@@ -262,38 +250,38 @@ const Transaction = () => {
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
             {
               quantity: updatedQuantity,
-              updateMode: "set",
+              updateMode: 'set',
             }
           );
         }
       }
       const response = await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
+        'https://siddha-shivalayas-backend.vercel.app/generate-bill',
         formData,
-        { responseType: "blob" }
+        { responseType: 'blob' }
       );
 
-      setSuccessMessage("Transaction saved successfully!");
-      console.log("Transaction saved successfully:", formData);
+      setSuccessMessage('Transaction saved successfully!');
+      console.log('Transaction saved successfully:', formData);
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      setErrorMessage(err.message || 'Error processing the request');
     }
   };
 
   const fetchBillHistory = async () => {
     try {
       const response = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/bills-history"
+        'https://siddha-shivalayas-backend.vercel.app/bills-history'
       );
-      const updatedBills = response.data.map((bill) => ({
+      const updatedBills = response.data.map(bill => ({
         ...bill,
         downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
       }));
       setBillHistory(updatedBills);
       setFilteredBills(updatedBills);
     } catch (error) {
-      console.error("Error fetching bill history:", error);
+      console.error('Error fetching bill history:', error);
     }
   };
 
@@ -302,48 +290,38 @@ const Transaction = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = billHistory.filter((bill) => {
-      const matchesName = bill.name
-        .toLowerCase()
-        .includes(formData.name.toLowerCase());
+    const filtered = billHistory.filter(bill => {
+      const matchesName = bill.name.toLowerCase().includes(formData.name.toLowerCase());
       return matchesName;
     });
-    console.log("Filtered Bills:", filtered);
+    console.log('Filtered Bills:', filtered);
     setFilteredBills(filtered);
-    console.log("Filtered Bills State:", filteredBills);
+    console.log('Filtered Bills State:', filteredBills);
   }, [billHistory]);
 
   useEffect(() => {}, [filteredBills]);
 
   const BillPreview = ({ bill }) => {
-    const subtotal = bill.items.reduce(
-      (acc, item) => acc + item.quantity * item.price,
-      0
-    );
+    const subtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
 
     return (
-      <Box sx={{ overflowX: "auto", mt: 2 }}>
+      <Box sx={{ overflowX: 'auto', mt: 2 }}>
         <table
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginBottom: "1rem",
+            width: '100%',
+            borderCollapse: 'collapse',
+            marginBottom: '1rem',
           }}
         >
           <thead>
             <tr>
-              {["Product", "HSN", "GST (%)", "Qty", "Price", "Total"].map(
-                (header) => (
-                  <th
-                    key={header}
-                    style={{ border: "1px solid #ccc", padding: "8px" }}
-                  >
-                    {header}
-                  </th>
-                )
-              )}
+              {['Product', 'HSN', 'GST (%)', 'Qty', 'Price', 'Total'].map(header => (
+                <th key={header} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -353,59 +331,34 @@ const Transaction = () => {
               const total = quantity * price;
               return (
                 <tr key={index}>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.description}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.HSN}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.GST}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.quantity}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.price}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {total}
-                  </td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{total}</td>
                 </tr>
               );
             })}
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Subtotal
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                ₹{subtotal}
-              </td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal}</td>
             </tr>
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Discount ({bill.discount || 0}%)
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                 ₹{discountAmount.toFixed(2)}
               </td>
             </tr>
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Total
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                ₹{total.toFixed(2)}
-              </td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{total.toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
@@ -420,35 +373,30 @@ const Transaction = () => {
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
       updatedItems[index][field] =
-        field === "quantity" || field === "price" || field === "GST"
-          ? parseFloat(value)
-          : value;
+        field === 'quantity' || field === 'price' || field === 'GST' ? parseFloat(value) : value;
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      setItems([
-        ...items,
-        { description: "", HSN: "", GST: 0, quantity: 1, price: 0 },
-      ]);
+      setItems([...items, { description: '', HSN: '', GST: 0, quantity: 1, price: 0 }]);
     };
 
-    const handleRemoveItem = (index) => {
+    const handleRemoveItem = index => {
       setItems(items.filter((_, i) => i !== index));
     };
 
     const handleSave = async () => {
       try {
-        await axios.put(
-          `https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`,
-          { items, discount }
-        );
+        await axios.put(`https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`, {
+          items,
+          discount,
+        });
         onClose();
         fetchBillHistory();
-        setSuccessMessage("Bill updated successfully.");
+        setSuccessMessage('Bill updated successfully.');
       } catch (err) {
-        console.error("Failed to update bill", err);
-        setErrorMessage("Failed to update bill");
+        console.error('Failed to update bill', err);
+        setErrorMessage('Failed to update bill');
       }
     };
 
@@ -462,9 +410,7 @@ const Transaction = () => {
                 <TextField
                   label="Description"
                   value={item.description}
-                  onChange={(e) =>
-                    handleItemChange(index, "description", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'description', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -472,9 +418,7 @@ const Transaction = () => {
                 <TextField
                   label="HSN"
                   value={item.HSN}
-                  onChange={(e) =>
-                    handleItemChange(index, "HSN", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'HSN', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -483,9 +427,7 @@ const Transaction = () => {
                   label="GST"
                   type="number"
                   value={item.GST}
-                  onChange={(e) =>
-                    handleItemChange(index, "GST", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'GST', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -494,9 +436,7 @@ const Transaction = () => {
                   label="Qty"
                   type="number"
                   value={item.quantity}
-                  onChange={(e) =>
-                    handleItemChange(index, "quantity", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'quantity', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -505,9 +445,7 @@ const Transaction = () => {
                   label="Price"
                   type="number"
                   value={item.price}
-                  onChange={(e) =>
-                    handleItemChange(index, "price", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'price', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -525,7 +463,7 @@ const Transaction = () => {
             label="Discount (%)"
             type="number"
             value={discount}
-            onChange={(e) => setDiscount(parseFloat(e.target.value))}
+            onChange={e => setDiscount(parseFloat(e.target.value))}
             fullWidth
             sx={{ mt: 2 }}
           />
@@ -543,24 +481,24 @@ const Transaction = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        background: `linear-gradient(135deg, ${alpha(
+        minHeight: '100vh',
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(
           theme.palette.primary.main,
-          0.1
-        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+          0.05
+        )} 100%)`,
         py: 8,
       }}
     >
       <Container maxWidth="lg">
         <Box
           sx={{
-            background: "white",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            background: 'white',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
             borderRadius: 2,
             p: 4,
-            transition: "all 0.3s ease",
-            "&:hover": {
-              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
             },
           }}
         >
@@ -570,7 +508,7 @@ const Transaction = () => {
             sx={{
               mb: 4,
               fontWeight: 700,
-              color: "primary.main",
+              color: 'primary.main',
               fontFamily: '"Inter", sans-serif',
             }}
           >
@@ -578,7 +516,7 @@ const Transaction = () => {
           </Typography>
 
           {loading ? (
-            <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
               <CircularProgress />
             </Box>
           ) : (
@@ -650,11 +588,9 @@ const Transaction = () => {
                       <Grid item xs={12} sm={4}>
                         <Autocomplete
                           options={stocks}
-                          getOptionLabel={(option) => option.productName}
-                          onChange={(e, selectedStock) =>
-                            handleItemSelection(index, selectedStock)
-                          }
-                          renderInput={(params) => (
+                          getOptionLabel={option => option.productName}
+                          onChange={(e, selectedStock) => handleItemSelection(index, selectedStock)}
+                          renderInput={params => (
                             <TextField {...params} label="Product" fullWidth />
                           )}
                         />
@@ -663,9 +599,7 @@ const Transaction = () => {
                         <TextField
                           label="HSN"
                           value={item.HSN}
-                          onChange={(e) =>
-                            handleItemChange(index, "HSN", e.target.value)
-                          }
+                          onChange={e => handleItemChange(index, 'HSN', e.target.value)}
                           fullWidth
                         />
                       </Grid>
@@ -673,9 +607,7 @@ const Transaction = () => {
                         <TextField
                           label="GST"
                           value={item.GST}
-                          onChange={(e) =>
-                            handleItemChange(index, "GST", e.target.value)
-                          }
+                          onChange={e => handleItemChange(index, 'GST', e.target.value)}
                           fullWidth
                         />
                       </Grid>
@@ -683,30 +615,26 @@ const Transaction = () => {
                         <TextField
                           label="Quantity"
                           value={item.quantity}
-                          onChange={(e) =>
-                            handleItemChange(index, "quantity", e.target.value)
-                          }
+                          onChange={e => handleItemChange(index, 'quantity', e.target.value)}
                           fullWidth
                           error={
                             !!stocks.find(
-                              (stock) =>
+                              stock =>
                                 stock.productName === item.description &&
                                 parseInt(item.quantity, 10) > stock.quantity
                             )
                           }
                           helperText={
                             stocks.find(
-                              (stock) =>
+                              stock =>
                                 stock.productName === item.description &&
                                 parseInt(item.quantity, 10) > stock.quantity
                             )
                               ? `Insufficient stock. Available: ${
-                                  stocks.find(
-                                    (stock) =>
-                                      stock.productName === item.description
-                                  ).quantity
+                                  stocks.find(stock => stock.productName === item.description)
+                                    .quantity
                                 }`
-                              : ""
+                              : ''
                           }
                         />
                       </Grid>
@@ -714,28 +642,18 @@ const Transaction = () => {
                         <TextField
                           label="Price"
                           value={item.price}
-                          onChange={(e) =>
-                            handleItemChange(index, "price", e.target.value)
-                          }
+                          onChange={e => handleItemChange(index, 'price', e.target.value)}
                           fullWidth
                         />
                       </Grid>
                       <Grid item xs={12} sm={2}>
-                        <IconButton
-                          onClick={() => removeItem(index)}
-                          color="error"
-                        >
+                        <IconButton onClick={() => removeItem(index)} color="error">
                           <DeleteIcon />
                         </IconButton>
                       </Grid>
                     </Grid>
                   ))}
-                  <Button
-                    variant="contained"
-                    onClick={addItem}
-                    sx={{ mt: 2 }}
-                    fullWidth
-                  >
+                  <Button variant="contained" onClick={addItem} sx={{ mt: 2 }} fullWidth>
                     Add Item
                   </Button>
                 </Grid>
@@ -749,7 +667,7 @@ const Transaction = () => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={12} sx={{ textAlign: "right" }}>
+                <Grid item xs={12} sx={{ textAlign: 'right' }}>
                   <Typography variant="h6">
                     Total Amount: ₹{formData.totalAmount.toFixed(2)}
                   </Typography>
@@ -759,46 +677,22 @@ const Transaction = () => {
                 <Typography variant="h6" gutterBottom>
                   Bill Preview
                 </Typography>
-                <Box sx={{ overflowX: "auto" }}>
+                <Box sx={{ overflowX: 'auto' }}>
                   <table
                     style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      marginBottom: "1rem",
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      marginBottom: '1rem',
                     }}
                   >
                     <thead>
                       <tr>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          Product
-                        </th>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          HSN
-                        </th>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          GST (%)
-                        </th>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          Qty
-                        </th>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          Price
-                        </th>
-                        <th
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
-                          Total
-                        </th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>Product</th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>HSN</th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>GST (%)</th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>Qty</th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>Price</th>
+                        <th style={{ border: '1px solid #ccc', padding: '8px' }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -810,48 +704,48 @@ const Transaction = () => {
                           <tr key={index}>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               {item.description}
                             </td>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               {item.HSN}
                             </td>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               {item.GST}
                             </td>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               {item.quantity}
                             </td>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               ₹{price.toFixed(2)}
                             </td>
                             <td
                               style={{
-                                border: "1px solid #ccc",
-                                padding: "8px",
+                                border: '1px solid #ccc',
+                                padding: '8px',
                               }}
                             >
                               ₹{total.toFixed(2)}
@@ -863,23 +757,20 @@ const Transaction = () => {
                         <td
                           colSpan={5}
                           style={{
-                            border: "1px solid #ccc",
-                            padding: "8px",
-                            textAlign: "right",
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            textAlign: 'right',
                           }}
                         >
                           Subtotal
                         </td>
-                        <td
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
+                        <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                           ₹
                           {formData.items
                             .reduce(
                               (acc, item) =>
                                 acc +
-                                parseFloat(item.price || 0) *
-                                  parseInt(item.quantity || 0, 10),
+                                parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
                             )
                             .toFixed(2)}
@@ -889,23 +780,20 @@ const Transaction = () => {
                         <td
                           colSpan={5}
                           style={{
-                            border: "1px solid #ccc",
-                            padding: "8px",
-                            textAlign: "right",
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            textAlign: 'right',
                           }}
                         >
                           Discount ({formData.discount || 0}%)
                         </td>
-                        <td
-                          style={{ border: "1px solid #ccc", padding: "8px" }}
-                        >
+                        <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                           -₹
                           {(
                             (formData.items.reduce(
                               (acc, item) =>
                                 acc +
-                                parseFloat(item.price || 0) *
-                                  parseInt(item.quantity || 0, 10),
+                                parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
                             ) *
                               (formData.discount || 0)) /
@@ -917,19 +805,19 @@ const Transaction = () => {
                         <td
                           colSpan={5}
                           style={{
-                            border: "1px solid #ccc",
-                            padding: "8px",
-                            textAlign: "right",
-                            fontWeight: "bold",
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            textAlign: 'right',
+                            fontWeight: 'bold',
                           }}
                         >
                           Total
                         </td>
                         <td
                           style={{
-                            border: "1px solid #ccc",
-                            padding: "8px",
-                            fontWeight: "bold",
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            fontWeight: 'bold',
                           }}
                         >
                           ₹{formData.totalAmount.toFixed(2)}
@@ -962,13 +850,13 @@ const Transaction = () => {
           <Snackbar
             open={Boolean(errorMessage)}
             autoHideDuration={3000}
-            onClose={() => setErrorMessage("")}
+            onClose={() => setErrorMessage('')}
           >
             <MuiAlert
               elevation={6}
               variant="filled"
               severity="error"
-              onClose={() => setErrorMessage("")}
+              onClose={() => setErrorMessage('')}
             >
               {errorMessage}
             </MuiAlert>
@@ -977,13 +865,13 @@ const Transaction = () => {
           <Snackbar
             open={Boolean(successMessage)}
             autoHideDuration={3000}
-            onClose={() => setSuccessMessage("")}
+            onClose={() => setSuccessMessage('')}
           >
             <MuiAlert
               elevation={6}
               variant="filled"
               severity="success"
-              onClose={() => setSuccessMessage("")}
+              onClose={() => setSuccessMessage('')}
             >
               {successMessage}
             </MuiAlert>
@@ -993,58 +881,51 @@ const Transaction = () => {
             sx={{
               mt: 6,
               borderRadius: 2,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
             }}
           >
             <Typography variant="h6" gutterBottom>
-              Bill History of {formData.name}  
+              Bill History of {formData.name}
             </Typography>
             <Table>
               <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: "bold" }}>Bill ID</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Total</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Edit</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Delete</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Preview</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Download</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Bill ID</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Edit</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Delete</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Preview</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Download</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredBills.map((bill, index) => (
                   <TableRow key={index}>
-                    <TableCell>{"B" + (index + 1)}</TableCell>
+                    <TableCell>{'B' + (index + 1)}</TableCell>
                     <TableCell>{bill.name}</TableCell>
                     <TableCell>
-                      {new Date(bill.date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
+                      {new Date(bill.date).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
                       })}
                     </TableCell>
                     <TableCell>
-                      ₹
-                      {bill.items.reduce(
-                        (acc, item) => acc + item.price * item.quantity,
-                        0
-                      )}
+                      ₹{bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0)}
                     </TableCell>
                     <TableCell>
                       <Button onClick={() => setEditingBill(bill)}>Edit</Button>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        color="error"
-                        onClick={() => setBillToDelete(bill)}
-                      >
+                      <Button color="error" onClick={() => setBillToDelete(bill)}>
                         Delete
                       </Button>
                     </TableCell>
                     <TableCell>
                       <Button onClick={() => togglePreview(bill._id)}>
-                        {previewedBillId === bill._id ? "Hide" : "Preview"}
+                        {previewedBillId === bill._id ? 'Hide' : 'Preview'}
                       </Button>
                     </TableCell>
                     <TableCell>
@@ -1063,17 +944,14 @@ const Transaction = () => {
             </Table>
           </TableContainer>
           {previewedBillId && (
-            <BillPreview
-              bill={billHistory.find((bill) => bill._id === previewedBillId)}
-            />
+            <BillPreview bill={billHistory.find(bill => bill._id === previewedBillId)} />
           )}
         </Box>
         <Dialog open={!!billToDelete} onClose={() => setBillToDelete(null)}>
           <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete the bill for{" "}
-              <strong>{billToDelete?.name}</strong>?
+              Are you sure you want to delete the bill for <strong>{billToDelete?.name}</strong>?
             </Typography>
           </DialogContent>
           <DialogActions>

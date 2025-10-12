@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Button,
   Container,
@@ -21,40 +21,41 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
-} from "@mui/material";
-import MuiAlert from "@mui/material/Alert";
+} from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
 
 const BillHistory = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [billToDelete, setBillToDelete] = useState(null);
 
   const [billHistory, setBillHistory] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]);
-  const [searchName, setSearchName] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [searchName, setSearchName] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [previewedBillId, setPreviewedBillId] = useState(null);
   const [editingBill, setEditingBill] = useState(null);
 
-  const togglePreview = (billId) => {
+  const togglePreview = billId => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
   };
 
   const fetchBillHistory = async () => {
     try {
       const response = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/bills-history"
+        'https://siddha-shivalayas-backend.vercel.app/bills-history'
       );
-      const updatedBills = response.data.map((bill) => ({
+      const updatedBills = response.data.map(bill => ({
         ...bill,
+        // The download link from the backend will now serve a PDF
         downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
       }));
       setBillHistory(updatedBills);
       setFilteredBills(updatedBills);
     } catch (error) {
-      console.error("Error fetching bill history:", error);
+      console.error('Error fetching bill history:', error);
     }
   };
 
@@ -63,29 +64,25 @@ const BillHistory = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = billHistory.filter((bill) => {
-      const matchesName = bill.name
-        .toLowerCase()
-        .includes(searchName.toLowerCase());
+    const filtered = billHistory.filter(bill => {
+      const matchesName = bill.name.toLowerCase().includes(searchName.toLowerCase());
       const matchesDate = searchDate
-        ? new Date(bill.date).toLocaleDateString("en-CA") === searchDate
+        ? new Date(bill.date).toLocaleDateString('en-CA') === searchDate
         : true;
       return matchesName && matchesDate;
     });
     setFilteredBills(filtered);
   }, [searchName, searchDate, billHistory]);
 
-  const deleteBill = (billId) => async () => {
+  const deleteBill = billId => async () => {
     try {
-      console.log("Deleting bill with ID:", billId);
-      await axios.delete(
-        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
-      );
+      console.log('Deleting bill with ID:', billId);
+      await axios.delete(`https://siddha-shivalayas-backend.vercel.app/bills/${billId}`);
       fetchBillHistory();
-      setSuccessMessage("Bill deleted successfully.");
+      setSuccessMessage('Bill deleted successfully.');
     } catch (error) {
-      console.error("Error deleting bill:", error);
-      setErrorMessage("Error deleting bill. Please try again later.");
+      console.error('Error deleting bill:', error);
+      setErrorMessage('Error deleting bill. Please try again later.');
     }
   };
 
@@ -96,35 +93,30 @@ const BillHistory = () => {
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
       updatedItems[index][field] =
-        field === "quantity" || field === "price" || field === "GST"
-          ? parseFloat(value)
-          : value;
+        field === 'quantity' || field === 'price' || field === 'GST' ? parseFloat(value) : value;
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      setItems([
-        ...items,
-        { description: "", HSN: "", GST: 0, quantity: 1, price: 0 },
-      ]);
+      setItems([...items, { description: '', HSN: '', GST: 0, quantity: 1, price: 0 }]);
     };
 
-    const handleRemoveItem = (index) => {
+    const handleRemoveItem = index => {
       setItems(items.filter((_, i) => i !== index));
     };
 
     const handleSave = async () => {
       try {
-        await axios.put(
-          `https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`,
-          { items, discount }
-        );
+        await axios.put(`https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`, {
+          items,
+          discount,
+        });
         onClose();
         fetchBillHistory();
-        setSuccessMessage("Bill updated successfully.");
+        setSuccessMessage('Bill updated successfully.');
       } catch (err) {
-        console.error("Failed to update bill", err);
-        setErrorMessage("Failed to update bill");
+        console.error('Failed to update bill', err);
+        setErrorMessage('Failed to update bill');
       }
     };
 
@@ -138,9 +130,7 @@ const BillHistory = () => {
                 <TextField
                   label="Description"
                   value={item.description}
-                  onChange={(e) =>
-                    handleItemChange(index, "description", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'description', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -148,9 +138,7 @@ const BillHistory = () => {
                 <TextField
                   label="HSN"
                   value={item.HSN}
-                  onChange={(e) =>
-                    handleItemChange(index, "HSN", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'HSN', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -159,9 +147,7 @@ const BillHistory = () => {
                   label="GST"
                   type="number"
                   value={item.GST}
-                  onChange={(e) =>
-                    handleItemChange(index, "GST", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'GST', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -170,9 +156,7 @@ const BillHistory = () => {
                   label="Qty"
                   type="number"
                   value={item.quantity}
-                  onChange={(e) =>
-                    handleItemChange(index, "quantity", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'quantity', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -181,9 +165,7 @@ const BillHistory = () => {
                   label="Price"
                   type="number"
                   value={item.price}
-                  onChange={(e) =>
-                    handleItemChange(index, "price", e.target.value)
-                  }
+                  onChange={e => handleItemChange(index, 'price', e.target.value)}
                   fullWidth
                 />
               </Grid>
@@ -201,7 +183,7 @@ const BillHistory = () => {
             label="Discount (%)"
             type="number"
             value={discount}
-            onChange={(e) => setDiscount(parseFloat(e.target.value))}
+            onChange={e => setDiscount(parseFloat(e.target.value))}
             fullWidth
             sx={{ mt: 2 }}
           />
@@ -217,34 +199,26 @@ const BillHistory = () => {
   };
 
   const BillPreview = ({ bill }) => {
-    const subtotal = bill.items.reduce(
-      (acc, item) => acc + item.quantity * item.price,
-      0
-    );
+    const subtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
 
     return (
-      <Box sx={{ overflowX: "auto", mt: 2 }}>
+      <Box sx={{ overflowX: 'auto', mt: 2 }}>
         <table
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginBottom: "1rem",
+            width: '100%',
+            borderCollapse: 'collapse',
+            marginBottom: '1rem',
           }}
         >
           <thead>
             <tr>
-              {["Product", "HSN", "GST (%)", "Qty", "Price", "Total"].map(
-                (header) => (
-                  <th
-                    key={header}
-                    style={{ border: "1px solid #ccc", padding: "8px" }}
-                  >
-                    {header}
-                  </th>
-                )
-              )}
+              {['Product', 'HSN', 'GST (%)', 'Qty', 'Price', 'Total'].map(header => (
+                <th key={header} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -254,59 +228,34 @@ const BillHistory = () => {
               const total = quantity * price;
               return (
                 <tr key={index}>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.description}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.HSN}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.GST}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.quantity}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {item.price}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                    {total}
-                  </td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{total}</td>
                 </tr>
               );
             })}
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Subtotal
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                ₹{subtotal}
-              </td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal}</td>
             </tr>
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Discount ({bill.discount || 0}%)
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                 ₹{discountAmount.toFixed(2)}
               </td>
             </tr>
             <tr>
-              <td
-                colSpan={5}
-                style={{ border: "1px solid #ccc", padding: "8px" }}
-              >
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
                 Total
               </td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
-                ₹{total.toFixed(2)}
-              </td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{total.toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
@@ -326,7 +275,7 @@ const BillHistory = () => {
             label="Search by Patient Name"
             fullWidth
             value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
+            onChange={e => setSearchName(e.target.value)}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -336,7 +285,7 @@ const BillHistory = () => {
             fullWidth
             InputLabelProps={{ shrink: true }}
             value={searchDate}
-            onChange={(e) => setSearchDate(e.target.value)}
+            onChange={e => setSearchDate(e.target.value)}
           />
         </Grid>
       </Grid>
@@ -358,21 +307,17 @@ const BillHistory = () => {
           <TableBody>
             {filteredBills.map((bill, index) => (
               <TableRow key={index}>
-                <TableCell>{"B" + (index + 1)}</TableCell>
+                <TableCell>{'B' + (index + 1)}</TableCell>
                 <TableCell>{bill.name}</TableCell>
                 <TableCell>
-                  {new Date(bill.date).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
+                  {new Date(bill.date).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
                   })}
                 </TableCell>
                 <TableCell>
-                  ₹
-                  {bill.items.reduce(
-                    (acc, item) => acc + item.price * item.quantity,
-                    0
-                  )}
+                  ₹{bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0)}
                 </TableCell>
                 <TableCell>
                   <Button onClick={() => setEditingBill(bill)}>Edit</Button>
@@ -385,7 +330,7 @@ const BillHistory = () => {
 
                 <TableCell>
                   <Button onClick={() => togglePreview(bill._id)}>
-                    {previewedBillId === bill._id ? "Hide" : "Preview"}
+                    {previewedBillId === bill._id ? 'Hide' : 'Preview'}
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -405,26 +350,20 @@ const BillHistory = () => {
       </TableContainer>
 
       {previewedBillId && (
-        <BillPreview
-          bill={billHistory.find((bill) => bill._id === previewedBillId)}
-        />
+        <BillPreview bill={billHistory.find(bill => bill._id === previewedBillId)} />
       )}
 
       <Snackbar
         open={!!successMessage}
         autoHideDuration={3000}
-        onClose={() => setSuccessMessage("")}
+        onClose={() => setSuccessMessage('')}
       >
         <MuiAlert elevation={6} variant="filled" severity="success">
           {successMessage}
         </MuiAlert>
       </Snackbar>
 
-      <Snackbar
-        open={!!errorMessage}
-        autoHideDuration={3000}
-        onClose={() => setErrorMessage("")}
-      >
+      <Snackbar open={!!errorMessage} autoHideDuration={3000} onClose={() => setErrorMessage('')}>
         <MuiAlert elevation={6} variant="filled" severity="error">
           {errorMessage}
         </MuiAlert>
@@ -434,8 +373,7 @@ const BillHistory = () => {
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the bill for{" "}
-            <strong>{billToDelete?.name}</strong>?
+            Are you sure you want to delete the bill for <strong>{billToDelete?.name}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
