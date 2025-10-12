@@ -210,9 +210,11 @@ app.get('/bills/download/:billId', async (req, res) => {
 // ... (The rest of your routes: /bills-history, /bills/:billId (DELETE, PUT) remain the same)
 app.get('/bills-history', async (req, res) => {
   try {
-    const bills = await Bill.find().sort({ createdAt: -1 });
+    // Sort by billNumber in ascending order (1, 2, 3...)
+    const bills = await Bill.find().sort({ billNumber: 1 });
     res.json(bills);
   } catch (error) {
+    console.error('Error fetching bill history:', error);
     res.status(500).json({ error: 'Error fetching bill history.' });
   }
 });
