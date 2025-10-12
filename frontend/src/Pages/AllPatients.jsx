@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import useFetchData from "./FetchData";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import useFetchData from './FetchData';
 import {
   TextField,
   CircularProgress,
@@ -18,18 +18,18 @@ import {
   alpha,
   useMediaQuery,
   Select,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const AllPatients = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (!token) {
-      navigate("/");
+      navigate('/');
     }
   }, [navigate]);
 
@@ -37,56 +37,55 @@ const AllPatients = () => {
     data: customers,
     loading,
     error,
-  } = useFetchData("https://siddha-shivalayas-backend.vercel.app/patients");
+  } = useFetchData('https://siddha-shivalayas-backend.vercel.app/patients');
 
-  const [filter, setFilter] = useState({ name: "", treatmentOrMedicine: "" });
+  const [filter, setFilter] = useState({ name: '', treatmentOrMedicine: '' });
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = e => {
     setFilter({ ...filter, [e.target.name]: e.target.value });
   };
 
-  const filteredCustomers = customers.filter((customer) => {
+  const filteredCustomers = customers.filter(customer => {
     return (
-      (filter.treatmentOrMedicine === "" ||
+      (filter.treatmentOrMedicine === '' ||
         customer.treatmentOrMedicine
           .toLowerCase()
           .includes(filter.treatmentOrMedicine.toLowerCase())) &&
-      (filter.name === "" ||
-        customer.name.toLowerCase().includes(filter.name.toLowerCase()))
+      (filter.name === '' || customer.name.toLowerCase().includes(filter.name.toLowerCase()))
     );
   });
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        background: `linear-gradient(135deg, ${alpha(
+        minHeight: '100vh',
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(
           theme.palette.primary.main,
-          0.1
-        )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+          0.05
+        )} 100%)`,
         py: 8,
       }}
     >
       <Container maxWidth="lg">
         <Box
           sx={{
-            background: "white",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            background: 'white',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
             borderRadius: 2,
             p: isSmallScreen ? 2 : 4,
-            transition: "all 0.3s ease",
-            "&:hover": {
-              boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
             },
           }}
         >
           <Typography
-            variant={isSmallScreen ? "h5" : "h4"}
+            variant={isSmallScreen ? 'h5' : 'h4'}
             align="center"
             sx={{
               mb: 4,
               fontWeight: 700,
-              color: "primary.main",
+              color: 'primary.main',
               fontFamily: '"Poppins", sans-serif',
             }}
           >
@@ -95,26 +94,13 @@ const AllPatients = () => {
 
           <Box
             sx={{
-              display: "flex",
-              flexDirection: isSmallScreen ? "column" : "row",
-              justifyContent: "space-between",
+              display: 'flex',
+              flexDirection: isSmallScreen ? 'column' : 'row',
+              justifyContent: 'space-between',
               gap: 2,
               mb: 3,
             }}
           >
-            <TextField
-              name="treatmentOrMedicine"
-              value={filter.treatmentOrMedicine}
-              onChange={handleFilterChange}
-              label="Filter by Treatment/Medicine/Consultation"
-              variant="outlined"
-              fullWidth
-              placeholder=""
-              sx={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
-              }}
-            />
             <TextField
               name="name"
               value={filter.name}
@@ -124,35 +110,35 @@ const AllPatients = () => {
               fullWidth
               placeholder="e.g., John Doe"
               sx={{
-                borderRadius: "8px",
-                backgroundColor: "#f9f9f9",
+                borderRadius: '8px',
+                backgroundColor: '#f9f9f9',
               }}
             />
           </Box>
 
           {loading ? (
-            <Box sx={{ textAlign: "center", mt: 4 }}>
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
               <CircularProgress />
             </Box>
           ) : error ? (
             <Typography
               variant="body1"
               sx={{
-                textAlign: "center",
+                textAlign: 'center',
                 mt: 4,
-                color: "red",
+                color: 'red',
               }}
             >
               Error: {error}
             </Typography>
           ) : (
-            <Box sx={{ overflowX: "auto" }}>
+            <Box sx={{ overflowX: 'auto' }}>
               <TableContainer
                 component={Paper}
                 sx={{
-                  borderRadius: "16px",
-                  boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
-                  minWidth: isSmallScreen ? "600px" : "100%", // Ensures table doesn't collapse
+                  borderRadius: '16px',
+                  boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.1)',
+                  minWidth: isSmallScreen ? '600px' : '100%', // Ensures table doesn't collapse
                 }}
               >
                 <Table>
@@ -162,21 +148,14 @@ const AllPatients = () => {
                     }}
                   >
                     <TableRow>
-                      {[
-                        "ID",
-                        "Name",
-                        "Phone",
-                        "Address",
-                        "Treatment/Medicine",
-                        "Date",
-                      ].map((header) => (
+                      {['ID', 'Name', 'Phone', 'Address', 'Date'].map(header => (
                         <TableCell
                           key={header}
                           sx={{
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: isSmallScreen ? "0.875rem" : "1rem",
-                            textTransform: "uppercase",
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: isSmallScreen ? '0.875rem' : '1rem',
+                            textTransform: 'uppercase',
                           }}
                         >
                           {header}
@@ -190,28 +169,22 @@ const AllPatients = () => {
                         <TableRow
                           key={customer.id}
                           sx={{
-                            backgroundColor:
-                              index % 2 === 0
-                                ? "rgba(25, 118, 210, 0.05)"
-                                : "white",
-                            "&:hover": {
-                              backgroundColor: alpha(
-                                theme.palette.primary.main,
-                                0.15
-                              ),
+                            backgroundColor: index % 2 === 0 ? 'rgba(25, 118, 210, 0.05)' : 'white',
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.15),
                             },
                           }}
                         >
                           <TableCell
                             sx={{
-                              fontWeight: "bold",
+                              fontWeight: 'bold',
                               color: theme.palette.primary.dark,
                             }}
                           >
                             <Link
                               to={`/customers/${customer.id}`}
                               style={{
-                                textDecoration: "none",
+                                textDecoration: 'none',
                                 color: theme.palette.primary.main,
                               }}
                             >
@@ -224,16 +197,14 @@ const AllPatients = () => {
                           <TableCell>{customer.treatmentOrMedicine}</TableCell>
                           <TableCell>
                             {customer.date
-                              ? new Date(customer.date).toLocaleDateString(
-                                  "en-CA"
-                                )
-                              : ""}
+                              ? new Date(customer.date).toLocaleDateString('en-CA')
+                              : ''}
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} sx={{ textAlign: "center" }}>
+                        <TableCell colSpan={6} sx={{ textAlign: 'center' }}>
                           No Patient Record Found
                         </TableCell>
                       </TableRow>
