@@ -570,6 +570,31 @@ const Transaction = () => {
 
                 <Grid item xs={12} sm={6}>
                   <TextField
+                    select
+                    label="Treatment/Therapy/Product"
+                    name="treatmentOrMedicine"
+                    value={formData.treatmentOrMedicine}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        treatmentOrMedicine: e.target.value,
+                      })
+                    }
+                    variant="outlined"
+                    fullWidth
+                    SelectProps={{
+                      native: true,
+                    }}
+                  >
+                    <option value=""></option>
+                    <option value="Treatment">Treatment</option>
+                    <option value="Therapy">Therapy</option>
+                    <option value="Product">Product</option>
+                  </TextField>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
                     label="Address"
                     name="address"
                     value={formData.address}
