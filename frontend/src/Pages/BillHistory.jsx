@@ -296,11 +296,11 @@ const BillHistory = () => {
             <TableRow>
               <TableCell>Bill ID</TableCell>
               <TableCell>Name</TableCell>
+              <TableCell>Type</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Total</TableCell>
               <TableCell>Edit</TableCell>
               <TableCell>Delete</TableCell>
-              <TableCell>Preview</TableCell>
               <TableCell>Download</TableCell>
             </TableRow>
           </TableHead>
@@ -309,6 +309,7 @@ const BillHistory = () => {
               <TableRow key={index}>
                 <TableCell>{'B' + (index + 1)}</TableCell>
                 <TableCell>{bill.name}</TableCell>
+                <TableCell>{bill.type || ''}</TableCell>
                 <TableCell>
                   {new Date(bill.date).toLocaleDateString('en-IN', {
                     day: '2-digit',
@@ -325,12 +326,6 @@ const BillHistory = () => {
                 <TableCell>
                   <Button color="error" onClick={() => setBillToDelete(bill)}>
                     Delete
-                  </Button>
-                </TableCell>
-
-                <TableCell>
-                  <Button onClick={() => togglePreview(bill._id)}>
-                    {previewedBillId === bill._id ? 'Hide' : 'Preview'}
                   </Button>
                 </TableCell>
                 <TableCell>
