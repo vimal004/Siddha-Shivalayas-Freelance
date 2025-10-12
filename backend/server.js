@@ -6,8 +6,9 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const fs = require('fs').promises;
 const path = require('path');
-const ILovePDFApi = require('ilovepdf-sdk');
-const { Readable } = require('stream'); // Import the Readable stream module
+// Use the official iLovePDF Node.js SDK
+const ILovePDFApi = require('@ilovepdf/ilovepdf-nodejs');
+const ILovePDFFile = require('@ilovepdf/ilovepdf-nodejs/ILovePDFFile');
 
 const app = express();
 
@@ -58,14 +59,6 @@ const BillSchema = new mongoose.Schema({
 });
 const Bill = mongoose.model('Bill', BillSchema);
 
-// Helper function to convert buffer to stream
-function bufferToStream(buffer) {
-  const stream = new Readable();
-  stream.push(buffer);
-  stream.push(null);
-  return stream;
-}
-
 // Bill Generation Endpoint
 app.post('/generate-bill', async (req, res) => {
   try {
@@ -78,8 +71,8 @@ app.post('/generate-bill', async (req, res) => {
     const discountValue = isNaN(parseFloat(discount)) ? 0 : parseFloat(discount);
     const itemTotals = items.map(item => ({
       ...item,
-      baseTotal: (parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2),
-      finalAmount: (parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2),
+      baseTotal: (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
+      finalAmount: (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
     }));
     const subtotal = itemTotals.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0);
     const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(2);
@@ -117,10 +110,12 @@ app.post('/generate-bill', async (req, res) => {
     doc.render();
     const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // **FIX:** Use createTask and addFileByStream for buffers
-    const task = await ilovepdf.createTask('officepdf');
-    const docxStream = bufferToStream(docxBuffer);
-    await task.addFileByStream(`bill-${id}.docx`, docxStream);
+    // --- PDF Conversion using the official SDK ---
+    const task = ilovepdf.newTask('officepdf');
+    await task.start();
+    // **FIX:** Create an ILovePDFFile instance from the buffer
+    const file = new ILovePDFFile(docxBuffer, `bill-${id}.docx`);
+    await task.addFile(file);
     await task.process();
     const pdfData = await task.download();
 
@@ -129,7 +124,9 @@ app.post('/generate-bill', async (req, res) => {
     res.send(pdfData);
   } catch (err) {
     console.error('Error during bill generation:', err);
-    res.status(500).json({ error: 'Internal server error.', message: err.message });
+    res
+      .status(500)
+      .json({ error: 'Internal server error.', message: err.message, stack: err.stack });
   }
 });
 
@@ -145,8 +142,11 @@ app.get('/bills/download/:billId', async (req, res) => {
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
-    const subtotal = bill.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const total = subtotal - (subtotal * bill.discount) / 100;
+    const subtotal = bill.items.reduce(
+      (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+      0
+    );
+    const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
     const displayDate = bill.date
       ? new Date(bill.date).toLocaleDateString('en-IN')
       : new Date(bill.createdAt).toLocaleDateString('en-IN');
@@ -159,17 +159,19 @@ app.get('/bills/download/:billId', async (req, res) => {
       date: displayDate,
       items: bill.items,
       subtotal: subtotal.toFixed(2),
-      discount: bill.discount.toFixed(2),
+      discount: (bill.discount || 0).toFixed(2),
       total: total.toFixed(2),
     });
 
     doc.render();
     const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // **FIX:** Use createTask and addFileByStream for buffers
-    const task = await ilovepdf.createTask('officepdf');
-    const docxStream = bufferToStream(docxBuffer);
-    await task.addFileByStream(`bill-${billId}.docx`, docxStream);
+    // --- PDF Conversion using the official SDK ---
+    const task = ilovepdf.newTask('officepdf');
+    await task.start();
+    // **FIX:** Create an ILovePDFFile instance from the buffer
+    const file = new ILovePDFFile(docxBuffer, `bill-${billId}.docx`);
+    await task.addFile(file);
     await task.process();
     const pdfData = await task.download();
 
@@ -178,7 +180,9 @@ app.get('/bills/download/:billId', async (req, res) => {
     res.send(pdfData);
   } catch (err) {
     console.error('Error downloading bill:', err);
-    res.status(500).json({ error: 'Internal server error.', message: err.message });
+    res
+      .status(500)
+      .json({ error: 'Internal server error.', message: err.message, stack: err.stack });
   }
 });
 

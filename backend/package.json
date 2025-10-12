@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@ilovepdf/ilovepdf-nodejs": "^0.3.1",
     "axios": "^1.7.9",
     "body-parser": "^1.20.3",
     "child_process": "^1.0.2",
@@ -19,7 +20,6 @@
     "express": "^4.21.1",
     "form-data": "^4.0.1",
     "fs": "^0.0.1-security",
-    "ilovepdf-sdk": "^0.0.5",
     "libreoffice-convert": "^1.5.1",
     "mongoose": "^8.7.1",
     "nodemon": "^3.1.7",
