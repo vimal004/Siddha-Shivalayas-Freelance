@@ -61,6 +61,9 @@ const Bill = mongoose.model('Bill', BillSchema);
 
 // Bill Generation Endpoint
 app.post('/generate-bill', async (req, res) => {
+  // Define a temporary path for the file
+  const tmpDocxPath = path.join('/tmp', `bill-${req.body.id}-${Date.now()}.docx`);
+
   try {
     const { id, name, phone, address, date, items, discount } = req.body;
 
@@ -110,11 +113,13 @@ app.post('/generate-bill', async (req, res) => {
     doc.render();
     const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // --- PDF Conversion using the official SDK ---
+    // --- PDF Conversion using a temporary file ---
+    // **FIX:** Write buffer to a temporary file first
+    await fs.writeFile(tmpDocxPath, docxBuffer);
+
     const task = ilovepdf.newTask('officepdf');
     await task.start();
-    // **FIX:** Create an ILovePDFFile instance from the buffer
-    const file = new ILovePDFFile(docxBuffer, `bill-${id}.docx`);
+    const file = new ILovePDFFile(tmpDocxPath);
     await task.addFile(file);
     await task.process();
     const pdfData = await task.download();
@@ -127,11 +132,19 @@ app.post('/generate-bill', async (req, res) => {
     res
       .status(500)
       .json({ error: 'Internal server error.', message: err.message, stack: err.stack });
+  } finally {
+    // **IMPORTANT:** Clean up the temporary file
+    try {
+      await fs.unlink(tmpDocxPath);
+    } catch (cleanupErr) {
+      console.error('Error cleaning up temporary file:', cleanupErr);
+    }
   }
 });
 
 // Download a specific bill by ID as PDF
 app.get('/bills/download/:billId', async (req, res) => {
+  const tmpDocxPath = path.join('/tmp', `bill-${req.params.billId}-${Date.now()}.docx`);
   try {
     const { billId } = req.params;
     const bill = await Bill.findById(billId);
@@ -166,11 +179,12 @@ app.get('/bills/download/:billId', async (req, res) => {
     doc.render();
     const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    // --- PDF Conversion using the official SDK ---
+    // **FIX:** Write buffer to a temporary file first
+    await fs.writeFile(tmpDocxPath, docxBuffer);
+
     const task = ilovepdf.newTask('officepdf');
     await task.start();
-    // **FIX:** Create an ILovePDFFile instance from the buffer
-    const file = new ILovePDFFile(docxBuffer, `bill-${billId}.docx`);
+    const file = new ILovePDFFile(tmpDocxPath);
     await task.addFile(file);
     await task.process();
     const pdfData = await task.download();
@@ -183,6 +197,13 @@ app.get('/bills/download/:billId', async (req, res) => {
     res
       .status(500)
       .json({ error: 'Internal server error.', message: err.message, stack: err.stack });
+  } finally {
+    // **IMPORTANT:** Clean up the temporary file
+    try {
+      await fs.unlink(tmpDocxPath);
+    } catch (cleanupErr) {
+      console.error('Error cleaning up temporary file:', cleanupErr);
+    }
   }
 });
 
