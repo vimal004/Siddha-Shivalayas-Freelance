@@ -572,12 +572,12 @@ const Transaction = () => {
                   <TextField
                     select
                     label="Treatment/Therapy/Product"
-                    name="treatmentOrMedicine"
-                    value={formData.treatmentOrMedicine}
+                    name="type"
+                    value={formData.type}
                     onChange={e =>
                       setFormData({
                         ...formData,
-                        treatmentOrMedicine: e.target.value,
+                        type: e.target.value,
                       })
                     }
                     variant="outlined"
