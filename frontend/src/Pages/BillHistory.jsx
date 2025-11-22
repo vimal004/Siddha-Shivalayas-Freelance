@@ -66,9 +66,11 @@ const BillHistory = () => {
   useEffect(() => {
     const filtered = billHistory.filter(bill => {
       const matchesName = bill.name.toLowerCase().includes(searchName.toLowerCase());
+      // Filter by comparing date string in 'YYYY-MM-DD' format (from the input type="date")
       const matchesDate = searchDate
-        ? new Date(bill.date).toLocaleDateString('en-CA') === searchDate
+        ? (bill.date && bill.date.startsWith(searchDate))
         : true;
+        
       return matchesName && matchesDate;
     });
     setFilteredBills(filtered);
@@ -199,7 +201,9 @@ const BillHistory = () => {
   };
 
   const BillPreview = ({ bill }) => {
-    const subtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+    const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
 
@@ -225,7 +229,7 @@ const BillHistory = () => {
             {bill.items.map((item, index) => {
               const quantity = parseInt(item.quantity || 0, 10);
               const price = parseFloat(item.price || 0);
-              const total = quantity * price;
+              const itemTotal = quantity * price;
               return (
                 <tr key={index}>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
@@ -233,29 +237,47 @@ const BillHistory = () => {
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{total}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
                 </tr>
               );
             })}
+            {/* ADDED: Consulting Fee row */}
+            {bill.type === 'Consulting' && feeValue > 0 && (
+              <tr>
+                <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                  Consulting Fee
+                </td>
+                <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
+                  ₹{feeValue.toFixed(2)}
+                </td>
+              </tr>
+            )}
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                Subtotal
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Subtotal (Before Discount)
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal.toFixed(2)}</td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
                 Discount ({bill.discount || 0}%)
-              </td>
+              </td >
               <td style={{ border: '1px solid #ccc', padding: '8px' }}>
-                ₹{discountAmount.toFixed(2)}
+                -₹{discountAmount.toFixed(2)}
               </td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>
                 Total
+              </td >
+              <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
+            </tr>
+            {/* ADDED: Payment Type Preview Row */}
+            <tr>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Payment Type
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{total.toFixed(2)}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>{bill.typeOfPayment || 'N/A'}</td>
             </tr>
           </tbody>
         </table>
@@ -299,47 +321,58 @@ const BillHistory = () => {
               <TableCell>Type</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Total</TableCell>
+              <TableCell>Payment</TableCell> {/* ADDED: New Column Header */}
               <TableCell>Edit</TableCell>
               <TableCell>Delete</TableCell>
               <TableCell>Download</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBills.map((bill, index) => (
-              <TableRow key={index}>
-                <TableCell>{'B' + (index + 1)}</TableCell>
-                <TableCell>{bill.name}</TableCell>
-                <TableCell>{bill.type || ''}</TableCell>
-                <TableCell>
-                  {new Date(bill.date).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
-                </TableCell>
-                <TableCell>
-                  ₹{bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0)}
-                </TableCell>
-                <TableCell>
-                  <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                </TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => setBillToDelete(bill)}>
-                    Delete
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    href={bill.downloadLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Download
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredBills.map((bill, index) => {
+              // Calculate totals for display
+              const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+              const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+              const subtotal = itemSubtotal + feeValue;
+              const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+
+              return (
+                <TableRow key={index}>
+                  <TableCell>{'B' + (index + 1)}</TableCell>
+                  <TableCell>{bill.name}</TableCell>
+                  <TableCell>{bill.type || ''}</TableCell>
+                  <TableCell>
+                    {/* Indian date format dd/mm/yyyy */}
+                    {new Date(bill.date).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    ₹{total.toFixed(2)} {/* MODIFIED: Use the calculated final total */}
+                  </TableCell>
+                  <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> {/* ADDED: Payment Type */}
+                  <TableCell>
+                    <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button color="error" onClick={() => setBillToDelete(bill)}>
+                      Delete
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      href={bill.downloadLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

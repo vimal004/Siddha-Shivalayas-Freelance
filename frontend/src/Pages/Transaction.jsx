@@ -27,7 +27,7 @@ import {
 import MuiAlert from '@mui/material/Alert';
 import { Autocomplete } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import DeleteIcon from '@mui/icons-material/Delete'; // Import the delete icon
+import DeleteIcon from '@mui/icons-material/Delete'; 
 import { use } from 'react';
 
 const Transaction = () => {
@@ -43,6 +43,9 @@ const Transaction = () => {
     items: [],
     discount: 0,
     totalAmount: 0,
+    type: '', // Bill Type: Consulting or Product
+    typeOfPayment: '', // ADDED
+    consultingFee: 0, // ADDED
   });
 
   const [filteredBills, setFilteredBills] = useState([]);
@@ -98,7 +101,7 @@ const Transaction = () => {
     axios
       .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
       .then(response => {
-        setFormData({ ...formData, ...response.data });
+        setFormData(prev => ({ ...prev, ...response.data }));
       })
       .catch(error => console.error(error));
   }, [id]);
@@ -154,20 +157,28 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
+  // MODIFIED: Calculate total to include consulting fee
   const calculateTotal = () => {
-    const total = formData.items.reduce((acc, item) => {
+    let subtotal = formData.items.reduce((acc, item) => {
       const price = parseFloat(item.price || 0);
       const quantity = parseInt(item.quantity || 0, 10);
-      const gst = parseFloat(item.GST || 0) / 100;
       return acc + price * quantity;
     }, 0);
-    return total - (total * formData.discount) / 100;
+
+    // Add consulting fee if bill type is 'Consulting'
+    if (formData.type === 'Consulting') {
+      const fee = parseFloat(formData.consultingFee || 0);
+      subtotal += fee;
+    }
+
+    // Apply discount to the combined total
+    return subtotal - (subtotal * formData.discount) / 100;
   };
 
   useEffect(() => {
     const totalAmount = calculateTotal();
     setFormData(prevData => ({ ...prevData, totalAmount }));
-  }, [formData.items, formData.discount]);
+  }, [formData.items, formData.discount, formData.type, formData.consultingFee]);
 
   const handleDownloadBill = async () => {
     try {
@@ -180,6 +191,10 @@ const Transaction = () => {
             `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
           );
         }
+      }
+
+      if (!formData.typeOfPayment) {
+        throw new Error('Type of Payment is required.');
       }
 
       // Step 1: Update stock quantities
@@ -236,6 +251,10 @@ const Transaction = () => {
           );
         }
       }
+      
+      if (!formData.typeOfPayment) {
+        throw new Error('Type of Payment is required.');
+      }
 
       // Step 1: Update stock quantities
       for (const item of formData.items) {
@@ -261,6 +280,7 @@ const Transaction = () => {
       );
 
       setSuccessMessage('Transaction saved successfully!');
+      fetchBillHistory();
       console.log('Transaction saved successfully:', formData);
     } catch (err) {
       console.error(err);
@@ -277,8 +297,10 @@ const Transaction = () => {
         ...bill,
         downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
       }));
-      setBillHistory(updatedBills);
-      setFilteredBills(updatedBills);
+      // Filter by current patient ID to show only relevant history
+      const filtered = updatedBills.filter(bill => bill.id === id); 
+      setBillHistory(filtered);
+      setFilteredBills(filtered);
     } catch (error) {
       console.error('Error fetching bill history:', error);
     }
@@ -286,22 +308,20 @@ const Transaction = () => {
 
   useEffect(() => {
     fetchBillHistory();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     const filtered = billHistory.filter(bill => {
       const matchesName = bill.name.toLowerCase().includes(formData.name.toLowerCase());
       return matchesName;
     });
-    console.log('Filtered Bills:', filtered);
     setFilteredBills(filtered);
-    console.log('Filtered Bills State:', filteredBills);
-  }, [billHistory]);
-
-  useEffect(() => {}, [filteredBills]);
+  }, [formData.name, billHistory]);
 
   const BillPreview = ({ bill }) => {
-    const subtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+    const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
 
@@ -327,7 +347,7 @@ const Transaction = () => {
             {bill.items.map((item, index) => {
               const quantity = parseInt(item.quantity || 0, 10);
               const price = parseFloat(item.price || 0);
-              const total = quantity * price;
+              const itemTotal = quantity * price;
               return (
                 <tr key={index}>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
@@ -335,29 +355,47 @@ const Transaction = () => {
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
                   <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{total}</td>
+                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
                 </tr>
               );
             })}
+             {/* ADDED: Consulting Fee row */}
+            {bill.type === 'Consulting' && feeValue > 0 && (
+              <tr>
+                <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                  Consulting Fee
+                </td>
+                <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
+                  ₹{feeValue.toFixed(2)}
+                </td>
+              </tr>
+            )}
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                Subtotal
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Subtotal (Before Discount)
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal.toFixed(2)}</td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
                 Discount ({bill.discount || 0}%)
               </td>
               <td style={{ border: '1px solid #ccc', padding: '8px' }}>
-                ₹{discountAmount.toFixed(2)}
+                -₹{discountAmount.toFixed(2)}
               </td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>
                 Total
+              </td >
+              <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
+            </tr>
+            {/* ADDED: Payment Type Preview Row */}
+            <tr>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Payment Type
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{total.toFixed(2)}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>{bill.typeOfPayment || 'N/A'}</td>
             </tr>
           </tbody>
         </table>
@@ -530,6 +568,7 @@ const Transaction = () => {
                     variant="outlined"
                     fullWidth
                     required
+                    InputProps={{ readOnly: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -540,6 +579,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
+                    InputProps={{ readOnly: true }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -550,6 +590,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
+                    InputProps={{ readOnly: true }}
                   />
                 </Grid>
 
@@ -558,26 +599,30 @@ const Transaction = () => {
                     label="Date"
                     name="date"
                     type="date"
-                    value={formData.date}
+                    value={formData.date ? formData.date.split('T')[0] : ''}
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
                     InputLabelProps={{
-                      shrink: true, // Ensures the label doesn't overlap with the date value
+                      shrink: true, 
                     }}
                   />
                 </Grid>
 
+                {/* MODIFIED: Bill Type Dropdown */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     select
-                    label="Treatment/Therapy/Product"
+                    label="Bill Type"
                     name="type"
                     value={formData.type}
                     onChange={e =>
                       setFormData({
                         ...formData,
                         type: e.target.value,
+                        // Clear consulting fee/items on type change
+                        consultingFee: e.target.value !== 'Consulting' ? 0 : formData.consultingFee,
+                        items: e.target.value === 'Consulting' ? [] : formData.items,
                       })
                     }
                     variant="outlined"
@@ -587,11 +632,33 @@ const Transaction = () => {
                     }}
                   >
                     <option value=""></option>
-                    <option value="Treatment">Treatment</option>
-                    <option value="Therapy">Therapy</option>
+                    <option value="Consulting">Consulting</option>
                     <option value="Product">Product</option>
                   </TextField>
                 </Grid>
+                {/* END MODIFIED */}
+
+                {/* ADDED: Type of Payment Field */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    label="Type of Payment"
+                    name="typeOfPayment"
+                    value={formData.typeOfPayment}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    required
+                    SelectProps={{
+                      native: true,
+                    }}
+                  >
+                    <option value=""></option>
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                  </TextField>
+                </Grid>
+                {/* END ADDED */}
 
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -601,86 +668,110 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
+                    InputProps={{ readOnly: true }}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Items
-                  </Typography>
-                  {formData.items.map((item, index) => (
-                    <Grid container spacing={2} key={index} marginBottom={2}>
-                      <Grid item xs={12} sm={4}>
-                        <Autocomplete
-                          options={stocks}
-                          getOptionLabel={option => option.productName}
-                          onChange={(e, selectedStock) => handleItemSelection(index, selectedStock)}
-                          renderInput={params => (
-                            <TextField {...params} label="Product" fullWidth />
-                          )}
-                        />
+                
+                {/* ADDED: Consulting Fee Field (Conditional) */}
+                {formData.type === 'Consulting' && (
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Consulting Fee"
+                      name="consultingFee"
+                      type="number"
+                      value={formData.consultingFee}
+                      onChange={handleChange}
+                      variant="outlined"
+                      fullWidth
+                    />
+                  </Grid>
+                )}
+                {/* END ADDED */}
+
+
+                {/* Conditional Items Section - Only show if not Consulting (or if forced) */}
+                {formData.type !== 'Consulting' && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom>
+                      Items
+                    </Typography>
+                    {formData.items.map((item, index) => (
+                      <Grid container spacing={2} key={index} marginBottom={2}>
+                        <Grid item xs={12} sm={4}>
+                          <Autocomplete
+                            options={stocks}
+                            getOptionLabel={option => option.productName}
+                            onChange={(e, selectedStock) => handleItemSelection(index, selectedStock)}
+                            renderInput={params => (
+                              <TextField {...params} label="Product" fullWidth />
+                            )}
+                          />
+                        </Grid>
+                        <Grid item xs={6} sm={2}>
+                          <TextField
+                            label="HSN"
+                            value={item.HSN}
+                            onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={6} sm={2}>
+                          <TextField
+                            label="GST"
+                            value={item.GST}
+                            onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={6} sm={2}>
+                          <TextField
+                            label="Quantity"
+                            value={item.quantity}
+                            onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                            fullWidth
+                            error={
+                              !!stocks.find(
+                                stock =>
+                                  stock.productName === item.description &&
+                                  parseInt(item.quantity, 10) > stock.quantity
+                              )
+                            }
+                            helperText={
+                              stocks.find(
+                                stock =>
+                                  stock.productName === item.description &&
+                                  parseInt(item.quantity, 10) > stock.quantity
+                              )
+                                ? `Insufficient stock. Available: ${
+                                    stocks.find(stock => stock.productName === item.description)
+                                      .quantity
+                                  }`
+                                : ''
+                            }
+                          />
+                        </Grid>
+                        <Grid item xs={6} sm={2}>
+                          <TextField
+                            label="Price"
+                            value={item.price}
+                            onChange={e => handleItemChange(index, 'price', e.target.value)}
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={2}>
+                          <IconButton onClick={() => removeItem(index)} color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        </Grid>
                       </Grid>
-                      <Grid item xs={6} sm={2}>
-                        <TextField
-                          label="HSN"
-                          value={item.HSN}
-                          onChange={e => handleItemChange(index, 'HSN', e.target.value)}
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={6} sm={2}>
-                        <TextField
-                          label="GST"
-                          value={item.GST}
-                          onChange={e => handleItemChange(index, 'GST', e.target.value)}
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={6} sm={2}>
-                        <TextField
-                          label="Quantity"
-                          value={item.quantity}
-                          onChange={e => handleItemChange(index, 'quantity', e.target.value)}
-                          fullWidth
-                          error={
-                            !!stocks.find(
-                              stock =>
-                                stock.productName === item.description &&
-                                parseInt(item.quantity, 10) > stock.quantity
-                            )
-                          }
-                          helperText={
-                            stocks.find(
-                              stock =>
-                                stock.productName === item.description &&
-                                parseInt(item.quantity, 10) > stock.quantity
-                            )
-                              ? `Insufficient stock. Available: ${
-                                  stocks.find(stock => stock.productName === item.description)
-                                    .quantity
-                                }`
-                              : ''
-                          }
-                        />
-                      </Grid>
-                      <Grid item xs={6} sm={2}>
-                        <TextField
-                          label="Price"
-                          value={item.price}
-                          onChange={e => handleItemChange(index, 'price', e.target.value)}
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <IconButton onClick={() => removeItem(index)} color="error">
-                          <DeleteIcon />
-                        </IconButton>
-                      </Grid>
-                    </Grid>
-                  ))}
-                  <Button variant="contained" onClick={addItem} sx={{ mt: 2 }} fullWidth>
-                    Add Item
-                  </Button>
-                </Grid>
+                    ))}
+                    <Button variant="contained" onClick={addItem} sx={{ mt: 2 }} fullWidth>
+                      Add Item
+                    </Button>
+                  </Grid>
+                )}
+                {/* END Conditional Items Section */}
+
                 <Grid item xs={12}>
                   <TextField
                     label="Discount"
@@ -697,6 +788,8 @@ const Transaction = () => {
                   </Typography>
                 </Grid>
               </Grid>
+              
+              {/* MODIFIED: Bill Preview Table Structure */}
               <Grid item xs={12}>
                 <Typography variant="h6" gutterBottom>
                   Bill Preview
@@ -777,6 +870,27 @@ const Transaction = () => {
                           </tr>
                         );
                       })}
+                      {/* ADDED: Consulting Fee Preview */}
+                      {formData.type === 'Consulting' && formData.consultingFee > 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            style={{
+                              border: '1px solid #ccc',
+                              padding: '8px',
+                              textAlign: 'right',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            Consulting Fee
+                          </td>
+                          <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                            ₹{parseFloat(formData.consultingFee).toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                      {/* END ADDED */}
+
                       <tr>
                         <td
                           colSpan={5}
@@ -786,18 +900,18 @@ const Transaction = () => {
                             textAlign: 'right',
                           }}
                         >
-                          Subtotal
+                          Subtotal (Before Discount)
                         </td>
                         <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                           ₹
-                          {formData.items
-                            .reduce(
+                          {(
+                            formData.items.reduce(
                               (acc, item) =>
                                 acc +
                                 parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
-                            )
-                            .toFixed(2)}
+                            ) + parseFloat(formData.consultingFee || 0)
+                          ).toFixed(2)}
                         </td>
                       </tr>
                       <tr>
@@ -814,12 +928,12 @@ const Transaction = () => {
                         <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                           -₹
                           {(
-                            (formData.items.reduce(
+                            ((formData.items.reduce(
                               (acc, item) =>
                                 acc +
                                 parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
-                            ) *
+                            ) + parseFloat(formData.consultingFee || 0)) *
                               (formData.discount || 0)) /
                             100
                           ).toFixed(2)}
@@ -847,6 +961,30 @@ const Transaction = () => {
                           ₹{formData.totalAmount.toFixed(2)}
                         </td>
                       </tr>
+                      {/* ADDED: Payment Type Preview */}
+                      <tr>
+                        <td
+                          colSpan={5}
+                          style={{
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            textAlign: 'right',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          Payment Type
+                        </td>
+                        <td
+                          style={{
+                            border: '1px solid #ccc',
+                            padding: '8px',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {formData.typeOfPayment || 'N/A'}
+                        </td>
+                      </tr>
+                       {/* END ADDED */}
                     </tbody>
                   </table>
                 </Box>
@@ -918,6 +1056,7 @@ const Transaction = () => {
                   <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Payment</TableCell> {/* ADDED */}
                   <TableCell sx={{ fontWeight: 'bold' }}>Edit</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Delete</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Preview</TableCell>
@@ -925,45 +1064,55 @@ const Transaction = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredBills.map((bill, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{'B' + (index + 1)}</TableCell>
-                    <TableCell>{bill.name}</TableCell>
-                    <TableCell>
-                      {new Date(bill.date).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      ₹{bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0)}
-                    </TableCell>
-                    <TableCell>
-                      <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button color="error" onClick={() => setBillToDelete(bill)}>
-                        Delete
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button onClick={() => togglePreview(bill._id)}>
-                        {previewedBillId === bill._id ? 'Hide' : 'Preview'}
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        href={bill.downloadLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Download
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredBills.map((bill, index) => {
+                  // Calculate totals for display
+                  const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                  const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+                  const subtotal = itemSubtotal + feeValue;
+                  const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+                  
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>{'B' + (index + 1)}</TableCell>
+                      <TableCell>{bill.name}</TableCell>
+                      <TableCell>
+                        {/* Indian date format dd/mm/yyyy */}
+                        {new Date(bill.date).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        ₹{total.toFixed(2)} {/* MODIFIED */}
+                      </TableCell>
+                      <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> {/* ADDED */}
+                      <TableCell>
+                        <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button color="error" onClick={() => setBillToDelete(bill)}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button onClick={() => togglePreview(bill._id)}>
+                          {previewedBillId === bill._id ? 'Hide' : 'Preview'}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          href={bill.downloadLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Download
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>

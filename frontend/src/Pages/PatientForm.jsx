@@ -25,7 +25,7 @@ const PatientForm = () => {
     name: '',
     phone: '',
     address: '',
-    treatmentOrMedicine: '',
+    // Removed: treatmentOrMedicine: '',
     date: '',
   });
 
@@ -64,7 +64,7 @@ const PatientForm = () => {
           name: '',
           phone: '',
           address: '',
-          treatmentOrMedicine: '',
+          // Removed: treatmentOrMedicine: '',
           date: '',
         });
         setIsExistingPatient(false); // We are in "create new" mode
