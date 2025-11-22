@@ -51,16 +51,16 @@ const AllPatients = () => {
     return name.toLowerCase().includes(nameFilter.toLowerCase());
   });
 
-  // 💡 HELPER FUNCTION FOR DATE FORMATTING
+  // 💡 HELPER FUNCTION FOR DATE FORMATTING (dd-mm-yyyy)
   const formatDateToIndian = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    // Use 'en-IN' locale for dd/mm/yyyy format or specify parts manually
+    // Use 'en-IN' locale for dd/mm/yyyy format and replace / with -
     return date.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    }).replace(/\//g, '-'); // Replace slashes with hyphens
+    }).replace(/\//g, '-'); 
   };
 
   return (
