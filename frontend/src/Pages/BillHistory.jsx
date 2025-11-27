@@ -91,16 +91,31 @@ const BillHistory = () => {
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
-      updatedItems[index][field] =
-        field === 'quantity' || field === 'price' || field === 'GST' ? parseFloat(value) : value;
+      updatedItems[index][field] = value;
+        
+      if (isProductBill) {
+        if (field === 'quantity' || field === 'price' || field === 'GST') {
+            updatedItems[index][field] = parseFloat(value) || 0;
+        }
+      } else {
+        // For non-product bills, preserve only the description
+        if (field === 'description') {
+            updatedItems[index]['price'] = 0;
+            updatedItems[index]['quantity'] = 0;
+            updatedItems[index]['HSN'] = '';
+            updatedItems[index]['GST'] = 0;
+        }
+      }
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      setItems([...items, { description: '', HSN: '', GST: 0, quantity: 1, price: 0 }]);
+      // Use defaults suitable for both types, where non-product fields are zeroed.
+      setItems([...items, { description: '', HSN: '', GST: 0, quantity: isProductBill ? 1 : 0, price: isProductBill ? 0 : 0 }]);
     };
 
     const handleRemoveItem = index => {
@@ -127,51 +142,67 @@ const BillHistory = () => {
         <DialogTitle>Edit Bill</DialogTitle>
         <DialogContent>
           {items.map((item, index) => (
-            <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
-              <Grid item xs={3}>
-                <TextField
-                  label="Description"
-                  value={item.description}
-                  onChange={e => handleItemChange(index, 'description', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="HSN"
-                  value={item.HSN}
-                  onChange={e => handleItemChange(index, 'HSN', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="GST"
-                  type="number"
-                  value={item.GST}
-                  onChange={e => handleItemChange(index, 'GST', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Qty"
-                  type="number"
-                  value={item.quantity}
-                  onChange={e => handleItemChange(index, 'quantity', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Price"
-                  type="number"
-                  value={item.price}
-                  onChange={e => handleItemChange(index, 'price', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={1}>
+            <Grid container spacing={2} key={index} sx={{ mt: 1 }} alignItems="center">
+              {isProductBill ? (
+                <>
+                  <Grid item xs={3}>
+                    <TextField
+                      label="Description"
+                      value={item.description}
+                      onChange={e => handleItemChange(index, 'description', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="HSN"
+                      value={item.HSN}
+                      onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="GST"
+                      type="number"
+                      value={item.GST}
+                      onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Qty"
+                      type="number"
+                      value={item.quantity}
+                      onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Price"
+                      type="number"
+                      value={item.price}
+                      onChange={e => handleItemChange(index, 'price', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                </>
+              ) : (
+                <Grid item xs={11}>
+                  <TextField
+                    label="Comment/Description"
+                    multiline
+                    rows={2}
+                    value={item.description}
+                    onChange={e => handleItemChange(index, 'description', e.target.value)}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+              
+              <Grid item xs={isProductBill ? 1 : 1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button color="error" onClick={() => handleRemoveItem(index)}>
                   X
                 </Button>
@@ -179,7 +210,7 @@ const BillHistory = () => {
             </Grid>
           ))}
           <Button onClick={handleAddItem} sx={{ mt: 2 }}>
-            Add Item
+            Add {isProductBill ? 'Item' : 'Comment'}
           </Button>
           <TextField
             label="Discount (%)"
@@ -200,8 +231,9 @@ const BillHistory = () => {
     );
   };
 
+
   const BillPreview = ({ bill }) => {
-    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.quantity || 0) * (item.price || 0), 0);
     
     let feeValue = 0; // MODIFIED
     let feeLabel = ''; // ADDED
@@ -217,6 +249,8 @@ const BillHistory = () => {
     const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
+    
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     return (
       <Box sx={{ overflowX: 'auto', mt: 2 }}>
@@ -241,16 +275,29 @@ const BillHistory = () => {
               const quantity = parseInt(item.quantity || 0, 10);
               const price = parseFloat(item.price || 0);
               const itemTotal = quantity * price;
-              return (
-                <tr key={index}>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
-                </tr>
-              );
+
+              if (isProductBill) {
+                  return (
+                    <tr key={index}>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
+                    </tr>
+                  );
+              } else if (item.description) {
+                  // MODIFICATION: Show comments as a single row spanning all columns
+                  return (
+                      <tr key={index}>
+                          <td colSpan={6} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                              <span style={{ fontWeight: 'bold' }}>Comment/Description:</span> {item.description}
+                          </td>
+                      </tr>
+                  );
+              }
+              return null;
             })}
             {/* MODIFIED: Combine Consulting/Treatment Fee row */}
             {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
@@ -341,7 +388,7 @@ const BillHistory = () => {
           <TableBody>
             {filteredBills.map((bill, index) => {
               // Calculate totals for display
-              const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+              const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
               
               let feeValue = 0;
               if (bill.type === 'Consulting') {

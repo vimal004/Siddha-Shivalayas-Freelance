@@ -154,6 +154,9 @@ const Transaction = () => {
   };
 
   const handleItemSelection = (index, selectedStock) => {
+    // Only allow item selection via Autocomplete for Product type
+    if (formData.type !== 'Product' && formData.type !== '') return;
+    
     const updatedItems = [...formData.items];
     updatedItems[index] = {
       ...updatedItems[index],
@@ -161,6 +164,7 @@ const Transaction = () => {
       price: selectedStock.price,
       GST: selectedStock.gst,
       HSN: selectedStock.hsnCode,
+      quantity: updatedItems[index].quantity || 1, 
     };
     setFormData({ ...formData, items: updatedItems });
   };
@@ -173,13 +177,29 @@ const Transaction = () => {
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
     updatedItems[index][field] = value;
+    
+    const isProductType = formData.type === 'Product' || formData.type === '';
+
+    // MODIFICATION: For non-product types, only the description matters. 
+    // Other fields must be zeroed out for accurate calculations and bill generation.
+    if (!isProductType) {
+        if (field === 'description') {
+            updatedItems[index]['price'] = 0;
+            updatedItems[index]['quantity'] = 0;
+            updatedItems[index]['HSN'] = '';
+            updatedItems[index]['GST'] = 0;
+        } else {
+            // Prevent changing other fields for non-product types in case they are manually added
+            updatedItems[index][field] = field === 'HSN' ? '' : 0;
+        }
+    }
 
     if (field === 'quantity') {
       const selectedStock = stocks.find(
         stock => stock.productName === updatedItems[index].description
       );
 
-      if (selectedStock && parseInt(value, 10) > selectedStock.quantity) {
+      if (formData.type === 'Product' && selectedStock && parseInt(value, 10) > selectedStock.quantity) {
         setErrorMessage(
           `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
         );
@@ -192,9 +212,10 @@ const Transaction = () => {
   };
 
   const addItem = () => {
+    // Initialize with safe defaults for both types
     setFormData({
       ...formData,
-      items: [...formData.items, { description: '', HSN: '', GST: '', quantity: '', price: '' }],
+      items: [...formData.items, { description: '', HSN: '', GST: 0, quantity: 0, price: 0 }],
     });
   };
 
@@ -206,9 +227,10 @@ const Transaction = () => {
   // MODIFIED: Calculate total to include consulting fee or treatment fee
   const calculateTotal = () => {
     let subtotal = formData.items.reduce((acc, item) => {
+      // Only include items with price/qty > 0 (i.e., product types) in this calculation
       const price = parseFloat(item.price || 0);
       const quantity = parseInt(item.quantity || 0, 10);
-      return acc + price * quantity;
+      return acc + (price * quantity);
     }, 0);
 
     if (formData.type === 'Consulting') {
@@ -218,6 +240,9 @@ const Transaction = () => {
       const fee = parseFloat(formData.treatmentFee || 0);
       subtotal += fee;
     }
+    
+    // Ensure subtotal is not negative before applying discount
+    subtotal = Math.max(0, subtotal);
 
     return subtotal - (subtotal * formData.discount) / 100;
   };
@@ -233,13 +258,17 @@ const Transaction = () => {
         throw new Error('Patient details (ID, Name, Phone, Address) are required for a new bill.');
       }
 
-      for (const item of formData.items) {
-        const selectedStock = stocks.find(stock => stock.productName === item.description);
+      const isProductBill = formData.type === 'Product' || formData.type === '';
+      
+      if (isProductBill) {
+        for (const item of formData.items) {
+          const selectedStock = stocks.find(stock => stock.productName === item.description);
 
-        if (selectedStock && item.quantity > selectedStock.quantity) {
-          throw new Error(
-            `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
-          );
+          if (selectedStock && item.quantity > selectedStock.quantity) {
+            throw new Error(
+              `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
+            );
+          }
         }
       }
 
@@ -247,20 +276,22 @@ const Transaction = () => {
         throw new Error('Type of Payment is required.');
       }
 
-      // Step 1: Update stock quantities
-      for (const item of formData.items) {
-        const selectedStock = stocks.find(stock => stock.productName === item.description);
+      // Step 1: Update stock quantities (only for Product type)
+      if (isProductBill) {
+        for (const item of formData.items) {
+          const selectedStock = stocks.find(stock => stock.productName === item.description);
 
-        if (selectedStock) {
-          const updatedQuantity = selectedStock.quantity - item.quantity;
+          if (selectedStock) {
+            const updatedQuantity = selectedStock.quantity - item.quantity;
 
-          await axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
-            {
-              quantity: updatedQuantity,
-              updateMode: 'set',
-            }
-          );
+            await axios.put(
+              `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+              {
+                quantity: updatedQuantity,
+                updateMode: 'set',
+              }
+            );
+          }
         }
       }
 
@@ -313,13 +344,17 @@ const Transaction = () => {
             throw new Error('Patient details (ID, Name, Phone, Address) are required for a new bill.');
         }
 
-      for (const item of formData.items) {
-        const selectedStock = stocks.find(stock => stock.productName === item.description);
+        const isProductBill = formData.type === 'Product' || formData.type === '';
 
-        if (selectedStock && item.quantity > selectedStock.quantity) {
-          throw new Error(
-            `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
-          );
+      if (isProductBill) {
+        for (const item of formData.items) {
+          const selectedStock = stocks.find(stock => stock.productName === item.description);
+
+          if (selectedStock && item.quantity > selectedStock.quantity) {
+            throw new Error(
+              `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
+            );
+          }
         }
       }
       
@@ -327,20 +362,22 @@ const Transaction = () => {
         throw new Error('Type of Payment is required.');
       }
 
-      // Step 1: Update stock quantities
-      for (const item of formData.items) {
-        const selectedStock = stocks.find(stock => stock.productName === item.description);
+      // Step 1: Update stock quantities (only for Product type)
+      if (isProductBill) {
+        for (const item of formData.items) {
+          const selectedStock = stocks.find(stock => stock.productName === item.description);
 
-        if (selectedStock) {
-          const updatedQuantity = selectedStock.quantity - item.quantity;
+          if (selectedStock) {
+            const updatedQuantity = selectedStock.quantity - item.quantity;
 
-          await axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
-            {
-              quantity: updatedQuantity,
-              updateMode: 'set',
-            }
-          );
+            await axios.put(
+              `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+              {
+                quantity: updatedQuantity,
+                updateMode: 'set',
+              }
+            );
+          }
         }
       }
       
@@ -377,7 +414,7 @@ const Transaction = () => {
   };
 
   const BillPreview = ({ bill }) => {
-    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.quantity || 0) * (item.price || 0), 0);
     
     let feeValue = 0;
     let feeLabel = '';
@@ -393,6 +430,8 @@ const Transaction = () => {
     const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
+    
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     return (
       <Box sx={{ overflowX: 'auto', mt: 2 }}>
@@ -417,16 +456,29 @@ const Transaction = () => {
               const quantity = parseInt(item.quantity || 0, 10);
               const price = parseFloat(item.price || 0);
               const itemTotal = quantity * price;
-              return (
-                <tr key={index}>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
-                </tr>
-              );
+              
+              if (isProductBill) {
+                  return (
+                    <tr key={index}>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
+                    </tr>
+                  );
+              } else if (item.description) {
+                  // MODIFICATION: Show comments as a single row spanning all columns
+                  return (
+                      <tr key={index}>
+                          <td colSpan={6} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                              <span style={{ fontWeight: 'bold' }}>Comment/Description:</span> {item.description}
+                          </td>
+                      </tr>
+                  );
+              }
+              return null; 
             })}
              {/* MODIFIED: Combine Consulting/Treatment Fee row */}
             {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
@@ -475,16 +527,31 @@ const Transaction = () => {
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
-      updatedItems[index][field] =
-        field === 'quantity' || field === 'price' || field === 'GST' ? parseFloat(value) : value;
+      updatedItems[index][field] = value;
+        
+      if (isProductBill) {
+        if (field === 'quantity' || field === 'price' || field === 'GST') {
+            updatedItems[index][field] = parseFloat(value) || 0;
+        }
+      } else {
+        // For non-product bills, preserve only the description
+        if (field === 'description') {
+            updatedItems[index]['price'] = 0;
+            updatedItems[index]['quantity'] = 0;
+            updatedItems[index]['HSN'] = '';
+            updatedItems[index]['GST'] = 0;
+        }
+      }
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      setItems([...items, { description: '', HSN: '', GST: 0, quantity: 1, price: 0 }]);
+      // Use defaults suitable for both types, where non-product fields are zeroed.
+      setItems([...items, { description: '', HSN: '', GST: 0, quantity: isProductBill ? 1 : 0, price: isProductBill ? 0 : 0 }]);
     };
 
     const handleRemoveItem = index => {
@@ -511,51 +578,67 @@ const Transaction = () => {
         <DialogTitle>Edit Bill</DialogTitle>
         <DialogContent>
           {items.map((item, index) => (
-            <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
-              <Grid item xs={3}>
-                <TextField
-                  label="Description"
-                  value={item.description}
-                  onChange={e => handleItemChange(index, 'description', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="HSN"
-                  value={item.HSN}
-                  onChange={e => handleItemChange(index, 'HSN', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="GST"
-                  type="number"
-                  value={item.GST}
-                  onChange={e => handleItemChange(index, 'GST', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Qty"
-                  type="number"
-                  value={item.quantity}
-                  onChange={e => handleItemChange(index, 'quantity', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Price"
-                  type="number"
-                  value={item.price}
-                  onChange={e => handleItemChange(index, 'price', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={1}>
+            <Grid container spacing={2} key={index} sx={{ mt: 1 }} alignItems="center">
+              {isProductBill ? (
+                <>
+                  <Grid item xs={3}>
+                    <TextField
+                      label="Description"
+                      value={item.description}
+                      onChange={e => handleItemChange(index, 'description', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="HSN"
+                      value={item.HSN}
+                      onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="GST"
+                      type="number"
+                      value={item.GST}
+                      onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Qty"
+                      type="number"
+                      value={item.quantity}
+                      onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Price"
+                      type="number"
+                      value={item.price}
+                      onChange={e => handleItemChange(index, 'price', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                </>
+              ) : (
+                <Grid item xs={11}>
+                  <TextField
+                    label="Comment/Description"
+                    multiline
+                    rows={2}
+                    value={item.description}
+                    onChange={e => handleItemChange(index, 'description', e.target.value)}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+              
+              <Grid item xs={isProductBill ? 1 : 1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button color="error" onClick={() => handleRemoveItem(index)}>
                   X
                 </Button>
@@ -563,7 +646,7 @@ const Transaction = () => {
             </Grid>
           ))}
           <Button onClick={handleAddItem} sx={{ mt: 2 }}>
-            Add Item
+            Add {isProductBill ? 'Item' : 'Comment'}
           </Button>
           <TextField
             label="Discount (%)"
@@ -583,6 +666,8 @@ const Transaction = () => {
       </Dialog>
     );
   };
+
+  const isProductBillType = formData.type === 'Product' || formData.type === '';
 
   return (
     <Box
@@ -695,7 +780,7 @@ const Transaction = () => {
                         // Clear fees/items based on new type
                         consultingFee: e.target.value !== 'Consulting' ? 0 : formData.consultingFee,
                         treatmentFee: e.target.value !== 'Treatment' ? 0 : formData.treatmentFee, // MODIFIED
-                        items: (e.target.value === 'Consulting' || e.target.value === 'Treatment') ? [] : formData.items, // MODIFIED
+                        items: [], // Reset items when type changes
                       })
                     }
                     variant="outlined"
@@ -777,100 +862,110 @@ const Transaction = () => {
                 {/* END ADDED */}
 
 
-                {/* Conditional Items Section - Only show if type is Product (or empty) */}
-                {formData.type === 'Product' || formData.type === '' ? (
+                {/* MODIFICATION: Conditional Items Section for all types */}
+                {(formData.type === 'Product' || formData.type === 'Consulting' || formData.type === 'Treatment' || formData.type === '') && (
                   <Grid item xs={12}>
                     <Typography variant="h6" gutterBottom>
-                      Items
+                      {isProductBillType ? 'Products' : 'Comments/Description'}
                     </Typography>
                     {formData.items.map((item, index) => (
-                      <Grid container spacing={2} key={index} marginBottom={2}>
-                        <Grid item xs={12} sm={4}>
-                          <Autocomplete
-                            options={stocks}
-                            getOptionLabel={option => option.productName}
-                            onChange={(e, selectedStock) => handleItemSelection(index, selectedStock)}
-                            renderInput={params => (
-                              <TextField {...params} label="Product" fullWidth />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={6} sm={2}>
-                          <TextField
-                            label="HSN"
-                            value={item.HSN}
-                            onChange={e => handleItemChange(index, 'HSN', e.target.value)}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={6} sm={2}>
-                          <TextField
-                            label="GST"
-                            value={item.GST}
-                            onChange={e => handleItemChange(index, 'GST', e.target.value)}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={6} sm={2}>
-                          <TextField
-                            label="Quantity"
-                            value={item.quantity}
-                            onChange={e => handleItemChange(index, 'quantity', e.target.value)}
-                            fullWidth
-                            error={
-                              !!stocks.find(
-                                stock =>
-                                  stock.productName === item.description &&
-                                  parseInt(item.quantity, 10) > stock.quantity
-                              )
-                            }
-                            helperText={
-                              stocks.find(
-                                stock =>
-                                  stock.productName === item.description &&
-                                  parseInt(item.quantity, 10) > stock.quantity
-                              )
-                                ? `Insufficient stock. Available: ${
-                                    stocks.find(stock => stock.productName === item.description)
-                                      .quantity
-                                  }`
-                                : ''
-                            }
-                          />
-                        </Grid>
-                        <Grid item xs={6} sm={2}>
-                          <TextField
-                            label="Price"
-                            value={item.price}
-                            onChange={e => handleItemChange(index, 'price', e.target.value)}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={2}>
-                          <IconButton onClick={() => removeItem(index)} color="error">
-                            <DeleteIcon />
-                          </IconButton>
+                      <Grid container spacing={2} key={index} marginBottom={2} alignItems="center">
+                        {isProductBillType ? (
+                          // === PRODUCT FIELDS ===
+                          <>
+                            <Grid item xs={12} sm={4}>
+                              <Autocomplete
+                                options={stocks}
+                                getOptionLabel={option => option.productName}
+                                onChange={(e, selectedStock) => handleItemSelection(index, selectedStock)}
+                                renderInput={params => (
+                                  <TextField {...params} label="Product" fullWidth />
+                                )}
+                                value={stocks.find(s => s.productName === item.description) || { productName: item.description || '' }}
+                                isOptionEqualToValue={(option, value) => option.productName === value.productName}
+                              />
+                            </Grid>
+                            <Grid item xs={6} sm={2}>
+                              <TextField
+                                label="HSN"
+                                value={item.HSN}
+                                onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                                fullWidth
+                              />
+                            </Grid>
+                            <Grid item xs={6} sm={2}>
+                              <TextField
+                                label="GST"
+                                value={item.GST}
+                                onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                                fullWidth
+                              />
+                            </Grid>
+                            <Grid item xs={6} sm={2}>
+                              <TextField
+                                label="Quantity"
+                                type="number"
+                                value={item.quantity}
+                                onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                                fullWidth
+                                error={
+                                  !!stocks.find(
+                                    stock =>
+                                      stock.productName === item.description &&
+                                      parseInt(item.quantity, 10) > stock.quantity
+                                  )
+                                }
+                                helperText={
+                                  stocks.find(
+                                    stock =>
+                                      stock.productName === item.description &&
+                                      parseInt(item.quantity, 10) > stock.quantity
+                                  )
+                                    ? `Insufficient stock. Available: ${
+                                        stocks.find(stock => stock.productName === item.description)
+                                          .quantity
+                                      }`
+                                    : ''
+                                }
+                              />
+                            </Grid>
+                            <Grid item xs={6} sm={2}>
+                              <TextField
+                                label="Price"
+                                type="number"
+                                value={item.price}
+                                onChange={e => handleItemChange(index, 'price', e.target.value)}
+                                fullWidth
+                              />
+                            </Grid>
+                          </>
+                        ) : (
+                          // === COMMENT/DESCRIPTION FIELD ===
+                          <Grid item xs={10}>
+                            <TextField
+                              label="Comment/Description"
+                              multiline
+                              rows={2}
+                              value={item.description}
+                              onChange={e => handleItemChange(index, 'description', e.target.value)}
+                              fullWidth
+                            />
+                          </Grid>
+                        )}
+
+                        <Grid item xs={isProductBillType ? 12 : 2} sm={isProductBillType ? 2 : 2} sx={{ display: 'flex', justifyContent: isProductBillType ? 'flex-start' : 'flex-end' }}>
+                            <IconButton onClick={() => removeItem(index)} color="error">
+                              <DeleteIcon />
+                            </IconButton>
                         </Grid>
                       </Grid>
                     ))}
                     <Button variant="contained" onClick={addItem} sx={{ mt: 2 }} fullWidth>
-                      Add Item
+                      Add {isProductBillType ? 'Product' : 'Comment/Description'}
                     </Button>
                   </Grid>
-                ) : (
-                    // Hide items section if Consulting or Treatment is selected and there are no items
-                    (formData.items.length > 0) && (
-                        <Grid item xs={12}>
-                            <Typography variant="h6" gutterBottom>
-                                Items
-                            </Typography>
-                            {/* Render logic can be placed here if you allow adding items to 'Consulting'/'Treatment' later */}
-                            <Typography variant="body2" color="textSecondary">
-                                Items section is hidden for {formData.type}.
-                            </Typography>
-                        </Grid>
-                    )
                 )}
+                {/* END MODIFICATION */}
 
 
                 <Grid item xs={12}>
@@ -917,59 +1012,44 @@ const Transaction = () => {
                       {formData.items.map((item, index) => {
                         const quantity = parseInt(item.quantity || 0, 10);
                         const price = parseFloat(item.price || 0);
-                        const total = quantity * price;
-                        return (
-                          <tr key={index}>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              {item.description}
-                            </td>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              {item.HSN}
-                            </td>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              {item.GST}
-                            </td>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              {item.quantity}
-                            </td>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              ₹{price.toFixed(2)}
-                            </td>
-                            <td
-                              style={{
-                                border: '1px solid #ccc',
-                                padding: '8px',
-                              }}
-                            >
-                              ₹{total.toFixed(2)}
-                            </td>
-                          </tr>
-                        );
+                        const itemTotal = quantity * price;
+                        const isProductType = formData.type === 'Product' || formData.type === '';
+                        
+                        if (!isProductType && !item.description) return null;
+
+                        if (isProductType) {
+                          return (
+                            <tr key={index}>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                {item.description}
+                              </td>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                {item.HSN}
+                              </td>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                {item.GST}
+                              </td>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                {item.quantity}
+                              </td>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                ₹{price.toFixed(2)}
+                              </td>
+                              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                ₹{itemTotal.toFixed(2)}
+                              </td>
+                            </tr>
+                          );
+                        } else {
+                             // MODIFICATION: Show comments/description with colspan
+                            return (
+                                <tr key={index}>
+                                    <td colSpan={6} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                                        <span style={{ fontWeight: 'bold' }}>Comment/Description:</span> {item.description}
+                                    </td>
+                                </tr>
+                            );
+                        }
                       })}
                       {/* Consulting Fee Preview */}
                       {formData.type === 'Consulting' && formData.consultingFee > 0 && (
@@ -1191,7 +1271,7 @@ const Transaction = () => {
                 <TableBody>
                   {filteredBills.map((bill, index) => {
                     // Calculate totals for display
-                    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                    const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
                     
                     let feeValue = 0;
                     if (bill.type === 'Consulting') {
