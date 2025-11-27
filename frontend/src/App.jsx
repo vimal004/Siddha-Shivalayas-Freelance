@@ -1,15 +1,15 @@
-import React from "react";
-import Header from "./Header";
-import Home from "./Home";
-import Transaction from "./Pages/Transaction";
-import { createBrowserRouter, Outlet } from "react-router-dom";
-import ViewStocks from "./Pages/ViewStocks";
-import StockForm from "./Pages/StockForm";
-import LoginForm from "./Pages/Login";
-import PatientForm from "./Pages/PatientForm";
-import AllPatients from "./Pages/AllPatients";
-import BillHistory from "./Pages/BillHistory";
-
+import React from 'react';
+import Header from './Header';
+import Home from './Home';
+import Transaction from './Pages/Transaction';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
+import ViewStocks from './Pages/ViewStocks';
+import StockForm from './Pages/StockForm';
+import LoginForm from './Pages/Login';
+import PatientForm from './Pages/PatientForm';
+import AllPatients from './Pages/AllPatients';
+import BillHistory from './Pages/BillHistory';
+import PurchaseEntry from './Pages/PurchaseEntry';
 function App() {
   return (
     <div>
@@ -21,43 +21,47 @@ function App() {
 
 const router = createBrowserRouter([
   {
-    path: "",
+    path: '',
     element: <App />,
     children: [
       {
-        path: "/",
+        path: '/',
         element: <LoginForm />,
       },
       {
-        path: "/home",
+        path: '/home',
         element: <Home />,
       },
       {
-        path: "/managepatients",
+        path: '/purchaseentry',
+        element: <PurchaseEntry />,
+      },
+      {
+        path: '/managepatients',
         element: <PatientForm />,
       },
       {
-        path: "/allpatients",
+        path: '/allpatients',
         element: <AllPatients />,
       },
       {
-        path: "customers/:customerid",
+        path: 'customers/:customerid',
         element: <Transaction />,
       },
       {
-        path: "/managestocks",
+        path: '/managestocks',
         element: <StockForm />,
       },
       {
-        path: "/viewstocks",
+        path: '/viewstocks',
         element: <ViewStocks />,
       },
       {
-        path: "/generatebill",
+        path: '/generatebill',
         element: <Transaction />,
       },
       {
-        path: "/BillHistory",
+        path: '/BillHistory',
         element: <BillHistory />,
       },
     ],
