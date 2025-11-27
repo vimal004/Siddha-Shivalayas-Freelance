@@ -26,13 +26,14 @@ import {
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import { Autocomplete } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // MODIFIED: ADDED useLocation
 import DeleteIcon from '@mui/icons-material/Delete'; 
 import { use } from 'react';
 
 const Transaction = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const location = useLocation(); // ADDED: to determine the current route
 
   const [formData, setFormData] = useState({
     id: '',
@@ -44,8 +45,8 @@ const Transaction = () => {
     discount: 0,
     totalAmount: 0,
     type: '', // Bill Type: Consulting or Product
-    typeOfPayment: '', // ADDED
-    consultingFee: 0, // ADDED
+    typeOfPayment: '', 
+    consultingFee: 0, 
   });
 
   const [filteredBills, setFilteredBills] = useState([]);
@@ -62,7 +63,11 @@ const Transaction = () => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
   };
 
-  const id = window.location.pathname.split('/')[2];
+  // The ID is only present if the path is /customers/:id
+  const urlId = window.location.pathname.split('/')[2];
+  
+  // Determine if we are on a specific patient's transaction page
+  const isExistingPatientRoute = location.pathname.startsWith('/customers/'); // MODIFIED: Check route pattern
 
   const deleteBill = billId => async () => {
     try {
@@ -97,15 +102,64 @@ const Transaction = () => {
       });
   }, []);
 
+  // MODIFIED: Fetch patient details only if it's an existing patient route, otherwise initialize for new bill
   useEffect(() => {
-    axios
-      .get(`https://siddha-shivalayas-backend.vercel.app/patients/${id}`)
-      .then(response => {
-        setFormData(prev => ({ ...prev, ...response.data }));
-      })
-      .catch(error => console.error(error));
-  }, [id]);
+    if (isExistingPatientRoute) {
+      axios
+        .get(`https://siddha-shivalayas-backend.vercel.app/patients/${urlId}`)
+        .then(response => {
+          setFormData(prev => ({ 
+            ...prev, 
+            ...response.data,
+            // Ensure date is in the correct format for the date input
+            date: response.data.date ? response.data.date.split('T')[0] : new Date().toISOString().split('T')[0],
+          }));
+          fetchBillHistory(response.data.id);
+        })
+        .catch(error => console.error(error));
+    } else {
+        // Initialize form for new/ad-hoc bill
+        setFormData({ 
+            id: '', 
+            name: '',
+            phone: '',
+            address: '',
+            date: new Date().toISOString().split('T')[0],
+            items: [],
+            discount: 0,
+            totalAmount: 0,
+            type: '', 
+            typeOfPayment: '', 
+            consultingFee: 0,
+        });
+        setFilteredBills([]); // Clear bill history for new/ad-hoc bill
+    }
+  }, [location.pathname]); // Dependency on location.pathname to trigger on route change
+  
+  // MODIFIED: Adjusted fetchBillHistory to take an optional ID for filtering
+  const fetchBillHistory = async (patientId = urlId) => {
+    try {
+      const response = await axios.get(
+        'https://siddha-shivalayas-backend.vercel.app/bills-history'
+      );
+      const updatedBills = response.data.map(bill => ({
+        ...bill,
+        downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
+      }));
+      // Filter by current patient ID if on the existing patient route
+      const filtered = isExistingPatientRoute && patientId
+        ? updatedBills.filter(bill => bill.id === patientId) 
+        : [];
+        
+      setBillHistory(filtered);
+      setFilteredBills(filtered);
+    } catch (error) {
+      console.error('Error fetching bill history:', error);
+    }
+  };
 
+  // The rest of the useEffects were removed/simplified into the new logic above.
+  
   const handleItemSelection = (index, selectedStock) => {
     const updatedItems = [...formData.items];
     updatedItems[index] = {
@@ -127,7 +181,6 @@ const Transaction = () => {
     const updatedItems = [...formData.items];
     updatedItems[index][field] = value;
 
-    // Check if the field being updated is "quantity"
     if (field === 'quantity') {
       const selectedStock = stocks.find(
         stock => stock.productName === updatedItems[index].description
@@ -138,7 +191,7 @@ const Transaction = () => {
           `Insufficient stock for ${selectedStock.productName}. Available: ${selectedStock.quantity}`
         );
       } else {
-        setErrorMessage(''); // Clear the error message if the quantity is valid
+        setErrorMessage('');
       }
     }
 
@@ -157,7 +210,6 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
-  // MODIFIED: Calculate total to include consulting fee
   const calculateTotal = () => {
     let subtotal = formData.items.reduce((acc, item) => {
       const price = parseFloat(item.price || 0);
@@ -165,13 +217,11 @@ const Transaction = () => {
       return acc + price * quantity;
     }, 0);
 
-    // Add consulting fee if bill type is 'Consulting'
     if (formData.type === 'Consulting') {
       const fee = parseFloat(formData.consultingFee || 0);
       subtotal += fee;
     }
 
-    // Apply discount to the combined total
     return subtotal - (subtotal * formData.discount) / 100;
   };
 
@@ -182,7 +232,10 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
-      // Check if any item quantity exceeds available stock
+      if (!formData.id || !formData.name || !formData.phone || !formData.address) {
+        throw new Error('Patient details (ID, Name, Phone, Address) are required for a new bill.');
+      }
+
       for (const item of formData.items) {
         const selectedStock = stocks.find(stock => stock.productName === item.description);
 
@@ -204,7 +257,6 @@ const Transaction = () => {
         if (selectedStock) {
           const updatedQuantity = selectedStock.quantity - item.quantity;
 
-          // Update the stock quantity in the database using stockId
           await axios.put(
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
             {
@@ -231,8 +283,28 @@ const Transaction = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Success message
+      // Success message and refresh history if on an existing patient's page
       setSuccessMessage('Stocks updated and bill generated successfully!');
+      if (isExistingPatientRoute) {
+          fetchBillHistory();
+      } else {
+          // Optional: clear form after successful new bill generation
+          setFormData(prev => ({ 
+            ...prev,
+            id: '', 
+            name: '',
+            phone: '',
+            address: '',
+            items: [],
+            discount: 0,
+            totalAmount: 0,
+            type: '', 
+            typeOfPayment: '', 
+            consultingFee: 0,
+            date: new Date().toISOString().split('T')[0],
+        }));
+      }
+
     } catch (err) {
       console.error(err);
       setErrorMessage(err.message || 'Error processing the request');
@@ -241,7 +313,10 @@ const Transaction = () => {
 
   const handleSaveTransaction = async () => {
     try {
-      // Check if any item quantity exceeds available stock
+        if (!formData.id || !formData.name || !formData.phone || !formData.address) {
+            throw new Error('Patient details (ID, Name, Phone, Address) are required for a new bill.');
+        }
+
       for (const item of formData.items) {
         const selectedStock = stocks.find(stock => stock.productName === item.description);
 
@@ -263,7 +338,6 @@ const Transaction = () => {
         if (selectedStock) {
           const updatedQuantity = selectedStock.quantity - item.quantity;
 
-          // Update the stock quantity in the database using stockId
           await axios.put(
             `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
             {
@@ -273,50 +347,39 @@ const Transaction = () => {
           );
         }
       }
-      const response = await axios.post(
+      
+      // Step 2: Generate the bill (implicitly saves the transaction to history on the backend)
+      await axios.post(
         'https://siddha-shivalayas-backend.vercel.app/generate-bill',
         formData,
         { responseType: 'blob' }
       );
 
       setSuccessMessage('Transaction saved successfully!');
-      fetchBillHistory();
-      console.log('Transaction saved successfully:', formData);
+      if (isExistingPatientRoute) {
+          fetchBillHistory();
+      } else {
+          // Optional: clear form after successful new bill save
+          setFormData(prev => ({ 
+            ...prev,
+            id: '', 
+            name: '',
+            phone: '',
+            address: '',
+            items: [],
+            discount: 0,
+            totalAmount: 0,
+            type: '', 
+            typeOfPayment: '', 
+            consultingFee: 0,
+            date: new Date().toISOString().split('T')[0],
+        }));
+      }
     } catch (err) {
       console.error(err);
       setErrorMessage(err.message || 'Error processing the request');
     }
   };
-
-  const fetchBillHistory = async () => {
-    try {
-      const response = await axios.get(
-        'https://siddha-shivalayas-backend.vercel.app/bills-history'
-      );
-      const updatedBills = response.data.map(bill => ({
-        ...bill,
-        downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
-      }));
-      // Filter by current patient ID to show only relevant history
-      const filtered = updatedBills.filter(bill => bill.id === id); 
-      setBillHistory(filtered);
-      setFilteredBills(filtered);
-    } catch (error) {
-      console.error('Error fetching bill history:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBillHistory();
-  }, [id]);
-
-  useEffect(() => {
-    const filtered = billHistory.filter(bill => {
-      const matchesName = bill.name.toLowerCase().includes(formData.name.toLowerCase());
-      return matchesName;
-    });
-    setFilteredBills(filtered);
-  }, [formData.name, billHistory]);
 
   const BillPreview = ({ bill }) => {
     const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
@@ -568,7 +631,10 @@ const Transaction = () => {
                     variant="outlined"
                     fullWidth
                     required
-                    InputProps={{ readOnly: true }}
+                    InputProps={{ 
+                      readOnly: isExistingPatientRoute, // CONDITIONAL READ ONLY
+                      style: isExistingPatientRoute ? { backgroundColor: '#f5f5f5', color: '#757575' } : {},
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -579,7 +645,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: true }}
+                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -590,7 +656,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: true }}
+                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
                   />
                 </Grid>
 
@@ -668,7 +734,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: true }}
+                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
                   />
                 </Grid>
                 
@@ -1038,84 +1104,88 @@ const Transaction = () => {
               {successMessage}
             </MuiAlert>
           </Snackbar>
-          <TableContainer
-            component={Paper}
-            sx={{
-              mt: 6,
-              borderRadius: 2,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Bill History of {formData.name}
-            </Typography>
-            <Table>
-              <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Bill ID</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Payment</TableCell> {/* ADDED */}
-                  <TableCell sx={{ fontWeight: 'bold' }}>Edit</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Delete</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Preview</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Download</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredBills.map((bill, index) => {
-                  // Calculate totals for display
-                  const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-                  const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
-                  const subtotal = itemSubtotal + feeValue;
-                  const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
-                  
-                  return (
-                    <TableRow key={index}>
-                      <TableCell>{'B' + (index + 1)}</TableCell>
-                      <TableCell>{bill.name}</TableCell>
-                      <TableCell>
-                        {/* Indian date format dd/mm/yyyy */}
-                        {new Date(bill.date).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        ₹{total.toFixed(2)} {/* MODIFIED */}
-                      </TableCell>
-                      <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> {/* ADDED */}
-                      <TableCell>
-                        <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button color="error" onClick={() => setBillToDelete(bill)}>
-                          Delete
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button onClick={() => togglePreview(bill._id)}>
-                          {previewedBillId === bill._id ? 'Hide' : 'Preview'}
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="contained"
-                          href={bill.downloadLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Download
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          
+          {/* Only render Bill History table if on the existing patient route */}
+          {isExistingPatientRoute && (
+            <TableContainer
+              component={Paper}
+              sx={{
+                mt: 6,
+                borderRadius: 2,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Bill History of {formData.name}
+              </Typography>
+              <Table>
+                <TableHead sx={{ backgroundColor: theme.palette.primary.light }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Bill ID</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Payment</TableCell> 
+                    <TableCell sx={{ fontWeight: 'bold' }}>Edit</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Delete</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Preview</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Download</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredBills.map((bill, index) => {
+                    // Calculate totals for display
+                    const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+                    const subtotal = itemSubtotal + feeValue;
+                    const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell>{'B' + (index + 1)}</TableCell>
+                        <TableCell>{bill.name}</TableCell>
+                        <TableCell>
+                          {/* Indian date format dd/mm/yyyy */}
+                          {new Date(bill.date).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          ₹{total.toFixed(2)} 
+                        </TableCell>
+                        <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> 
+                        <TableCell>
+                          <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button color="error" onClick={() => setBillToDelete(bill)}>
+                            Delete
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button onClick={() => togglePreview(bill._id)}>
+                            {previewedBillId === bill._id ? 'Hide' : 'Preview'}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="contained"
+                            href={bill.downloadLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Download
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
           {previewedBillId && (
             <BillPreview bill={billHistory.find(bill => bill._id === previewedBillId)} />
           )}
