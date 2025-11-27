@@ -26,14 +26,14 @@ import {
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import { Autocomplete } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom'; // MODIFIED: ADDED useLocation
+import { useNavigate, useLocation } from 'react-router-dom';
 import DeleteIcon from '@mui/icons-material/Delete'; 
 import { use } from 'react';
 
 const Transaction = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const location = useLocation(); // ADDED: to determine the current route
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     id: '',
@@ -44,9 +44,10 @@ const Transaction = () => {
     items: [],
     discount: 0,
     totalAmount: 0,
-    type: '', // Bill Type: Consulting or Product
+    type: '', // Bill Type: Consulting, Treatment or Product
     typeOfPayment: '', 
     consultingFee: 0, 
+    treatmentFee: 0, // ADDED
   });
 
   const [filteredBills, setFilteredBills] = useState([]);
@@ -63,11 +64,8 @@ const Transaction = () => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
   };
 
-  // The ID is only present if the path is /customers/:id
   const urlId = window.location.pathname.split('/')[2];
-  
-  // Determine if we are on a specific patient's transaction page
-  const isExistingPatientRoute = location.pathname.startsWith('/customers/'); // MODIFIED: Check route pattern
+  const isExistingPatientRoute = location.pathname.startsWith('/customers/');
 
   const deleteBill = billId => async () => {
     try {
@@ -102,7 +100,6 @@ const Transaction = () => {
       });
   }, []);
 
-  // MODIFIED: Fetch patient details only if it's an existing patient route, otherwise initialize for new bill
   useEffect(() => {
     if (isExistingPatientRoute) {
       axios
@@ -111,14 +108,12 @@ const Transaction = () => {
           setFormData(prev => ({ 
             ...prev, 
             ...response.data,
-            // Ensure date is in the correct format for the date input
             date: response.data.date ? response.data.date.split('T')[0] : new Date().toISOString().split('T')[0],
           }));
           fetchBillHistory(response.data.id);
         })
         .catch(error => console.error(error));
     } else {
-        // Initialize form for new/ad-hoc bill
         setFormData({ 
             id: '', 
             name: '',
@@ -131,12 +126,12 @@ const Transaction = () => {
             type: '', 
             typeOfPayment: '', 
             consultingFee: 0,
+            treatmentFee: 0, // ADDED
         });
-        setFilteredBills([]); // Clear bill history for new/ad-hoc bill
+        setFilteredBills([]);
     }
-  }, [location.pathname]); // Dependency on location.pathname to trigger on route change
+  }, [location.pathname]);
   
-  // MODIFIED: Adjusted fetchBillHistory to take an optional ID for filtering
   const fetchBillHistory = async (patientId = urlId) => {
     try {
       const response = await axios.get(
@@ -146,7 +141,7 @@ const Transaction = () => {
         ...bill,
         downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
       }));
-      // Filter by current patient ID if on the existing patient route
+      
       const filtered = isExistingPatientRoute && patientId
         ? updatedBills.filter(bill => bill.id === patientId) 
         : [];
@@ -158,8 +153,6 @@ const Transaction = () => {
     }
   };
 
-  // The rest of the useEffects were removed/simplified into the new logic above.
-  
   const handleItemSelection = (index, selectedStock) => {
     const updatedItems = [...formData.items];
     updatedItems[index] = {
@@ -210,6 +203,7 @@ const Transaction = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
+  // MODIFIED: Calculate total to include consulting fee or treatment fee
   const calculateTotal = () => {
     let subtotal = formData.items.reduce((acc, item) => {
       const price = parseFloat(item.price || 0);
@@ -220,6 +214,9 @@ const Transaction = () => {
     if (formData.type === 'Consulting') {
       const fee = parseFloat(formData.consultingFee || 0);
       subtotal += fee;
+    } else if (formData.type === 'Treatment') { // ADDED: Treatment fee
+      const fee = parseFloat(formData.treatmentFee || 0);
+      subtotal += fee;
     }
 
     return subtotal - (subtotal * formData.discount) / 100;
@@ -228,7 +225,7 @@ const Transaction = () => {
   useEffect(() => {
     const totalAmount = calculateTotal();
     setFormData(prevData => ({ ...prevData, totalAmount }));
-  }, [formData.items, formData.discount, formData.type, formData.consultingFee]);
+  }, [formData.items, formData.discount, formData.type, formData.consultingFee, formData.treatmentFee]); // MODIFIED: ADDED formData.treatmentFee
 
   const handleDownloadBill = async () => {
     try {
@@ -283,12 +280,10 @@ const Transaction = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Success message and refresh history if on an existing patient's page
       setSuccessMessage('Stocks updated and bill generated successfully!');
       if (isExistingPatientRoute) {
           fetchBillHistory();
       } else {
-          // Optional: clear form after successful new bill generation
           setFormData(prev => ({ 
             ...prev,
             id: '', 
@@ -301,6 +296,7 @@ const Transaction = () => {
             type: '', 
             typeOfPayment: '', 
             consultingFee: 0,
+            treatmentFee: 0,
             date: new Date().toISOString().split('T')[0],
         }));
       }
@@ -348,7 +344,6 @@ const Transaction = () => {
         }
       }
       
-      // Step 2: Generate the bill (implicitly saves the transaction to history on the backend)
       await axios.post(
         'https://siddha-shivalayas-backend.vercel.app/generate-bill',
         formData,
@@ -359,7 +354,6 @@ const Transaction = () => {
       if (isExistingPatientRoute) {
           fetchBillHistory();
       } else {
-          // Optional: clear form after successful new bill save
           setFormData(prev => ({ 
             ...prev,
             id: '', 
@@ -372,6 +366,7 @@ const Transaction = () => {
             type: '', 
             typeOfPayment: '', 
             consultingFee: 0,
+            treatmentFee: 0,
             date: new Date().toISOString().split('T')[0],
         }));
       }
@@ -383,7 +378,18 @@ const Transaction = () => {
 
   const BillPreview = ({ bill }) => {
     const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+    
+    let feeValue = 0;
+    let feeLabel = '';
+    
+    if (bill.type === 'Consulting') {
+        feeValue = bill.consultingFee || 0;
+        feeLabel = 'Consulting Fee';
+    } else if (bill.type === 'Treatment') { // ADDED
+        feeValue = bill.treatmentFee || 0;
+        feeLabel = 'Treatment Fee';
+    }
+
     const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
@@ -422,11 +428,11 @@ const Transaction = () => {
                 </tr>
               );
             })}
-             {/* ADDED: Consulting Fee row */}
-            {bill.type === 'Consulting' && feeValue > 0 && (
+             {/* MODIFIED: Combine Consulting/Treatment Fee row */}
+            {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
               <tr>
                 <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
-                  Consulting Fee
+                  {feeLabel}
                 </td>
                 <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
                   ₹{feeValue.toFixed(2)}
@@ -453,7 +459,7 @@ const Transaction = () => {
               </td >
               <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
             </tr>
-            {/* ADDED: Payment Type Preview Row */}
+            {/* Payment Type Preview Row */}
             <tr>
               <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
                 Payment Type
@@ -632,7 +638,7 @@ const Transaction = () => {
                     fullWidth
                     required
                     InputProps={{ 
-                      readOnly: isExistingPatientRoute, // CONDITIONAL READ ONLY
+                      readOnly: isExistingPatientRoute, 
                       style: isExistingPatientRoute ? { backgroundColor: '#f5f5f5', color: '#757575' } : {},
                     }}
                   />
@@ -645,7 +651,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
+                    InputProps={{ readOnly: isExistingPatientRoute }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -656,7 +662,7 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
+                    InputProps={{ readOnly: isExistingPatientRoute }}
                   />
                 </Grid>
 
@@ -675,7 +681,7 @@ const Transaction = () => {
                   />
                 </Grid>
 
-                {/* MODIFIED: Bill Type Dropdown */}
+                {/* MODIFIED: Bill Type Dropdown to include Treatment */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     select
@@ -686,9 +692,10 @@ const Transaction = () => {
                       setFormData({
                         ...formData,
                         type: e.target.value,
-                        // Clear consulting fee/items on type change
+                        // Clear fees/items based on new type
                         consultingFee: e.target.value !== 'Consulting' ? 0 : formData.consultingFee,
-                        items: e.target.value === 'Consulting' ? [] : formData.items,
+                        treatmentFee: e.target.value !== 'Treatment' ? 0 : formData.treatmentFee, // MODIFIED
+                        items: (e.target.value === 'Consulting' || e.target.value === 'Treatment') ? [] : formData.items, // MODIFIED
                       })
                     }
                     variant="outlined"
@@ -699,12 +706,13 @@ const Transaction = () => {
                   >
                     <option value=""></option>
                     <option value="Consulting">Consulting</option>
+                    <option value="Treatment">Treatment</option> {/* ADDED */}
                     <option value="Product">Product</option>
                   </TextField>
                 </Grid>
                 {/* END MODIFIED */}
 
-                {/* ADDED: Type of Payment Field */}
+                {/* Type of Payment Field */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     select
@@ -724,7 +732,6 @@ const Transaction = () => {
                     <option value="Cash">Cash</option>
                   </TextField>
                 </Grid>
-                {/* END ADDED */}
 
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -734,11 +741,11 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: isExistingPatientRoute }} // CONDITIONAL READ ONLY
+                    InputProps={{ readOnly: isExistingPatientRoute }}
                   />
                 </Grid>
                 
-                {/* ADDED: Consulting Fee Field (Conditional) */}
+                {/* Consulting Fee Field (Conditional) */}
                 {formData.type === 'Consulting' && (
                   <Grid item xs={12} sm={6}>
                     <TextField
@@ -752,11 +759,26 @@ const Transaction = () => {
                     />
                   </Grid>
                 )}
+
+                {/* ADDED: Treatment Fee Field (Conditional) */}
+                {formData.type === 'Treatment' && (
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Treatment Fee"
+                      name="treatmentFee"
+                      type="number"
+                      value={formData.treatmentFee}
+                      onChange={handleChange}
+                      variant="outlined"
+                      fullWidth
+                    />
+                  </Grid>
+                )}
                 {/* END ADDED */}
 
 
-                {/* Conditional Items Section - Only show if not Consulting (or if forced) */}
-                {formData.type !== 'Consulting' && (
+                {/* Conditional Items Section - Only show if type is Product (or empty) */}
+                {formData.type === 'Product' || formData.type === '' ? (
                   <Grid item xs={12}>
                     <Typography variant="h6" gutterBottom>
                       Items
@@ -835,8 +857,21 @@ const Transaction = () => {
                       Add Item
                     </Button>
                   </Grid>
+                ) : (
+                    // Hide items section if Consulting or Treatment is selected and there are no items
+                    (formData.items.length > 0) && (
+                        <Grid item xs={12}>
+                            <Typography variant="h6" gutterBottom>
+                                Items
+                            </Typography>
+                            {/* Render logic can be placed here if you allow adding items to 'Consulting'/'Treatment' later */}
+                            <Typography variant="body2" color="textSecondary">
+                                Items section is hidden for {formData.type}.
+                            </Typography>
+                        </Grid>
+                    )
                 )}
-                {/* END Conditional Items Section */}
+
 
                 <Grid item xs={12}>
                   <TextField
@@ -936,7 +971,7 @@ const Transaction = () => {
                           </tr>
                         );
                       })}
-                      {/* ADDED: Consulting Fee Preview */}
+                      {/* Consulting Fee Preview */}
                       {formData.type === 'Consulting' && formData.consultingFee > 0 && (
                         <tr>
                           <td
@@ -952,6 +987,25 @@ const Transaction = () => {
                           </td>
                           <td style={{ border: '1px solid #ccc', padding: '8px' }}>
                             ₹{parseFloat(formData.consultingFee).toFixed(2)}
+                          </td>
+                        </tr>
+                      )}
+                      {/* ADDED: Treatment Fee Preview */}
+                      {formData.type === 'Treatment' && formData.treatmentFee > 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            style={{
+                              border: '1px solid #ccc',
+                              padding: '8px',
+                              textAlign: 'right',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            Treatment Fee
+                          </td>
+                          <td style={{ border: '1px solid #ccc', padding: '8px' }}>
+                            ₹{parseFloat(formData.treatmentFee).toFixed(2)}
                           </td>
                         </tr>
                       )}
@@ -976,7 +1030,9 @@ const Transaction = () => {
                                 acc +
                                 parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
-                            ) + parseFloat(formData.consultingFee || 0)
+                            ) + 
+                            parseFloat(formData.consultingFee || 0) + // MODIFIED: Include both fees
+                            parseFloat(formData.treatmentFee || 0) // MODIFIED: Include both fees
                           ).toFixed(2)}
                         </td>
                       </tr>
@@ -999,7 +1055,9 @@ const Transaction = () => {
                                 acc +
                                 parseFloat(item.price || 0) * parseInt(item.quantity || 0, 10),
                               0
-                            ) + parseFloat(formData.consultingFee || 0)) *
+                            ) + 
+                            parseFloat(formData.consultingFee || 0) + // MODIFIED: Include both fees
+                            parseFloat(formData.treatmentFee || 0)) * // MODIFIED: Include both fees
                               (formData.discount || 0)) /
                             100
                           ).toFixed(2)}
@@ -1027,7 +1085,7 @@ const Transaction = () => {
                           ₹{formData.totalAmount.toFixed(2)}
                         </td>
                       </tr>
-                      {/* ADDED: Payment Type Preview */}
+                      {/* Payment Type Preview */}
                       <tr>
                         <td
                           colSpan={5}
@@ -1050,7 +1108,6 @@ const Transaction = () => {
                           {formData.typeOfPayment || 'N/A'}
                         </td>
                       </tr>
-                       {/* END ADDED */}
                     </tbody>
                   </table>
                 </Box>
@@ -1105,7 +1162,6 @@ const Transaction = () => {
             </MuiAlert>
           </Snackbar>
           
-          {/* Only render Bill History table if on the existing patient route */}
           {isExistingPatientRoute && (
             <TableContainer
               component={Paper}
@@ -1136,7 +1192,14 @@ const Transaction = () => {
                   {filteredBills.map((bill, index) => {
                     // Calculate totals for display
                     const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-                    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+                    
+                    let feeValue = 0;
+                    if (bill.type === 'Consulting') {
+                        feeValue = bill.consultingFee || 0;
+                    } else if (bill.type === 'Treatment') {
+                        feeValue = bill.treatmentFee || 0;
+                    }
+
                     const subtotal = itemSubtotal + feeValue;
                     const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
                     
@@ -1145,7 +1208,6 @@ const Transaction = () => {
                         <TableCell>{'B' + (index + 1)}</TableCell>
                         <TableCell>{bill.name}</TableCell>
                         <TableCell>
-                          {/* Indian date format dd/mm/yyyy */}
                           {new Date(bill.date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: '2-digit',

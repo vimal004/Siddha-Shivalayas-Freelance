@@ -55,8 +55,9 @@ const BillSchema = new mongoose.Schema({
   date: Date,
   items: Array,
   discount: { type: Number, default: 0 },
-  typeOfPayment: String, // ADDED
-  consultingFee: { type: Number, default: 0 }, // ADDED
+  typeOfPayment: String, 
+  consultingFee: { type: Number, default: 0 }, 
+  treatmentFee: { type: Number, default: 0 }, // ADDED
   createdAt: { type: Date, default: Date.now },
 });
 const Bill = mongoose.model('Bill', BillSchema);
@@ -67,7 +68,7 @@ app.post('/generate-bill', async (req, res) => {
   const tmpDocxPath = path.join('/tmp', `bill-${req.body.id}-${Date.now()}.docx`);
 
   try {
-    const { id, name, phone, address, date, items, discount, typeOfPayment, consultingFee } = req.body;
+    const { id, name, phone, address, date, items, discount, typeOfPayment, consultingFee, treatmentFee } = req.body; // MODIFIED: ADDED treatmentFee
 
     if (!id) {
       return res.status(400).json({ error: 'Missing required fields (ID).' });
@@ -87,8 +88,14 @@ app.post('/generate-bill', async (req, res) => {
     }));
     const itemSubtotal = itemTotals.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0);
 
-    // 2. Calculate and add consulting fee (only if bill type is 'Consulting')
-    const feeValue = req.body.type === 'Consulting' ? (parseFloat(consultingFee || 0)) : 0;
+    // 2. Calculate and add fee (MODIFIED logic)
+    let feeValue = 0;
+    if (req.body.type === 'Consulting') {
+        feeValue = parseFloat(consultingFee || 0);
+    } else if (req.body.type === 'Treatment') { // ADDED logic
+        feeValue = parseFloat(treatmentFee || 0);
+    }
+    
     const subtotal = itemSubtotal + feeValue; // Combined subtotal
 
     // 3. Apply discount
@@ -103,8 +110,9 @@ app.post('/generate-bill', async (req, res) => {
       type: req.body.type || '',
       items: itemTotals,
       discount: discountValue,
-      typeOfPayment, // ADDED
-      consultingFee: feeValue, // ADDED
+      typeOfPayment, 
+      consultingFee: req.body.type === 'Consulting' ? feeValue : 0, // MODIFIED
+      treatmentFee: req.body.type === 'Treatment' ? feeValue : 0, // ADDED
     });
     await newBill.save();
 
@@ -124,12 +132,13 @@ app.post('/generate-bill', async (req, res) => {
       phone,
       address,
       type: req.body.type || '',
-      date: displayDate.replace(/\//g, '-'), // Changed to dd-mm-yyyy for template
+      date: displayDate.replace(/\//g, '-'), 
       items: itemTotals,
       subtotal: subtotal.toFixed(2), 
       discount: discountValue.toFixed(2),
-      consultingFee: feeValue.toFixed(2), // ADDED
-      typeOfPayment: typeOfPayment || 'N/A', // ADDED
+      consultingFee: req.body.type === 'Consulting' ? feeValue.toFixed(2) : '', // MODIFIED
+      treatmentFee: req.body.type === 'Treatment' ? feeValue.toFixed(2) : '', // ADDED
+      typeOfPayment: typeOfPayment || 'N/A', 
       total: finalTotal,
     });
     doc.render();
@@ -175,12 +184,19 @@ app.get('/bills/download/:billId', async (req, res) => {
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
-    // Calculate totals including consulting fee
+    // Calculate totals including consulting/treatment fee (MODIFIED logic)
     const itemSubtotal = bill.items.reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
       0
     );
-    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+    
+    let feeValue = 0; 
+    if (bill.type === 'Consulting') { 
+        feeValue = bill.consultingFee || 0;
+    } else if (bill.type === 'Treatment') { // ADDED logic
+        feeValue = bill.treatmentFee || 0;
+    }
+    
     const subtotal = itemSubtotal + feeValue;
     const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
@@ -195,12 +211,13 @@ app.get('/bills/download/:billId', async (req, res) => {
       phone: bill.phone,
       address: bill.address,
       type: bill.type || '',
-      date: displayDate.replace(/\//g, '-'), // Changed to dd-mm-yyyy for template
+      date: displayDate.replace(/\//g, '-'), 
       items: bill.items,
       subtotal: subtotal.toFixed(2),
       discount: (bill.discount || 0).toFixed(2),
-      consultingFee: feeValue.toFixed(2), // ADDED
-      typeOfPayment: bill.typeOfPayment || 'N/A', // ADDED
+      consultingFee: bill.type === 'Consulting' ? feeValue.toFixed(2) : '', // MODIFIED
+      treatmentFee: bill.type === 'Treatment' ? feeValue.toFixed(2) : '', // ADDED
+      typeOfPayment: bill.typeOfPayment || 'N/A', 
       total: total.toFixed(2),
     });
 

@@ -202,7 +202,18 @@ const BillHistory = () => {
 
   const BillPreview = ({ bill }) => {
     const itemSubtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-    const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+    
+    let feeValue = 0; // MODIFIED
+    let feeLabel = ''; // ADDED
+    
+    if (bill.type === 'Consulting') {
+        feeValue = bill.consultingFee || 0;
+        feeLabel = 'Consulting Fee';
+    } else if (bill.type === 'Treatment') { // ADDED
+        feeValue = bill.treatmentFee || 0;
+        feeLabel = 'Treatment Fee';
+    }
+
     const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
@@ -241,11 +252,11 @@ const BillHistory = () => {
                 </tr>
               );
             })}
-            {/* ADDED: Consulting Fee row */}
-            {bill.type === 'Consulting' && feeValue > 0 && (
+            {/* MODIFIED: Combine Consulting/Treatment Fee row */}
+            {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
               <tr>
                 <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
-                  Consulting Fee
+                  {feeLabel}
                 </td>
                 <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
                   ₹{feeValue.toFixed(2)}
@@ -272,7 +283,7 @@ const BillHistory = () => {
               </td >
               <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
             </tr>
-            {/* ADDED: Payment Type Preview Row */}
+            {/* Payment Type Preview Row */}
             <tr>
               <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
                 Payment Type
@@ -321,7 +332,7 @@ const BillHistory = () => {
               <TableCell>Type</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Total</TableCell>
-              <TableCell>Payment</TableCell> {/* ADDED: New Column Header */}
+              <TableCell>Payment</TableCell> 
               <TableCell>Edit</TableCell>
               <TableCell>Delete</TableCell>
               <TableCell>Download</TableCell>
@@ -331,7 +342,14 @@ const BillHistory = () => {
             {filteredBills.map((bill, index) => {
               // Calculate totals for display
               const itemSubtotal = bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-              const feeValue = bill.type === 'Consulting' ? (bill.consultingFee || 0) : 0;
+              
+              let feeValue = 0;
+              if (bill.type === 'Consulting') {
+                  feeValue = bill.consultingFee || 0;
+              } else if (bill.type === 'Treatment') { // ADDED
+                  feeValue = bill.treatmentFee || 0;
+              }
+
               const subtotal = itemSubtotal + feeValue;
               const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
@@ -349,9 +367,9 @@ const BillHistory = () => {
                     })}
                   </TableCell>
                   <TableCell>
-                    ₹{total.toFixed(2)} {/* MODIFIED: Use the calculated final total */}
+                    ₹{total.toFixed(2)} 
                   </TableCell>
-                  <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> {/* ADDED: Payment Type */}
+                  <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> 
                   <TableCell>
                     <Button onClick={() => setEditingBill(bill)}>Edit</Button>
                   </TableCell>
