@@ -29,13 +29,6 @@ const Home = () => {
       color: '#2196F3', // Blue
     },
     {
-      title: 'Purchase Order History', // Add this block
-      icon: <HistoryIcon />,
-      path: '/purchasehistory',
-      description: 'View all wholesale purchase records',
-      color: '#795549',
-    },
-    {
       title: 'Manage Patient Records',
       icon: <PeopleIcon />,
       path: '/managepatients',
@@ -74,8 +67,15 @@ const Home = () => {
       title: 'Purchase Entry',
       icon: <InventoryIcon />, // Or a different icon like LocalShipping
       path: '/purchaseentry',
-      description: 'Track incoming stock from vendors',
+      description: 'Enter stock from vendors',
       color: '#607d8b', // Blue Grey
+    },
+    {
+      title: 'Purchase Order History', // Add this block
+      icon: <HistoryIcon />,
+      path: '/purchasehistory',
+      description: 'View all vendor purchase records',
+      color: '#795549',
     },
   ];
 
