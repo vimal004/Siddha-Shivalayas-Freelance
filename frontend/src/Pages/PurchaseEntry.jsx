@@ -22,17 +22,16 @@ import {
   Divider,
   useTheme,
   alpha,
+  Autocomplete,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Save as SaveIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 
 const PurchaseEntry = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
 
   // --- State for Invoice Header Details ---
   const [invoiceDetails, setInvoiceDetails] = useState({
-    vendorName: '', // Defaulting based on your image
+    vendorName: '',
     invoiceNo: '',
     invoiceDate: new Date().toISOString().split('T')[0],
     gstin: '',
@@ -46,14 +45,15 @@ const PurchaseEntry = () => {
       hsnCode: '',
       expiryDate: '',
       mrp: 0,
-      rate: 0, // Purchase Rate
+      rate: 0,
       qty: 0,
       discountPercent: 0,
-      gstPercent: 5, // Default from your image
+      gstPercent: 5,
     },
   ]);
 
-  // --- State for Calculated Totals ---
+  // --- State for Data & UI ---
+  const [existingStocks, setExistingStocks] = useState([]);
   const [totals, setTotals] = useState({
     taxableAmount: 0,
     cgst: 0,
@@ -61,17 +61,22 @@ const PurchaseEntry = () => {
     roundOff: 0,
     grandTotal: 0,
   });
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ open: false, text: '', severity: 'success' });
 
-  // --- Effects ---
+  // --- Load Existing Stocks on Mount ---
+  useEffect(() => {
+    axios.get('https://siddha-shivalayas-backend.vercel.app/stocks')
+      .then(res => setExistingStocks(res.data))
+      .catch(err => console.error("Failed to load stocks", err));
+  }, []);
+
+  // --- Calculate Totals whenever items change ---
   useEffect(() => {
     calculateInvoiceTotals();
   }, [items]);
 
   // --- Handlers ---
-
   const handleHeaderChange = e => {
     setInvoiceDetails({ ...invoiceDetails, [e.target.name]: e.target.value });
   };
@@ -79,6 +84,24 @@ const PurchaseEntry = () => {
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
+    setItems(newItems);
+  };
+
+  // Handle Autocomplete Selection
+  const handleProductSelect = (index, value) => {
+    const newItems = [...items];
+    if (typeof value === 'string') {
+        // User typed a new name
+        newItems[index].productName = value;
+    } else if (value && value.productName) {
+        // User selected existing stock
+        newItems[index].productName = value.productName;
+        newItems[index].hsnCode = value.hsnCode || '';
+        newItems[index].gstPercent = value.gst || 5;
+        newItems[index].mrp = value.price || 0; // Assuming selling price is MRP for now
+    } else {
+        newItems[index].productName = '';
+    }
     setItems(newItems);
   };
 
@@ -117,19 +140,15 @@ const PurchaseEntry = () => {
       const discount = parseFloat(item.discountPercent) || 0;
       const gst = parseFloat(item.gstPercent) || 0;
 
-      // Logic: (Rate * Qty) - Discount
       const baseAmount = quantity * rate;
       const discountAmount = baseAmount * (discount / 100);
       const taxable = baseAmount - discountAmount;
-
-      // Tax Logic
       const taxAmount = taxable * (gst / 100);
 
       totalTaxable += taxable;
       totalTax += taxAmount;
     });
 
-    // Assuming intra-state (CGST + SGST split equally)
     const cgst = totalTax / 2;
     const sgst = totalTax / 2;
     const rawTotal = totalTaxable + totalTax;
@@ -149,7 +168,6 @@ const PurchaseEntry = () => {
   const handleSubmit = async () => {
     setLoading(true);
 
-    // 1. Validation
     if (!invoiceDetails.invoiceNo || !invoiceDetails.vendorName) {
       setMessage({ open: true, text: 'Please fill Invoice No and Vendor Name', severity: 'error' });
       setLoading(false);
@@ -157,74 +175,61 @@ const PurchaseEntry = () => {
     }
 
     try {
-      // 2. Prepare Payload
-      // We need to send this to backend to:
-      // a) Save the Purchase Record (You might need a new Model for this)
-      // b) UPDATE the Stock Quantity automatically
-
-      const payload = {
+      // 1. Save Purchase Record
+      const purchasePayload = {
         ...invoiceDetails,
         items,
         totals,
       };
+      await axios.post('https://siddha-shivalayas-backend.vercel.app/purchases', purchasePayload);
 
-      // NOTE: You need to create this route on backend (see step 2 below)
-      // For now, let's simulate updating stocks one by one if you don't have a bulk route
+      // 2. Update Stocks
+      const stockUpdatePromises = items.map(item => {
+        // Find if stock exists by Name
+        const existingStock = existingStocks.find(
+            s => s.productName.toLowerCase() === item.productName.toLowerCase()
+        );
 
-      // Loop through items and update stock (Simple integration for your current backend)
-      const updatePromises = items.map(item => {
-        // We assume "productName" matches exactly or we create a new one.
-        // Since your current backend uses 'stockId', in a real app we'd map names to IDs.
-        // Here we will try to find by name or just post as new stock logic
-
-        // This is a simplified logic to push data to your existing /stocks endpoint
-        // You might need to adjust based on how you generate 'stockId'
-        const stockPayload = {
-          stockId:
-            item.productName.substring(0, 3).toUpperCase() + Math.floor(Math.random() * 1000), // Temp ID gen
-          productName: item.productName,
-          quantity: item.qty, // This needs to be ADDED to existing in backend
-          price: item.mrp, // Selling price usually MRP
-          hsnCode: item.hsnCode,
-          discount: 0, // Default selling discount
-          gst: item.gstPercent,
-          updateMode: 'add', // Signal backend to ADD quantity, not set it
-        };
-
-        // We use PUT to update if exists, logic handled in backend
-        // Note: Your current backend might need a tweak to handle 'productName' lookup if ID isn't known
-        // For this example, let's assume we are sending a purchase record
-        return axios
-          .post('https://siddha-shivalayas-backend.vercel.app/stocks', stockPayload)
-          .catch(e => {
-            // If creation fails (duplicate ID), try updating?
-            // Ideally backend handles this.
-            console.log('Stock update/create attempted');
-          });
+        if (existingStock) {
+            // UPDATE existing stock (Add Quantity)
+            return axios.put(`https://siddha-shivalayas-backend.vercel.app/stocks/${existingStock.stockId}`, {
+                quantity: item.qty,
+                price: item.mrp > 0 ? item.mrp : existingStock.price, // Update price if provided
+                updateMode: 'add'
+            });
+        } else {
+            // CREATE new stock
+            // Generate a simple ID if not provided logic (e.g., first 3 letters + random)
+            const newStockId = (item.productName.substring(0, 3) + Math.floor(1000 + Math.random() * 9000)).toUpperCase();
+            return axios.post('https://siddha-shivalayas-backend.vercel.app/stocks', {
+                stockId: newStockId,
+                productName: item.productName,
+                quantity: item.qty,
+                price: item.mrp || item.rate, // Selling price
+                hsnCode: item.hsnCode,
+                discount: 0,
+                gst: item.gstPercent
+            });
+        }
       });
 
-      await Promise.all(updatePromises);
+      await Promise.all(stockUpdatePromises);
+
+      // Refresh local stocks for next entry
+      const res = await axios.get('https://siddha-shivalayas-backend.vercel.app/stocks');
+      setExistingStocks(res.data);
 
       setMessage({ open: true, text: 'Purchase Saved & Stocks Updated!', severity: 'success' });
-
+      
       // Reset Form
       setTimeout(() => {
-        // navigate('/viewstocks'); // Optional redirect
-        setItems([
-          {
-            productName: '',
-            batchNo: '',
-            hsnCode: '',
-            expiryDate: '',
-            mrp: 0,
-            rate: 0,
-            qty: 0,
-            discountPercent: 0,
-            gstPercent: 5,
-          },
-        ]);
+        setItems([{
+            productName: '', batchNo: '', hsnCode: '', expiryDate: '',
+            mrp: 0, rate: 0, qty: 0, discountPercent: 0, gstPercent: 5,
+        }]);
         setInvoiceDetails({ ...invoiceDetails, invoiceNo: '' });
       }, 1500);
+
     } catch (error) {
       console.error(error);
       setMessage({ open: true, text: 'Error saving purchase', severity: 'error' });
@@ -237,19 +242,12 @@ const PurchaseEntry = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(
-          theme.palette.primary.main,
-          0.1
-        )} 100%)`,
+        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
         py: 4,
       }}
     >
       <Container maxWidth="xl">
-        {/* Header Section */}
-        <Typography
-          variant="h4"
-          sx={{ mb: 4, fontWeight: 700, color: 'primary.main', textAlign: 'center' }}
-        >
+        <Typography variant="h4" sx={{ mb: 4, fontWeight: 700, color: 'primary.main', textAlign: 'center' }}>
           Wholesale Purchase Entry
         </Typography>
 
@@ -293,16 +291,12 @@ const PurchaseEntry = () => {
           </CardContent>
         </Card>
 
-        {/* Items Table Section */}
-        <TableContainer
-          component={Paper}
-          sx={{ mb: 4, borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
-        >
+        <TableContainer component={Paper} sx={{ mb: 4, borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
           <Table size="small">
             <TableHead sx={{ backgroundColor: theme.palette.primary.main }}>
               <TableRow>
                 <TableCell sx={{ color: 'white' }}>#</TableCell>
-                <TableCell sx={{ color: 'white', width: '20%' }}>Product Name</TableCell>
+                <TableCell sx={{ color: 'white', width: '25%' }}>Product Name</TableCell>
                 <TableCell sx={{ color: 'white' }}>Batch</TableCell>
                 <TableCell sx={{ color: 'white' }}>Expiry</TableCell>
                 <TableCell sx={{ color: 'white' }}>HSN</TableCell>
@@ -324,13 +318,24 @@ const PurchaseEntry = () => {
                   <TableRow key={index}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
-                      <TextField
+                      <Autocomplete
+                        freeSolo
+                        options={existingStocks}
+                        getOptionLabel={(option) => typeof option === 'string' ? option : option.productName}
                         value={item.productName}
-                        onChange={e => handleItemChange(index, 'productName', e.target.value)}
-                        placeholder="Item Name"
-                        fullWidth
-                        size="small"
-                        variant="standard"
+                        onChange={(event, newValue) => handleProductSelect(index, newValue)}
+                        onInputChange={(event, newInputValue) => {
+                            // Handle raw input change
+                            handleItemChange(index, 'productName', newInputValue);
+                        }}
+                        renderInput={(params) => (
+                            <TextField 
+                                {...params} 
+                                placeholder="Item Name" 
+                                variant="standard"
+                                fullWidth
+                            />
+                        )}
                       />
                     </TableCell>
                     <TableCell>
@@ -416,16 +421,14 @@ const PurchaseEntry = () => {
           </Box>
         </TableContainer>
 
-        {/* Footer Summary Section */}
+        {/* Footer Summary */}
         <Grid container spacing={2} justifyContent="flex-end">
           <Grid item xs={12} md={4}>
             <Card variant="outlined" sx={{ backgroundColor: '#f9f9f9' }}>
               <CardContent>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2">Taxable Amount:</Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    ₹{totals.taxableAmount}
-                  </Typography>
+                  <Typography variant="body1" fontWeight="bold">₹{totals.taxableAmount}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2">CGST:</Typography>
@@ -441,12 +444,8 @@ const PurchaseEntry = () => {
                 </Box>
                 <Divider sx={{ my: 1 }} />
                 <Box display="flex" justifyContent="space-between" mt={1}>
-                  <Typography variant="h6" color="primary">
-                    Grand Total:
-                  </Typography>
-                  <Typography variant="h6" color="primary">
-                    ₹{totals.grandTotal}
-                  </Typography>
+                  <Typography variant="h6" color="primary">Grand Total:</Typography>
+                  <Typography variant="h6" color="primary">₹{totals.grandTotal}</Typography>
                 </Box>
               </CardContent>
             </Card>

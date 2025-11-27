@@ -10,6 +10,7 @@ import PatientForm from './Pages/PatientForm';
 import AllPatients from './Pages/AllPatients';
 import BillHistory from './Pages/BillHistory';
 import PurchaseEntry from './Pages/PurchaseEntry';
+import PurchaseHistory from './Pages/PurchaseHistory';
 function App() {
   return (
     <div>
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: '/purchaseentry',
         element: <PurchaseEntry />,
+      },
+      {
+        path: '/purchasehistory', // Add this new path
+        element: <PurchaseHistory />,
       },
       {
         path: '/managepatients',

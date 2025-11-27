@@ -29,6 +29,13 @@ const Home = () => {
       color: '#2196F3', // Blue
     },
     {
+      title: 'Purchase Order History', // Add this block
+      icon: <HistoryIcon />,
+      path: '/purchasehistory',
+      description: 'View all wholesale purchase records',
+      color: '#795549',
+    },
+    {
       title: 'Manage Patient Records',
       icon: <PeopleIcon />,
       path: '/managepatients',

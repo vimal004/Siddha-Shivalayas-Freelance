@@ -37,9 +37,11 @@ mongoose
 // --- START: Routes ---
 const stockRoutes = require('./routes/stock');
 const patientRoutes = require('./routes/patient');
+const purchaseRoutes = require('./routes/purchase');
 
 app.use('/stocks', stockRoutes);
 app.use('/patients', patientRoutes);
+app.use('/purchases', purchaseRoutes); // Add this line
 
 app.get('/', (req, res) => {
   res.json('Hello World');
