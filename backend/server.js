@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
   res.json('Hello World');
 });
 
-// Bill Schema
+// Bill Schema (MODIFIED)
 const BillSchema = new mongoose.Schema({
   id: String,
   name: String,
@@ -55,29 +55,50 @@ const BillSchema = new mongoose.Schema({
   date: Date,
   items: Array,
   discount: { type: Number, default: 0 },
+  typeOfPayment: String, 
+  consultingFee: { type: Number, default: 0 }, 
+  treatmentFee: { type: Number, default: 0 }, // ADDED
   createdAt: { type: Date, default: Date.now },
 });
 const Bill = mongoose.model('Bill', BillSchema);
 
-// Bill Generation Endpoint
+// Bill Generation Endpoint (MODIFIED)
 app.post('/generate-bill', async (req, res) => {
   // Define a temporary path for the file
   const tmpDocxPath = path.join('/tmp', `bill-${req.body.id}-${Date.now()}.docx`);
 
   try {
-    const { id, name, phone, address, date, items, discount } = req.body;
+    const { id, name, phone, address, date, items, discount, typeOfPayment, consultingFee, treatmentFee } = req.body; // MODIFIED: ADDED treatmentFee
 
-    if (!id || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields.' });
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required fields (ID).' });
+    }
+    const billItems = Array.isArray(items) ? items : []; 
+    if (!typeOfPayment) {
+        return res.status(400).json({ error: 'Type of Payment is required.' });
     }
 
     const discountValue = isNaN(parseFloat(discount)) ? 0 : parseFloat(discount);
-    const itemTotals = items.map(item => ({
+    
+    // 1. Calculate item subtotal
+    const itemTotals = billItems.map(item => ({
       ...item,
       baseTotal: (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
       finalAmount: (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
     }));
-    const subtotal = itemTotals.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0);
+    const itemSubtotal = itemTotals.reduce((sum, item) => sum + parseFloat(item.baseTotal), 0);
+
+    // 2. Calculate and add fee (MODIFIED logic)
+    let feeValue = 0;
+    if (req.body.type === 'Consulting') {
+        feeValue = parseFloat(consultingFee || 0);
+    } else if (req.body.type === 'Treatment') { // ADDED logic
+        feeValue = parseFloat(treatmentFee || 0);
+    }
+    
+    const subtotal = itemSubtotal + feeValue; // Combined subtotal
+
+    // 3. Apply discount
     const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(2);
 
     const newBill = new Bill({
@@ -89,6 +110,9 @@ app.post('/generate-bill', async (req, res) => {
       type: req.body.type || '',
       items: itemTotals,
       discount: discountValue,
+      typeOfPayment, 
+      consultingFee: req.body.type === 'Consulting' ? feeValue : 0, // MODIFIED
+      treatmentFee: req.body.type === 'Treatment' ? feeValue : 0, // ADDED
     });
     await newBill.save();
 
@@ -97,26 +121,30 @@ app.post('/generate-bill', async (req, res) => {
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
+    // Date format for dd/mm/yyyy in Indian English locale
     const displayDate = date
-      ? new Date(date).toLocaleDateString('en-IN')
-      : new Date().toLocaleDateString('en-IN');
+      ? new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      
     doc.setData({
       id,
       name,
       phone,
       address,
       type: req.body.type || '',
-      date: displayDate,
+      date: displayDate.replace(/\//g, '-'), 
       items: itemTotals,
-      subtotal: subtotal.toFixed(2),
+      subtotal: subtotal.toFixed(2), 
       discount: discountValue.toFixed(2),
+      consultingFee: req.body.type === 'Consulting' ? feeValue.toFixed(2) : '', // MODIFIED
+      treatmentFee: req.body.type === 'Treatment' ? feeValue.toFixed(2) : '', // ADDED
+      typeOfPayment: typeOfPayment || 'N/A', 
       total: finalTotal,
     });
     doc.render();
     const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
     // --- PDF Conversion using a temporary file ---
-    // **FIX:** Write buffer to a temporary file first
     await fs.writeFile(tmpDocxPath, docxBuffer);
 
     const task = ilovepdf.newTask('officepdf');
@@ -135,7 +163,6 @@ app.post('/generate-bill', async (req, res) => {
       .status(500)
       .json({ error: 'Internal server error.', message: err.message, stack: err.stack });
   } finally {
-    // **IMPORTANT:** Clean up the temporary file
     try {
       await fs.unlink(tmpDocxPath);
     } catch (cleanupErr) {
@@ -144,7 +171,7 @@ app.post('/generate-bill', async (req, res) => {
   }
 });
 
-// Download a specific bill by ID as PDF
+// Download a specific bill by ID as PDF (MODIFIED)
 app.get('/bills/download/:billId', async (req, res) => {
   const tmpDocxPath = path.join('/tmp', `bill-${req.params.billId}-${Date.now()}.docx`);
   try {
@@ -157,14 +184,26 @@ app.get('/bills/download/:billId', async (req, res) => {
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
 
-    const subtotal = bill.items.reduce(
+    // Calculate totals including consulting/treatment fee (MODIFIED logic)
+    const itemSubtotal = bill.items.reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
       0
     );
+    
+    let feeValue = 0; 
+    if (bill.type === 'Consulting') { 
+        feeValue = bill.consultingFee || 0;
+    } else if (bill.type === 'Treatment') { // ADDED logic
+        feeValue = bill.treatmentFee || 0;
+    }
+    
+    const subtotal = itemSubtotal + feeValue;
     const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+
+    // Date format for dd/mm/yyyy in Indian English locale
     const displayDate = bill.date
-      ? new Date(bill.date).toLocaleDateString('en-IN')
-      : new Date(bill.createdAt).toLocaleDateString('en-IN');
+      ? new Date(bill.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : new Date(bill.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     doc.setData({
       id: bill.id,
@@ -172,10 +211,13 @@ app.get('/bills/download/:billId', async (req, res) => {
       phone: bill.phone,
       address: bill.address,
       type: bill.type || '',
-      date: displayDate,
+      date: displayDate.replace(/\//g, '-'), 
       items: bill.items,
       subtotal: subtotal.toFixed(2),
       discount: (bill.discount || 0).toFixed(2),
+      consultingFee: bill.type === 'Consulting' ? feeValue.toFixed(2) : '', // MODIFIED
+      treatmentFee: bill.type === 'Treatment' ? feeValue.toFixed(2) : '', // ADDED
+      typeOfPayment: bill.typeOfPayment || 'N/A', 
       total: total.toFixed(2),
     });
 

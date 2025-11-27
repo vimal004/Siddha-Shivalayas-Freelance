@@ -66,9 +66,11 @@ const BillHistory = () => {
   useEffect(() => {
     const filtered = billHistory.filter(bill => {
       const matchesName = bill.name.toLowerCase().includes(searchName.toLowerCase());
+      // Filter by comparing date string in 'YYYY-MM-DD' format (from the input type="date")
       const matchesDate = searchDate
-        ? new Date(bill.date).toLocaleDateString('en-CA') === searchDate
+        ? (bill.date && bill.date.startsWith(searchDate))
         : true;
+        
       return matchesName && matchesDate;
     });
     setFilteredBills(filtered);
@@ -89,16 +91,31 @@ const BillHistory = () => {
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
-      updatedItems[index][field] =
-        field === 'quantity' || field === 'price' || field === 'GST' ? parseFloat(value) : value;
+      updatedItems[index][field] = value;
+        
+      if (isProductBill) {
+        if (field === 'quantity' || field === 'price' || field === 'GST') {
+            updatedItems[index][field] = parseFloat(value) || 0;
+        }
+      } else {
+        // For non-product bills, preserve only the description
+        if (field === 'description') {
+            updatedItems[index]['price'] = 0;
+            updatedItems[index]['quantity'] = 0;
+            updatedItems[index]['HSN'] = '';
+            updatedItems[index]['GST'] = 0;
+        }
+      }
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      setItems([...items, { description: '', HSN: '', GST: 0, quantity: 1, price: 0 }]);
+      // Use defaults suitable for both types, where non-product fields are zeroed.
+      setItems([...items, { description: '', HSN: '', GST: 0, quantity: isProductBill ? 1 : 0, price: isProductBill ? 0 : 0 }]);
     };
 
     const handleRemoveItem = index => {
@@ -125,51 +142,67 @@ const BillHistory = () => {
         <DialogTitle>Edit Bill</DialogTitle>
         <DialogContent>
           {items.map((item, index) => (
-            <Grid container spacing={2} key={index} sx={{ mt: 1 }}>
-              <Grid item xs={3}>
-                <TextField
-                  label="Description"
-                  value={item.description}
-                  onChange={e => handleItemChange(index, 'description', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="HSN"
-                  value={item.HSN}
-                  onChange={e => handleItemChange(index, 'HSN', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="GST"
-                  type="number"
-                  value={item.GST}
-                  onChange={e => handleItemChange(index, 'GST', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Qty"
-                  type="number"
-                  value={item.quantity}
-                  onChange={e => handleItemChange(index, 'quantity', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Price"
-                  type="number"
-                  value={item.price}
-                  onChange={e => handleItemChange(index, 'price', e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={1}>
+            <Grid container spacing={2} key={index} sx={{ mt: 1 }} alignItems="center">
+              {isProductBill ? (
+                <>
+                  <Grid item xs={3}>
+                    <TextField
+                      label="Description"
+                      value={item.description}
+                      onChange={e => handleItemChange(index, 'description', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="HSN"
+                      value={item.HSN}
+                      onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="GST"
+                      type="number"
+                      value={item.GST}
+                      onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Qty"
+                      type="number"
+                      value={item.quantity}
+                      onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Price"
+                      type="number"
+                      value={item.price}
+                      onChange={e => handleItemChange(index, 'price', e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                </>
+              ) : (
+                <Grid item xs={11}>
+                  <TextField
+                    label="Comment/Description"
+                    multiline
+                    rows={2}
+                    value={item.description}
+                    onChange={e => handleItemChange(index, 'description', e.target.value)}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+              
+              <Grid item xs={isProductBill ? 1 : 1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button color="error" onClick={() => handleRemoveItem(index)}>
                   X
                 </Button>
@@ -177,7 +210,7 @@ const BillHistory = () => {
             </Grid>
           ))}
           <Button onClick={handleAddItem} sx={{ mt: 2 }}>
-            Add Item
+            Add {isProductBill ? 'Item' : 'Comment'}
           </Button>
           <TextField
             label="Discount (%)"
@@ -198,10 +231,26 @@ const BillHistory = () => {
     );
   };
 
+
   const BillPreview = ({ bill }) => {
-    const subtotal = bill.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+    const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.quantity || 0) * (item.price || 0), 0);
+    
+    let feeValue = 0; // MODIFIED
+    let feeLabel = ''; // ADDED
+    
+    if (bill.type === 'Consulting') {
+        feeValue = bill.consultingFee || 0;
+        feeLabel = 'Consulting Fee';
+    } else if (bill.type === 'Treatment') { // ADDED
+        feeValue = bill.treatmentFee || 0;
+        feeLabel = 'Treatment Fee';
+    }
+
+    const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
+    
+    const isProductBill = bill.type === 'Product' || bill.type === '';
 
     return (
       <Box sx={{ overflowX: 'auto', mt: 2 }}>
@@ -225,37 +274,68 @@ const BillHistory = () => {
             {bill.items.map((item, index) => {
               const quantity = parseInt(item.quantity || 0, 10);
               const price = parseFloat(item.price || 0);
-              const total = quantity * price;
-              return (
-                <tr key={index}>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                  <td style={{ border: '1px solid #ccc', padding: '8px' }}>{total}</td>
-                </tr>
-              );
+              const itemTotal = quantity * price;
+
+              if (isProductBill) {
+                  return (
+                    <tr key={index}>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
+                    </tr>
+                  );
+              } else if (item.description) {
+                  // MODIFICATION: Show comments as a single row spanning all columns
+                  return (
+                      <tr key={index}>
+                          <td colSpan={6} style={{ border: '1px solid #ccc', padding: '8px' }}>
+                              <span style={{ fontWeight: 'bold' }}>Comment/Description:</span> {item.description}
+                          </td>
+                      </tr>
+                  );
+              }
+              return null;
             })}
+            {/* MODIFIED: Combine Consulting/Treatment Fee row */}
+            {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
+              <tr>
+                <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                  {feeLabel}
+                </td>
+                <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
+                  ₹{feeValue.toFixed(2)}
+                </td>
+              </tr>
+            )}
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                Subtotal
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Subtotal (Before Discount)
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal.toFixed(2)}</td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
                 Discount ({bill.discount || 0}%)
-              </td>
+              </td >
               <td style={{ border: '1px solid #ccc', padding: '8px' }}>
-                ₹{discountAmount.toFixed(2)}
+                -₹{discountAmount.toFixed(2)}
               </td>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px' }}>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>
                 Total
+              </td >
+              <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
+            </tr>
+            {/* Payment Type Preview Row */}
+            <tr>
+              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+                Payment Type
               </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{total.toFixed(2)}</td>
+              <td style={{ border: '1px solid #ccc', padding: '8px' }}>{bill.typeOfPayment || 'N/A'}</td>
             </tr>
           </tbody>
         </table>
@@ -299,47 +379,65 @@ const BillHistory = () => {
               <TableCell>Type</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Total</TableCell>
+              <TableCell>Payment</TableCell> 
               <TableCell>Edit</TableCell>
               <TableCell>Delete</TableCell>
               <TableCell>Download</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBills.map((bill, index) => (
-              <TableRow key={index}>
-                <TableCell>{'B' + (index + 1)}</TableCell>
-                <TableCell>{bill.name}</TableCell>
-                <TableCell>{bill.type || ''}</TableCell>
-                <TableCell>
-                  {new Date(bill.date).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}
-                </TableCell>
-                <TableCell>
-                  ₹{bill.items.reduce((acc, item) => acc + item.price * item.quantity, 0)}
-                </TableCell>
-                <TableCell>
-                  <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                </TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => setBillToDelete(bill)}>
-                    Delete
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    href={bill.downloadLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Download
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredBills.map((bill, index) => {
+              // Calculate totals for display
+              const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
+              
+              let feeValue = 0;
+              if (bill.type === 'Consulting') {
+                  feeValue = bill.consultingFee || 0;
+              } else if (bill.type === 'Treatment') { // ADDED
+                  feeValue = bill.treatmentFee || 0;
+              }
+
+              const subtotal = itemSubtotal + feeValue;
+              const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+
+              return (
+                <TableRow key={index}>
+                  <TableCell>{'B' + (index + 1)}</TableCell>
+                  <TableCell>{bill.name}</TableCell>
+                  <TableCell>{bill.type || ''}</TableCell>
+                  <TableCell>
+                    {/* Indian date format dd/mm/yyyy */}
+                    {new Date(bill.date).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    ₹{total.toFixed(2)} 
+                  </TableCell>
+                  <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> 
+                  <TableCell>
+                    <Button onClick={() => setEditingBill(bill)}>Edit</Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button color="error" onClick={() => setBillToDelete(bill)}>
+                      Delete
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      href={bill.downloadLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
