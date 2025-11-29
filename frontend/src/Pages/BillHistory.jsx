@@ -399,10 +399,13 @@ const BillHistory = () => {
 
               const subtotal = itemSubtotal + feeValue;
               const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+              const billNumber = index + 1;
+                const paddedNumber = billNumber.toString().padStart(3, '0');
+                const displayId = `B${paddedNumber}`;
 
               return (
                 <TableRow key={index}>
-                  <TableCell>{'ID-' + bill._id.substring(0, 8)}</TableCell>
+                  <TableCell>{displayId}</TableCell>
                   <TableCell>{bill.name}</TableCell>
                   <TableCell>{bill.type || ''}</TableCell>
                   <TableCell>
