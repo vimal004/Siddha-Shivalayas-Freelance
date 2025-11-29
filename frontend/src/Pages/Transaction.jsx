@@ -826,10 +826,9 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    InputProps={{ readOnly: isExistingPatientRoute }}
+                    // REMOVED: InputProps={{ readOnly: isExistingPatientRoute }}
                   />
                 </Grid>
-                
                 {/* Consulting Fee Field (Conditional) */}
                 {formData.type === 'Consulting' && (
                   <Grid item xs={12} sm={6}>
