@@ -310,8 +310,8 @@ app.get('/bills/download/:billId', async (req, res) => {
 
 app.get('/bills-history', async (req, res) => {
   try {
-    // Sort by billNumber in ascending order (1, 2, 3...)
-    const bills = await Bill.find().sort({ billNumber: 1 });
+    // Sort by creation date for a stable chronological order
+    const bills = await Bill.find().sort({ createdAt: 1 });
     res.json(bills);
   } catch (error) {
     console.error('Error fetching bill history:', error);

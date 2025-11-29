@@ -402,7 +402,7 @@ const BillHistory = () => {
 
               return (
                 <TableRow key={index}>
-                  <TableCell>{'B' + (index + 1)}</TableCell>
+                  <TableCell>{'ID-' + bill._id.substring(0, 8)}</TableCell>
                   <TableCell>{bill.name}</TableCell>
                   <TableCell>{bill.type || ''}</TableCell>
                   <TableCell>
