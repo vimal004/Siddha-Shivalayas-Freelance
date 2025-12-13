@@ -25,6 +25,7 @@ const PatientForm = () => {
     name: '',
     phone: '',
     address: '',
+    age: '',
     // Removed: treatmentOrMedicine: '',
     date: '',
   });
@@ -64,6 +65,7 @@ const PatientForm = () => {
           name: '',
           phone: '',
           address: '',
+          age: '',
           // Removed: treatmentOrMedicine: '',
           date: '',
         });
@@ -251,6 +253,18 @@ const PatientForm = () => {
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   variant="outlined"
                   fullWidth
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  label="Age"
+                  name="age"
+                  type="number"
+                  value={formData.age}
+                  onChange={e => setFormData({ ...formData, age: e.target.value })}
+                  variant="outlined"
+                  fullWidth
+                  inputProps={{ min: 0, max: 150 }}
                 />
               </Grid>
               <Grid item xs={12} sm={6} md={6}>

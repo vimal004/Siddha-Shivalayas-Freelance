@@ -40,6 +40,7 @@ const Transaction = () => {
     name: '',
     phone: '',
     address: '',
+    age: '',
     date: '',
     items: [],
     discount: 0,
@@ -119,6 +120,7 @@ const Transaction = () => {
             name: '',
             phone: '',
             address: '',
+            age: '',
             date: new Date().toISOString().split('T')[0],
             items: [],
             discount: 0,
@@ -321,6 +323,7 @@ const Transaction = () => {
             name: '',
             phone: '',
             address: '',
+            age: '',
             items: [],
             discount: 0,
             totalAmount: 0,
@@ -397,6 +400,7 @@ const Transaction = () => {
             name: '',
             phone: '',
             address: '',
+            age: '',
             items: [],
             discount: 0,
             totalAmount: 0,
@@ -747,6 +751,20 @@ const Transaction = () => {
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
+                    InputProps={{ readOnly: isExistingPatientRoute }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Age"
+                    name="age"
+                    type="number"
+                    value={formData.age}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    inputProps={{ min: 0, max: 150 }}
                     InputProps={{ readOnly: isExistingPatientRoute }}
                   />
                 </Grid>

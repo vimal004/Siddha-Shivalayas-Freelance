@@ -5,6 +5,7 @@ const patientSchema = new mongoose.Schema({
   name: { type: String },
   phone: { type: String },
   address: { type: String },
+  age: { type: Number },
   date: { type: Date },
 });
 
