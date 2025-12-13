@@ -21,6 +21,13 @@ import {
   DialogContent,
   DialogActions,
   useMediaQuery,
+  Card,
+  CardContent,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider,
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 
@@ -37,6 +44,14 @@ const BillHistory = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [previewedBillId, setPreviewedBillId] = useState(null);
   const [editingBill, setEditingBill] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [monthlyStats, setMonthlyStats] = useState({
+    product: 0,
+    consulting: 0,
+    treatment: 0,
+    total: 0,
+  });
 
   const togglePreview = billId => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
@@ -70,11 +85,53 @@ const BillHistory = () => {
       const matchesDate = searchDate
         ? (bill.date && bill.date.startsWith(searchDate))
         : true;
+      
+      // Filter by selected month and year
+      const billDate = new Date(bill.date);
+      const billMonth = billDate.getMonth() + 1;
+      const billYear = billDate.getFullYear();
+      const matchesMonth = billMonth === selectedMonth && billYear === selectedYear;
         
-      return matchesName && matchesDate;
+      return matchesName && matchesDate && matchesMonth;
     });
     setFilteredBills(filtered);
-  }, [searchName, searchDate, billHistory]);
+  }, [searchName, searchDate, billHistory, selectedMonth, selectedYear]);
+
+  // Calculate monthly statistics
+  useEffect(() => {
+    const stats = {
+      product: 0,
+      consulting: 0,
+      treatment: 0,
+      total: 0,
+    };
+
+    filteredBills.forEach(bill => {
+      const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
+      
+      let feeValue = 0;
+      if (bill.type === 'Consulting') {
+        feeValue = bill.consultingFee || 0;
+      } else if (bill.type === 'Treatment') {
+        feeValue = bill.treatmentFee || 0;
+      }
+
+      const subtotal = itemSubtotal + feeValue;
+      const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+
+      if (bill.type === 'Product' || bill.type === '') {
+        stats.product += total;
+      } else if (bill.type === 'Consulting') {
+        stats.consulting += total;
+      } else if (bill.type === 'Treatment') {
+        stats.treatment += total;
+      }
+
+      stats.total += total;
+    });
+
+    setMonthlyStats(stats);
+  }, [filteredBills]);
 
   const deleteBill = billId => async () => {
     try {
@@ -349,6 +406,102 @@ const BillHistory = () => {
         Bill History
       </Typography>
 
+      {/* Month and Year Selector */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth>
+            <InputLabel>Month</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Month"
+              onChange={e => setSelectedMonth(e.target.value)}
+            >
+              <MenuItem value={1}>January</MenuItem>
+              <MenuItem value={2}>February</MenuItem>
+              <MenuItem value={3}>March</MenuItem>
+              <MenuItem value={4}>April</MenuItem>
+              <MenuItem value={5}>May</MenuItem>
+              <MenuItem value={6}>June</MenuItem>
+              <MenuItem value={7}>July</MenuItem>
+              <MenuItem value={8}>August</MenuItem>
+              <MenuItem value={9}>September</MenuItem>
+              <MenuItem value={10}>October</MenuItem>
+              <MenuItem value={11}>November</MenuItem>
+              <MenuItem value={12}>December</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth>
+            <InputLabel>Year</InputLabel>
+            <Select
+              value={selectedYear}
+              label="Year"
+              onChange={e => setSelectedYear(e.target.value)}
+            >
+              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                <MenuItem key={year} value={year}>
+                  {year}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      {/* Monthly Statistics Card */}
+      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Monthly Statistics - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Typography>
+          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                  Product Bills
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.product.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                  Consulting Bills
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.consulting.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                  Treatment Bills
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.treatment.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontWeight: 600 }}>
+                  Total
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.total.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Search Filters */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6}>
           <TextField
