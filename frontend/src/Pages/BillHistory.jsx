@@ -40,6 +40,7 @@ const BillHistory = () => {
   const [filteredBills, setFilteredBills] = useState([]);
   const [searchName, setSearchName] = useState('');
   const [searchDate, setSearchDate] = useState('');
+  const [searchPaymentMethod, setSearchPaymentMethod] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [previewedBillId, setPreviewedBillId] = useState(null);
@@ -51,6 +52,8 @@ const BillHistory = () => {
     consulting: 0,
     treatment: 0,
     total: 0,
+    upi: 0,
+    cash: 0,
   });
 
   const togglePreview = billId => {
@@ -91,11 +94,16 @@ const BillHistory = () => {
       const billMonth = billDate.getMonth() + 1;
       const billYear = billDate.getFullYear();
       const matchesMonth = billMonth === selectedMonth && billYear === selectedYear;
+      
+      // Filter by payment method
+      const matchesPaymentMethod = searchPaymentMethod
+        ? bill.typeOfPayment === searchPaymentMethod
+        : true;
         
-      return matchesName && matchesDate && matchesMonth;
+      return matchesName && matchesDate && matchesMonth && matchesPaymentMethod;
     });
     setFilteredBills(filtered);
-  }, [searchName, searchDate, billHistory, selectedMonth, selectedYear]);
+  }, [searchName, searchDate, billHistory, selectedMonth, selectedYear, searchPaymentMethod]);
 
   // Calculate monthly statistics
   useEffect(() => {
@@ -104,6 +112,8 @@ const BillHistory = () => {
       consulting: 0,
       treatment: 0,
       total: 0,
+      upi: 0,
+      cash: 0,
     };
 
     filteredBills.forEach(bill => {
@@ -119,12 +129,20 @@ const BillHistory = () => {
       const subtotal = itemSubtotal + feeValue;
       const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
+      // Bill type breakdown
       if (bill.type === 'Product' || bill.type === '') {
         stats.product += total;
       } else if (bill.type === 'Consulting') {
         stats.consulting += total;
       } else if (bill.type === 'Treatment') {
         stats.treatment += total;
+      }
+
+      // Payment method breakdown
+      if (bill.typeOfPayment === 'UPI') {
+        stats.upi += total;
+      } else if (bill.typeOfPayment === 'Cash') {
+        stats.cash += total;
       }
 
       stats.total += total;
@@ -501,9 +519,51 @@ const BillHistory = () => {
         </CardContent>
       </Card>
 
+      {/* Payment Method Statistics Card */}
+      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
+        <CardContent>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+            Payment Method Breakdown - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Typography>
+          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                  UPI Payments
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.upi.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
+                  Cash Payments
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.cash.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
+                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontWeight: 600 }}>
+                  Total
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  ₹{monthlyStats.total.toFixed(2)}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
       {/* Search Filters */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Search by Patient Name"
             fullWidth
@@ -511,7 +571,7 @@ const BillHistory = () => {
             onChange={e => setSearchName(e.target.value)}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} md={4}>
           <TextField
             label="Search by Date"
             type="date"
@@ -520,6 +580,20 @@ const BillHistory = () => {
             value={searchDate}
             onChange={e => setSearchDate(e.target.value)}
           />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <FormControl fullWidth>
+            <InputLabel>Payment Method</InputLabel>
+            <Select
+              value={searchPaymentMethod}
+              label="Payment Method"
+              onChange={e => setSearchPaymentMethod(e.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="UPI">UPI</MenuItem>
+              <MenuItem value="Cash">Cash</MenuItem>
+            </Select>
+          </FormControl>
         </Grid>
       </Grid>
 
