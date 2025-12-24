@@ -860,9 +860,10 @@ const Transaction = () => {
                         })
                       }
                       fullWidth
+                      InputLabelProps={{ shrink: true }}
                       SelectProps={{ native: true }}
                     >
-                      <option value="">Select type</option>
+                      <option value="">— Select bill type —</option>
                       <option value="Product">Product</option>
                       <option value="Consulting">Consulting</option>
                       <option value="Treatment">Treatment</option>
@@ -877,9 +878,10 @@ const Transaction = () => {
                       onChange={handleChange}
                       fullWidth
                       required
+                      InputLabelProps={{ shrink: true }}
                       SelectProps={{ native: true }}
                     >
-                      <option value="">Select payment</option>
+                      <option value="">— Select payment —</option>
                       <option value="UPI">UPI</option>
                       <option value="Cash">Cash</option>
                     </StyledTextField>
