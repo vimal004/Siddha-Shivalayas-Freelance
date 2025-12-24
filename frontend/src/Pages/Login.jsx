@@ -3,7 +3,6 @@ import {
   TextField,
   Button,
   Container,
-  Grid,
   Typography,
   CircularProgress,
   Snackbar,
@@ -14,16 +13,19 @@ import {
 import {
   Email as EmailIcon,
   Lock as LockIcon,
-  Login as LoginIcon,
+  ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import BGIMG from "../img/bg.jpg";
-import { styled, useTheme, alpha } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
+import designTokens from "../designTokens";
+import logo from "../img/Logo.svg";
+
+const { colors, typography, borderRadius, elevation, motion, spacing } =
+  designTokens;
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
@@ -64,208 +66,271 @@ const LoginForm = () => {
   };
 
   return (
-    <PageWrapper theme={theme}>
+    <PageWrapper>
       <Container maxWidth="sm">
         <LoginCard>
-          <Box mb={4} textAlign="center">
-            <Typography
-              variant="h4"
-              sx={{
-                fontFamily: '"Poppins", sans-serif',
-                fontWeight: 600,
-                background: "linear-gradient(45deg, #1976d2, #2196f3)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                marginBottom: "8px",
-              }}
-            >
-              Welcome Back!
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: "text.secondary",
-                fontFamily: '"Poppins", sans-serif',
-              }}
-            >
-              Please enter your credentials to continue
-            </Typography>
-          </Box>
+          {/* Logo & Branding */}
+          <LogoSection>
+            <LogoImage src={logo} alt="Shivalayas Siddha" />
+            <BrandName>Shivalayas Siddha</BrandName>
+          </LogoSection>
 
+          {/* Welcome Text */}
+          <WelcomeSection>
+            <WelcomeTitle>Welcome back</WelcomeTitle>
+            <WelcomeSubtitle>Sign in to access your dashboard</WelcomeSubtitle>
+          </WelcomeSection>
+
+          {/* Login Form */}
           <form onSubmit={handleLogin}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <StyledTextField
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon sx={{ color: "primary.main" }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <StyledTextField
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon sx={{ color: "primary.main" }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <LoginButton
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  disabled={loading}
-                  startIcon={loading ? null : <LoginIcon />}
-                >
-                  {loading ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    "Sign In"
-                  )}
-                </LoginButton>
-              </Grid>
-            </Grid>
+            <FormGroup>
+              <StyledTextField
+                label="Email address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                fullWidth
+                required
+                placeholder="Enter your email"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon
+                        sx={{ color: colors.text.tertiary, fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <StyledTextField
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                fullWidth
+                required
+                placeholder="Enter your password"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon
+                        sx={{ color: colors.text.tertiary, fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <LoginButton
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={loading}
+                endIcon={!loading && <ArrowForwardIcon />}
+              >
+                {loading ? (
+                  <CircularProgress size={22} sx={{ color: "white" }} />
+                ) : (
+                  "Sign in"
+                )}
+              </LoginButton>
+            </FormGroup>
           </form>
+
+          {/* Footer */}
+          <FooterText>Siddha Healthcare Management System</FooterText>
         </LoginCard>
       </Container>
 
-      <CustomSnackbar
+      {/* Success Snackbar */}
+      <Snackbar
         open={success === true}
         autoHideDuration={3000}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSuccess(null)}
       >
         <Alert
-          elevation={6}
           variant="filled"
           severity="success"
-          sx={{ width: "100%" }}
+          sx={{
+            borderRadius: borderRadius.md,
+            fontFamily: typography.fontFamily.primary,
+          }}
         >
-          Login successful
+          Login successful! Redirecting...
         </Alert>
-      </CustomSnackbar>
+      </Snackbar>
 
-      <CustomSnackbar
+      {/* Error Snackbar */}
+      <Snackbar
         open={success === false}
-        autoHideDuration={3000}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        autoHideDuration={4000}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSuccess(null)}
       >
         <Alert
-          elevation={6}
           variant="filled"
           severity="error"
-          sx={{ width: "100%" }}
+          sx={{
+            borderRadius: borderRadius.md,
+            fontFamily: typography.fontFamily.primary,
+          }}
         >
           {errorMessage}
         </Alert>
-      </CustomSnackbar>
+      </Snackbar>
     </PageWrapper>
   );
 };
 
 // Styled Components
-const PageWrapper = styled("div")(({ theme }) => ({
-  backgroundImage: `url(${BGIMG})`,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
+
+const PageWrapper = styled(Box)({
   minHeight: "100vh",
   display: "flex",
-  justifyContent: "center",
   alignItems: "center",
-  padding: "20px",
-  background: `linear-gradient(135deg, ${alpha(
-    theme.palette.primary.main,
-    0.2
-  )} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-}));
+  justifyContent: "center",
+  backgroundColor: colors.surface.container,
+  padding: spacing[6],
+});
 
-const LoginCard = styled(Box)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.98)",
-  backdropFilter: "blur(10px)",
-  borderRadius: "20px",
-  padding: "40px",
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
+const LoginCard = styled(Box)({
+  backgroundColor: colors.surface.background,
+  borderRadius: borderRadius.cardLg,
+  boxShadow: elevation.level3,
+  padding: spacing[10],
   width: "100%",
-  maxWidth: "480px",
+  maxWidth: "420px",
   margin: "0 auto",
-  transition: "transform 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-5px)",
+  animation: "fadeInUp 0.5s cubic-bezier(0, 0, 0, 1)",
+  "@media (max-width: 600px)": {
+    padding: spacing[8],
+    borderRadius: borderRadius.card,
   },
-}));
+});
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const LogoSection = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: spacing[3],
+  marginBottom: spacing[8],
+});
+
+const LogoImage = styled("img")({
+  height: "48px",
+  width: "auto",
+});
+
+const BrandName = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontSize: typography.fontSize.xl,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+  letterSpacing: "-0.01em",
+});
+
+const WelcomeSection = styled(Box)({
+  textAlign: "center",
+  marginBottom: spacing[8],
+});
+
+const WelcomeTitle = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontSize: "clamp(1.75rem, 4vw, 2.25rem)",
+  fontWeight: typography.fontWeight.regular,
+  color: colors.text.primary,
+  marginBottom: spacing[2],
+  letterSpacing: "-0.02em",
+  lineHeight: 1.2,
+});
+
+const WelcomeSubtitle = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.base,
+  fontWeight: typography.fontWeight.regular,
+  color: colors.text.secondary,
+  lineHeight: 1.5,
+});
+
+const FormGroup = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: spacing[5],
+});
+
+const StyledTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
-    borderRadius: "12px",
-    backgroundColor: "rgba(0, 0, 0, 0.02)",
-    transition: "all 0.3s ease",
-    "&:hover": {
-      backgroundColor: "rgba(0, 0, 0, 0.03)",
+    borderRadius: borderRadius.input,
+    backgroundColor: colors.surface.container,
+    fontFamily: typography.fontFamily.primary,
+    transition: motion.transition.fast,
+    "& fieldset": {
+      borderColor: "transparent",
+      borderWidth: "1px",
+    },
+    "&:hover fieldset": {
+      borderColor: colors.border.medium,
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: colors.primary.main,
+      borderWidth: "2px",
     },
     "&.Mui-focused": {
-      backgroundColor: "rgba(0, 0, 0, 0.02)",
-      "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: theme.palette.primary.main,
-        borderWidth: "2px",
-      },
+      backgroundColor: alpha(colors.primary.main, 0.02),
     },
   },
   "& .MuiInputLabel-root": {
-    fontFamily: '"Poppins", sans-serif',
+    fontFamily: typography.fontFamily.primary,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.text.secondary,
+    "&.Mui-focused": {
+      color: colors.primary.main,
+    },
   },
-  "& input": {
-    fontFamily: '"Poppins", sans-serif',
+  "& .MuiInputBase-input": {
+    fontFamily: typography.fontFamily.primary,
+    fontSize: typography.fontSize.base,
     padding: "16px 14px",
   },
-}));
+  "& .MuiInputBase-input::placeholder": {
+    color: colors.text.tertiary,
+    opacity: 1,
+  },
+});
 
-const LoginButton = styled(Button)(({ theme }) => ({
-  background: "linear-gradient(45deg, #1976d2, #2196f3)",
-  color: "white",
-  padding: "12px",
-  borderRadius: "12px",
+const LoginButton = styled(Button)({
+  marginTop: spacing[2],
+  padding: "14px 24px",
+  borderRadius: borderRadius.button,
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.base,
+  fontWeight: typography.fontWeight.medium,
   textTransform: "none",
-  fontSize: "1rem",
-  fontWeight: 600,
-  fontFamily: '"Poppins", sans-serif',
-  boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
-  transition: "all 0.3s ease",
+  backgroundColor: colors.primary.main,
+  color: colors.primary.onPrimary,
+  boxShadow: "none",
+  transition: motion.transition.normal,
   "&:hover": {
-    background: "linear-gradient(45deg, #1565c0, #1976d2)",
-    transform: "translateY(-2px)",
-    boxShadow: "0 6px 16px rgba(25, 118, 210, 0.2)",
+    backgroundColor: colors.primary.dark,
+    boxShadow: elevation.buttonHover,
   },
   "&:disabled": {
-    background: "linear-gradient(45deg, #bdbdbd, #e0e0e0)",
+    backgroundColor: colors.border.medium,
+    color: colors.text.disabled,
   },
-}));
+});
 
-const CustomSnackbar = styled(Snackbar)({
-  "& .MuiAlert-root": {
-    borderRadius: "12px",
-    fontFamily: '"Poppins", sans-serif',
-  },
+const FooterText = styled(Typography)({
+  marginTop: spacing[8],
+  textAlign: "center",
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  fontWeight: typography.fontWeight.regular,
+  color: colors.text.tertiary,
 });
 
 export default LoginForm;

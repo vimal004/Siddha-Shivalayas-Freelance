@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Button,
   Container,
@@ -12,7 +12,6 @@ import {
   TextField,
   Grid,
   Box,
-  useTheme,
   Snackbar,
   TableContainer,
   Paper,
@@ -20,29 +19,38 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  useMediaQuery,
-  Card,
-  CardContent,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Divider,
-} from '@mui/material';
-import MuiAlert from '@mui/material/Alert';
+  Chip,
+  Alert,
+  IconButton,
+} from "@mui/material";
+import { styled, alpha } from "@mui/material/styles";
+import {
+  History as HistoryIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Download as DownloadIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+} from "@mui/icons-material";
+import designTokens from "../designTokens";
+
+const { colors, typography, borderRadius, elevation, motion, spacing } =
+  designTokens;
 
 const BillHistory = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [billToDelete, setBillToDelete] = useState(null);
-
   const [billHistory, setBillHistory] = useState([]);
   const [filteredBills, setFilteredBills] = useState([]);
-  const [searchName, setSearchName] = useState('');
-  const [searchDate, setSearchDate] = useState('');
-  const [searchPaymentMethod, setSearchPaymentMethod] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [searchName, setSearchName] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchPaymentMethod, setSearchPaymentMethod] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [previewedBillId, setPreviewedBillId] = useState(null);
   const [editingBill, setEditingBill] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -56,24 +64,23 @@ const BillHistory = () => {
     cash: 0,
   });
 
-  const togglePreview = billId => {
+  const togglePreview = (billId) => {
     setPreviewedBillId(previewedBillId === billId ? null : billId);
   };
 
   const fetchBillHistory = async () => {
     try {
       const response = await axios.get(
-        'https://siddha-shivalayas-backend.vercel.app/bills-history'
+        "https://siddha-shivalayas-backend.vercel.app/bills-history"
       );
-      const updatedBills = response.data.map(bill => ({
+      const updatedBills = response.data.map((bill) => ({
         ...bill,
-        // The download link from the backend will now serve a PDF
         downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
       }));
       setBillHistory(updatedBills);
       setFilteredBills(updatedBills);
     } catch (error) {
-      console.error('Error fetching bill history:', error);
+      console.error("Error fetching bill history:", error);
     }
   };
 
@@ -82,30 +89,36 @@ const BillHistory = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = billHistory.filter(bill => {
-      const matchesName = bill.name.toLowerCase().includes(searchName.toLowerCase());
-      // Filter by comparing date string in 'YYYY-MM-DD' format (from the input type="date")
+    const filtered = billHistory.filter((bill) => {
+      const matchesName = bill.name
+        .toLowerCase()
+        .includes(searchName.toLowerCase());
       const matchesDate = searchDate
-        ? (bill.date && bill.date.startsWith(searchDate))
+        ? bill.date && bill.date.startsWith(searchDate)
         : true;
-      
-      // Filter by selected month and year
+
       const billDate = new Date(bill.date);
       const billMonth = billDate.getMonth() + 1;
       const billYear = billDate.getFullYear();
-      const matchesMonth = billMonth === selectedMonth && billYear === selectedYear;
-      
-      // Filter by payment method
+      const matchesMonth =
+        billMonth === selectedMonth && billYear === selectedYear;
+
       const matchesPaymentMethod = searchPaymentMethod
         ? bill.typeOfPayment === searchPaymentMethod
         : true;
-        
+
       return matchesName && matchesDate && matchesMonth && matchesPaymentMethod;
     });
     setFilteredBills(filtered);
-  }, [searchName, searchDate, billHistory, selectedMonth, selectedYear, searchPaymentMethod]);
+  }, [
+    searchName,
+    searchDate,
+    billHistory,
+    selectedMonth,
+    selectedYear,
+    searchPaymentMethod,
+  ]);
 
-  // Calculate monthly statistics
   useEffect(() => {
     const stats = {
       product: 0,
@@ -116,32 +129,33 @@ const BillHistory = () => {
       cash: 0,
     };
 
-    filteredBills.forEach(bill => {
-      const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
-      
+    filteredBills.forEach((bill) => {
+      const itemSubtotal = bill.items.reduce(
+        (acc, item) => acc + (item.price || 0) * (item.quantity || 0),
+        0
+      );
+
       let feeValue = 0;
-      if (bill.type === 'Consulting') {
+      if (bill.type === "Consulting") {
         feeValue = bill.consultingFee || 0;
-      } else if (bill.type === 'Treatment') {
+      } else if (bill.type === "Treatment") {
         feeValue = bill.treatmentFee || 0;
       }
 
       const subtotal = itemSubtotal + feeValue;
       const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
-      // Bill type breakdown
-      if (bill.type === 'Product' || bill.type === '') {
+      if (bill.type === "Product" || bill.type === "") {
         stats.product += total;
-      } else if (bill.type === 'Consulting') {
+      } else if (bill.type === "Consulting") {
         stats.consulting += total;
-      } else if (bill.type === 'Treatment') {
+      } else if (bill.type === "Treatment") {
         stats.treatment += total;
       }
 
-      // Payment method breakdown
-      if (bill.typeOfPayment === 'UPI') {
+      if (bill.typeOfPayment === "UPI") {
         stats.upi += total;
-      } else if (bill.typeOfPayment === 'Cash') {
+      } else if (bill.typeOfPayment === "Cash") {
         stats.cash += total;
       }
 
@@ -151,198 +165,240 @@ const BillHistory = () => {
     setMonthlyStats(stats);
   }, [filteredBills]);
 
-  const deleteBill = billId => async () => {
+  const deleteBill = (billId) => async () => {
     try {
-      console.log('Deleting bill with ID:', billId);
-      await axios.delete(`https://siddha-shivalayas-backend.vercel.app/bills/${billId}`);
+      await axios.delete(
+        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
+      );
       fetchBillHistory();
-      setSuccessMessage('Bill deleted successfully.');
+      setSuccessMessage("Bill deleted successfully.");
     } catch (error) {
-      console.error('Error deleting bill:', error);
-      setErrorMessage('Error deleting bill. Please try again later.');
+      console.error("Error deleting bill:", error);
+      setErrorMessage("Error deleting bill. Please try again later.");
     }
   };
 
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
-    const isProductBill = bill.type === 'Product' || bill.type === '';
+    const isProductBill = bill.type === "Product" || bill.type === "";
 
     const handleItemChange = (index, field, value) => {
       const updatedItems = [...items];
       updatedItems[index][field] = value;
-        
+
       if (isProductBill) {
-        if (field === 'quantity' || field === 'price' || field === 'GST') {
-            updatedItems[index][field] = parseFloat(value) || 0;
+        if (field === "quantity" || field === "price" || field === "GST") {
+          updatedItems[index][field] = parseFloat(value) || 0;
         }
       } else {
-        // For non-product bills, preserve only the description
-        if (field === 'description') {
-            updatedItems[index]['price'] = 0;
-            updatedItems[index]['quantity'] = 0;
-            updatedItems[index]['HSN'] = '';
-            updatedItems[index]['GST'] = 0;
+        if (field === "description") {
+          updatedItems[index]["price"] = 0;
+          updatedItems[index]["quantity"] = 0;
+          updatedItems[index]["HSN"] = "";
+          updatedItems[index]["GST"] = 0;
         }
       }
       setItems(updatedItems);
     };
 
     const handleAddItem = () => {
-      // Use defaults suitable for both types, where non-product fields are zeroed.
-      setItems([...items, { description: '', HSN: '', GST: 0, quantity: isProductBill ? 1 : 0, price: isProductBill ? 0 : 0 }]);
+      setItems([
+        ...items,
+        {
+          description: "",
+          HSN: "",
+          GST: 0,
+          quantity: isProductBill ? 1 : 0,
+          price: isProductBill ? 0 : 0,
+        },
+      ]);
     };
 
-    const handleRemoveItem = index => {
+    const handleRemoveItem = (index) => {
       setItems(items.filter((_, i) => i !== index));
     };
 
     const handleSave = async () => {
       try {
-        await axios.put(`https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`, {
-          items,
-          discount,
-        });
+        await axios.put(
+          `https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`,
+          {
+            items,
+            discount,
+          }
+        );
         onClose();
         fetchBillHistory();
-        setSuccessMessage('Bill updated successfully.');
+        setSuccessMessage("Bill updated successfully.");
       } catch (err) {
-        console.error('Failed to update bill', err);
-        setErrorMessage('Failed to update bill');
+        console.error("Failed to update bill", err);
+        setErrorMessage("Failed to update bill");
       }
     };
 
     return (
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-        <DialogTitle>Edit Bill</DialogTitle>
+      <StyledDialog open={open} onClose={onClose} fullWidth maxWidth="md">
+        <StyledDialogTitle>Edit Bill</StyledDialogTitle>
         <DialogContent>
           {items.map((item, index) => (
-            <Grid container spacing={2} key={index} sx={{ mt: 1 }} alignItems="center">
+            <Grid
+              container
+              spacing={2}
+              key={index}
+              sx={{ mt: 1 }}
+              alignItems="center"
+            >
               {isProductBill ? (
                 <>
                   <Grid item xs={3}>
-                    <TextField
+                    <StyledTextField
                       label="Description"
                       value={item.description}
-                      onChange={e => handleItemChange(index, 'description', e.target.value)}
+                      onChange={(e) =>
+                        handleItemChange(index, "description", e.target.value)
+                      }
                       fullWidth
+                      size="small"
                     />
                   </Grid>
                   <Grid item xs={2}>
-                    <TextField
+                    <StyledTextField
                       label="HSN"
                       value={item.HSN}
-                      onChange={e => handleItemChange(index, 'HSN', e.target.value)}
+                      onChange={(e) =>
+                        handleItemChange(index, "HSN", e.target.value)
+                      }
                       fullWidth
+                      size="small"
                     />
                   </Grid>
                   <Grid item xs={2}>
-                    <TextField
+                    <StyledTextField
                       label="GST"
                       type="number"
                       value={item.GST}
-                      onChange={e => handleItemChange(index, 'GST', e.target.value)}
+                      onChange={(e) =>
+                        handleItemChange(index, "GST", e.target.value)
+                      }
                       fullWidth
+                      size="small"
                     />
                   </Grid>
                   <Grid item xs={2}>
-                    <TextField
+                    <StyledTextField
                       label="Qty"
                       type="number"
                       value={item.quantity}
-                      onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                      onChange={(e) =>
+                        handleItemChange(index, "quantity", e.target.value)
+                      }
                       fullWidth
+                      size="small"
                     />
                   </Grid>
                   <Grid item xs={2}>
-                    <TextField
+                    <StyledTextField
                       label="Price"
                       type="number"
                       value={item.price}
-                      onChange={e => handleItemChange(index, 'price', e.target.value)}
+                      onChange={(e) =>
+                        handleItemChange(index, "price", e.target.value)
+                      }
                       fullWidth
+                      size="small"
                     />
                   </Grid>
                 </>
               ) : (
                 <Grid item xs={11}>
-                  <TextField
+                  <StyledTextField
                     label="Comment/Description"
                     multiline
                     rows={2}
                     value={item.description}
-                    onChange={e => handleItemChange(index, 'description', e.target.value)}
+                    onChange={(e) =>
+                      handleItemChange(index, "description", e.target.value)
+                    }
                     fullWidth
                   />
                 </Grid>
               )}
-              
-              <Grid item xs={isProductBill ? 1 : 1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button color="error" onClick={() => handleRemoveItem(index)}>
-                  X
-                </Button>
+
+              <Grid
+                item
+                xs={isProductBill ? 1 : 1}
+                sx={{ display: "flex", justifyContent: "flex-end" }}
+              >
+                <IconButton
+                  color="error"
+                  onClick={() => handleRemoveItem(index)}
+                  size="small"
+                >
+                  <DeleteIcon />
+                </IconButton>
               </Grid>
             </Grid>
           ))}
-          <Button onClick={handleAddItem} sx={{ mt: 2 }}>
-            Add {isProductBill ? 'Item' : 'Comment'}
-          </Button>
-          <TextField
+          <AddItemButton
+            onClick={handleAddItem}
+            variant="text"
+            startIcon={<EditIcon />}
+          >
+            Add {isProductBill ? "Item" : "Comment"}
+          </AddItemButton>
+          <StyledTextField
             label="Discount (%)"
             type="number"
             value={discount}
-            onChange={e => setDiscount(parseFloat(e.target.value))}
+            onChange={(e) => setDiscount(parseFloat(e.target.value))}
             fullWidth
             sx={{ mt: 2 }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">
-            Save
-          </Button>
+        <DialogActions sx={{ p: 3 }}>
+          <CancelButton onClick={onClose}>Cancel</CancelButton>
+          <SaveButton onClick={handleSave} variant="contained">
+            Save Changes
+          </SaveButton>
         </DialogActions>
-      </Dialog>
+      </StyledDialog>
     );
   };
 
-
   const BillPreview = ({ bill }) => {
-    const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.quantity || 0) * (item.price || 0), 0);
-    
-    let feeValue = 0; // MODIFIED
-    let feeLabel = ''; // ADDED
-    
-    if (bill.type === 'Consulting') {
-        feeValue = bill.consultingFee || 0;
-        feeLabel = 'Consulting Fee';
-    } else if (bill.type === 'Treatment') { // ADDED
-        feeValue = bill.treatmentFee || 0;
-        feeLabel = 'Treatment Fee';
+    const itemSubtotal = bill.items.reduce(
+      (acc, item) => acc + (item.quantity || 0) * (item.price || 0),
+      0
+    );
+
+    let feeValue = 0;
+    let feeLabel = "";
+
+    if (bill.type === "Consulting") {
+      feeValue = bill.consultingFee || 0;
+      feeLabel = "Consulting Fee";
+    } else if (bill.type === "Treatment") {
+      feeValue = bill.treatmentFee || 0;
+      feeLabel = "Treatment Fee";
     }
 
     const subtotal = itemSubtotal + feeValue;
     const discountAmount = (subtotal * (bill.discount || 0)) / 100;
     const total = subtotal - discountAmount;
-    
-    const isProductBill = bill.type === 'Product' || bill.type === '';
+
+    const isProductBill = bill.type === "Product" || bill.type === "";
 
     return (
-      <Box sx={{ overflowX: 'auto', mt: 2 }}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            marginBottom: '1rem',
-          }}
-        >
+      <PreviewWrapper>
+        <PreviewTable>
           <thead>
             <tr>
-              {['Product', 'HSN', 'GST (%)', 'Qty', 'Price', 'Total'].map(header => (
-                <th key={header} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                  {header}
-                </th>
-              ))}
+              {["Product", "HSN", "GST (%)", "Qty", "Price", "Total"].map(
+                (header) => (
+                  <PreviewTh key={header}>{header}</PreviewTh>
+                )
+              )}
             </tr>
           </thead>
           <tbody>
@@ -352,376 +408,771 @@ const BillHistory = () => {
               const itemTotal = quantity * price;
 
               if (isProductBill) {
-                  return (
-                    <tr key={index}>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.HSN}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.GST}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.price}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '8px' }}>{itemTotal.toFixed(2)}</td>
-                    </tr>
-                  );
+                return (
+                  <tr key={index}>
+                    <PreviewTd>{item.description}</PreviewTd>
+                    <PreviewTd>{item.HSN}</PreviewTd>
+                    <PreviewTd>{item.GST}</PreviewTd>
+                    <PreviewTd>{item.quantity}</PreviewTd>
+                    <PreviewTd>{item.price}</PreviewTd>
+                    <PreviewTd>{itemTotal.toFixed(2)}</PreviewTd>
+                  </tr>
+                );
               } else if (item.description) {
-                  // MODIFICATION: Show comments as a single row spanning all columns
-                  return (
-                      <tr key={index}>
-                          <td colSpan={6} style={{ border: '1px solid #ccc', padding: '8px' }}>
-                              <span style={{ fontWeight: 'bold' }}>Comment/Description:</span> {item.description}
-                          </td>
-                      </tr>
-                  );
+                return (
+                  <tr key={index}>
+                    <PreviewTd colSpan={6}>
+                      <strong>Comment:</strong> {item.description}
+                    </PreviewTd>
+                  </tr>
+                );
               }
               return null;
             })}
-            {/* MODIFIED: Combine Consulting/Treatment Fee row */}
-            {(bill.type === 'Consulting' || bill.type === 'Treatment') && feeValue > 0 && (
-              <tr>
-                <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
-                  {feeLabel}
-                </td>
-                <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>
-                  ₹{feeValue.toFixed(2)}
-                </td>
-              </tr>
-            )}
+            {(bill.type === "Consulting" || bill.type === "Treatment") &&
+              feeValue > 0 && (
+                <tr>
+                  <PreviewTd
+                    colSpan={5}
+                    style={{ textAlign: "right", fontWeight: 500 }}
+                  >
+                    {feeLabel}
+                  </PreviewTd>
+                  <PreviewTd style={{ fontWeight: 500 }}>
+                    ₹{feeValue.toFixed(2)}
+                  </PreviewTd>
+                </tr>
+              )}
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
-                Subtotal (Before Discount)
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>₹{subtotal.toFixed(2)}</td>
+              <PreviewTd colSpan={5} style={{ textAlign: "right" }}>
+                Subtotal
+              </PreviewTd>
+              <PreviewTd>₹{subtotal.toFixed(2)}</PreviewTd>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+              <PreviewTd colSpan={5} style={{ textAlign: "right" }}>
                 Discount ({bill.discount || 0}%)
-              </td >
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>
-                -₹{discountAmount.toFixed(2)}
-              </td>
+              </PreviewTd>
+              <PreviewTd>-₹{discountAmount.toFixed(2)}</PreviewTd>
             </tr>
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold', textAlign: 'right' }}>
+              <PreviewTd
+                colSpan={5}
+                style={{ textAlign: "right", fontWeight: 600 }}
+              >
                 Total
-              </td >
-              <td style={{ border: '1px solid #ccc', padding: '8px', fontWeight: 'bold' }}>₹{total.toFixed(2)}</td>
+              </PreviewTd>
+              <PreviewTd style={{ fontWeight: 600 }}>
+                ₹{total.toFixed(2)}
+              </PreviewTd>
             </tr>
-            {/* Payment Type Preview Row */}
             <tr>
-              <td colSpan={5} style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'right' }}>
+              <PreviewTd colSpan={5} style={{ textAlign: "right" }}>
                 Payment Type
-              </td>
-              <td style={{ border: '1px solid #ccc', padding: '8px' }}>{bill.typeOfPayment || 'N/A'}</td>
+              </PreviewTd>
+              <PreviewTd>{bill.typeOfPayment || "N/A"}</PreviewTd>
             </tr>
           </tbody>
-        </table>
-      </Box>
+        </PreviewTable>
+      </PreviewWrapper>
     );
   };
 
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
   return (
-    <Container>
-      <Typography variant="h4" align="center" sx={{ mb: 4 }}>
-        Bill History
-      </Typography>
+    <PageWrapper>
+      <Container maxWidth="xl">
+        <ContentCard>
+          {/* Header Section */}
+          <HeaderSection>
+            <HeaderIcon>
+              <HistoryIcon sx={{ fontSize: 24, color: colors.primary.main }} />
+            </HeaderIcon>
+            <Box>
+              <PageTitle>Bill History</PageTitle>
+              <PageSubtitle>View and manage all billing records</PageSubtitle>
+            </Box>
+          </HeaderSection>
 
-      {/* Month and Year Selector */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth>
-            <InputLabel>Month</InputLabel>
-            <Select
-              value={selectedMonth}
-              label="Month"
-              onChange={e => setSelectedMonth(e.target.value)}
-            >
-              <MenuItem value={1}>January</MenuItem>
-              <MenuItem value={2}>February</MenuItem>
-              <MenuItem value={3}>March</MenuItem>
-              <MenuItem value={4}>April</MenuItem>
-              <MenuItem value={5}>May</MenuItem>
-              <MenuItem value={6}>June</MenuItem>
-              <MenuItem value={7}>July</MenuItem>
-              <MenuItem value={8}>August</MenuItem>
-              <MenuItem value={9}>September</MenuItem>
-              <MenuItem value={10}>October</MenuItem>
-              <MenuItem value={11}>November</MenuItem>
-              <MenuItem value={12}>December</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth>
-            <InputLabel>Year</InputLabel>
-            <Select
-              value={selectedYear}
-              label="Year"
-              onChange={e => setSelectedYear(e.target.value)}
-            >
-              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+          {/* Month/Year Selector */}
+          <FilterSection>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={4} md={2}>
+                <StyledFormControl fullWidth size="small">
+                  <InputLabel>Month</InputLabel>
+                  <Select
+                    value={selectedMonth}
+                    label="Month"
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                  >
+                    {months.map((month, index) => (
+                      <MenuItem key={index} value={index + 1}>
+                        {month}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </StyledFormControl>
+              </Grid>
+              <Grid item xs={12} sm={4} md={2}>
+                <StyledFormControl fullWidth size="small">
+                  <InputLabel>Year</InputLabel>
+                  <Select
+                    value={selectedYear}
+                    label="Year"
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                  >
+                    {Array.from(
+                      { length: 10 },
+                      (_, i) => new Date().getFullYear() - i
+                    ).map((year) => (
+                      <MenuItem key={year} value={year}>
+                        {year}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </StyledFormControl>
+              </Grid>
+            </Grid>
+          </FilterSection>
 
-      {/* Monthly Statistics Card */}
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-        <CardContent>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            Monthly Statistics - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </Typography>
-          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
-                  Product Bills
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.product.toFixed(2)}
-                </Typography>
-              </Box>
+          {/* Stats Cards */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.product.toFixed(0)}</StatValue>
+                <StatLabel>Products</StatLabel>
+              </StatCard>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
-                  Consulting Bills
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.consulting.toFixed(2)}
-                </Typography>
-              </Box>
+            <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.consulting.toFixed(0)}</StatValue>
+                <StatLabel>Consulting</StatLabel>
+              </StatCard>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
-                  Treatment Bills
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.treatment.toFixed(2)}
-                </Typography>
-              </Box>
+            <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.treatment.toFixed(0)}</StatValue>
+                <StatLabel>Treatment</StatLabel>
+              </StatCard>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontWeight: 600 }}>
+            <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.upi.toFixed(0)}</StatValue>
+                <StatLabel>UPI</StatLabel>
+              </StatCard>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.cash.toFixed(0)}</StatValue>
+                <StatLabel>Cash</StatLabel>
+              </StatCard>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <TotalStatCard>
+                <StatValue style={{ color: colors.primary.main }}>
+                  ₹{monthlyStats.total.toFixed(0)}
+                </StatValue>
+                <StatLabel style={{ color: colors.primary.main }}>
                   Total
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.total.toFixed(2)}
-                </Typography>
-              </Box>
+                </StatLabel>
+              </TotalStatCard>
             </Grid>
           </Grid>
-        </CardContent>
-      </Card>
 
-      {/* Payment Method Statistics Card */}
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-        <CardContent>
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-            Payment Method Breakdown - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </Typography>
-          <Divider sx={{ mb: 2, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
-                  UPI Payments
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.upi.toFixed(2)}
-                </Typography>
-              </Box>
+          {/* Search Filters */}
+          <FilterSection>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <StyledTextField
+                  label="Search by Patient Name"
+                  fullWidth
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  size="small"
+                  placeholder="Enter patient name"
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StyledTextField
+                  label="Search by Date"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StyledFormControl fullWidth size="small">
+                  <InputLabel>Payment Method</InputLabel>
+                  <Select
+                    value={searchPaymentMethod}
+                    label="Payment Method"
+                    onChange={(e) => setSearchPaymentMethod(e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="UPI">UPI</MenuItem>
+                    <MenuItem value="Cash">Cash</MenuItem>
+                  </Select>
+                </StyledFormControl>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9 }}>
-                  Cash Payments
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.cash.toFixed(2)}
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, border: '2px solid rgba(255,255,255,0.3)' }}>
-                <Typography variant="body2" sx={{ mb: 1, opacity: 0.9, fontWeight: 600 }}>
-                  Total
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  ₹{monthlyStats.total.toFixed(2)}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+          </FilterSection>
 
-      {/* Search Filters */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Search by Patient Name"
-            fullWidth
-            value={searchName}
-            onChange={e => setSearchName(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField
-            label="Search by Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={searchDate}
-            onChange={e => setSearchDate(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <FormControl fullWidth>
-            <InputLabel>Payment Method</InputLabel>
-            <Select
-              value={searchPaymentMethod}
-              label="Payment Method"
-              onChange={e => setSearchPaymentMethod(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="UPI">UPI</MenuItem>
-              <MenuItem value="Cash">Cash</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+          {/* Bills Table */}
+          <TableWrapper>
+            <StyledTableContainer component={Paper} elevation={0}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <StyledTableHeadCell>Bill ID</StyledTableHeadCell>
+                    <StyledTableHeadCell>Name</StyledTableHeadCell>
+                    <StyledTableHeadCell>Type</StyledTableHeadCell>
+                    <StyledTableHeadCell>Date</StyledTableHeadCell>
+                    <StyledTableHeadCell align="right">
+                      Total
+                    </StyledTableHeadCell>
+                    <StyledTableHeadCell>Payment</StyledTableHeadCell>
+                    <StyledTableHeadCell align="center">
+                      Actions
+                    </StyledTableHeadCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredBills.map((bill, index) => {
+                    const itemSubtotal = bill.items.reduce(
+                      (acc, item) =>
+                        acc + (item.price || 0) * (item.quantity || 0),
+                      0
+                    );
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Bill ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Payment</TableCell> 
-              <TableCell>Edit</TableCell>
-              <TableCell>Delete</TableCell>
-              <TableCell>Download</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredBills.map((bill, index) => {
-              // Calculate totals for display
-              const itemSubtotal = bill.items.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0);
-              
-              let feeValue = 0;
-              if (bill.type === 'Consulting') {
-                  feeValue = bill.consultingFee || 0;
-              } else if (bill.type === 'Treatment') { // ADDED
-                  feeValue = bill.treatmentFee || 0;
-              }
+                    let feeValue = 0;
+                    if (bill.type === "Consulting") {
+                      feeValue = bill.consultingFee || 0;
+                    } else if (bill.type === "Treatment") {
+                      feeValue = bill.treatmentFee || 0;
+                    }
 
-              const subtotal = itemSubtotal + feeValue;
-              const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
-              const billNumber = index + 1;
-                const paddedNumber = billNumber.toString().padStart(3, '0');
-                const displayId = `B${paddedNumber}`;
+                    const subtotal = itemSubtotal + feeValue;
+                    const total =
+                      subtotal - (subtotal * (bill.discount || 0)) / 100;
+                    const billNumber = (index + 1).toString().padStart(3, "0");
+                    const displayId = `B${billNumber}`;
 
-              return (
-                <TableRow key={index}>
-                  <TableCell>{displayId}</TableCell>
-                  <TableCell>{bill.name}</TableCell>
-                  <TableCell>{bill.type || ''}</TableCell>
-                  <TableCell>
-                    {/* Indian date format dd/mm/yyyy */}
-                    {new Date(bill.date).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    ₹{total.toFixed(2)} 
-                  </TableCell>
-                  <TableCell>{bill.typeOfPayment || 'N/A'}</TableCell> 
-                  <TableCell>
-                    <Button onClick={() => setEditingBill(bill)}>Edit</Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button color="error" onClick={() => setBillToDelete(bill)}>
-                      Delete
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      href={bill.downloadLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Download
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    return (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell>
+                          <BillIdChip label={displayId} />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <PatientName>{bill.name}</PatientName>
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <TypeChip
+                            label={bill.type || "Product"}
+                            billType={bill.type || "Product"}
+                          />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <DateText>
+                            {new Date(bill.date).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </DateText>
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          <TotalAmount>₹{total.toFixed(2)}</TotalAmount>
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <PaymentChip
+                            label={bill.typeOfPayment || "N/A"}
+                            paymentType={bill.typeOfPayment}
+                          />
+                        </StyledTableCell>
+                        <StyledTableCell align="center">
+                          <ActionButtonsWrapper>
+                            <ActionButton
+                              onClick={() => setEditingBill(bill)}
+                              title="Edit"
+                            >
+                              <EditIcon sx={{ fontSize: 18 }} />
+                            </ActionButton>
+                            <ActionButton
+                              onClick={() => setBillToDelete(bill)}
+                              title="Delete"
+                              isDelete
+                            >
+                              <DeleteIcon sx={{ fontSize: 18 }} />
+                            </ActionButton>
+                            <DownloadButton
+                              href={bill.downloadLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Download"
+                            >
+                              <DownloadIcon sx={{ fontSize: 18 }} />
+                            </DownloadButton>
+                          </ActionButtonsWrapper>
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    );
+                  })}
+                  {filteredBills.length === 0 && (
+                    <TableRow>
+                      <StyledTableCell colSpan={7}>
+                        <EmptyState>
+                          <EmptyStateText>
+                            No bills found for this period
+                          </EmptyStateText>
+                        </EmptyState>
+                      </StyledTableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </StyledTableContainer>
+          </TableWrapper>
 
-      {previewedBillId && (
-        <BillPreview bill={billHistory.find(bill => bill._id === previewedBillId)} />
-      )}
+          {previewedBillId && (
+            <BillPreview
+              bill={billHistory.find((bill) => bill._id === previewedBillId)}
+            />
+          )}
+        </ContentCard>
 
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage('')}
-      >
-        <MuiAlert elevation={6} variant="filled" severity="success">
-          {successMessage}
-        </MuiAlert>
-      </Snackbar>
-
-      <Snackbar open={!!errorMessage} autoHideDuration={3000} onClose={() => setErrorMessage('')}>
-        <MuiAlert elevation={6} variant="filled" severity="error">
-          {errorMessage}
-        </MuiAlert>
-      </Snackbar>
-
-      <Dialog open={!!billToDelete} onClose={() => setBillToDelete(null)}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the bill for <strong>{billToDelete?.name}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setBillToDelete(null)}>Cancel</Button>
-          <Button
-            color="error"
-            onClick={async () => {
-              await deleteBill(billToDelete._id)();
-              setBillToDelete(null);
-            }}
+        {/* Snackbars */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={3000}
+          onClose={() => setSuccessMessage("")}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert
+            severity="success"
+            variant="filled"
+            sx={{ borderRadius: borderRadius.md }}
           >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {successMessage}
+          </Alert>
+        </Snackbar>
 
-      {editingBill && (
-        <EditBillModal
-          bill={editingBill}
-          open={!!editingBill}
-          onClose={() => setEditingBill(null)}
-        />
-      )}
-    </Container>
+        <Snackbar
+          open={!!errorMessage}
+          autoHideDuration={3000}
+          onClose={() => setErrorMessage("")}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert
+            severity="error"
+            variant="filled"
+            sx={{ borderRadius: borderRadius.md }}
+          >
+            {errorMessage}
+          </Alert>
+        </Snackbar>
+
+        {/* Delete Confirmation Dialog */}
+        <StyledDialog
+          open={!!billToDelete}
+          onClose={() => setBillToDelete(null)}
+        >
+          <StyledDialogTitle>Confirm Deletion</StyledDialogTitle>
+          <DialogContent>
+            <Typography sx={{ fontFamily: typography.fontFamily.primary }}>
+              Are you sure you want to delete the bill for{" "}
+              <strong>{billToDelete?.name}</strong>?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 3 }}>
+            <CancelButton onClick={() => setBillToDelete(null)}>
+              Cancel
+            </CancelButton>
+            <DeleteConfirmButton
+              onClick={async () => {
+                await deleteBill(billToDelete._id)();
+                setBillToDelete(null);
+              }}
+            >
+              Delete
+            </DeleteConfirmButton>
+          </DialogActions>
+        </StyledDialog>
+
+        {editingBill && (
+          <EditBillModal
+            bill={editingBill}
+            open={!!editingBill}
+            onClose={() => setEditingBill(null)}
+          />
+        )}
+      </Container>
+    </PageWrapper>
   );
 };
+
+// Styled Components
+
+const PageWrapper = styled(Box)({
+  minHeight: "100vh",
+  backgroundColor: colors.surface.container,
+  paddingTop: spacing[8],
+  paddingBottom: spacing[12],
+});
+
+const ContentCard = styled(Box)({
+  backgroundColor: colors.surface.background,
+  borderRadius: borderRadius.cardLg,
+  boxShadow: elevation.card,
+  padding: spacing[8],
+  animation: "fadeInUp 0.5s cubic-bezier(0, 0, 0, 1)",
+  "@media (max-width: 600px)": {
+    padding: spacing[5],
+    borderRadius: borderRadius.lg,
+  },
+});
+
+const HeaderSection = styled(Box)({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: spacing[4],
+  marginBottom: spacing[6],
+});
+
+const HeaderIcon = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "48px",
+  height: "48px",
+  borderRadius: borderRadius.lg,
+  backgroundColor: colors.primary.surface,
+  flexShrink: 0,
+});
+
+const PageTitle = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontSize: "clamp(1.5rem, 4vw, 2rem)",
+  fontWeight: typography.fontWeight.regular,
+  color: colors.text.primary,
+  letterSpacing: "-0.01em",
+  marginBottom: spacing[1],
+});
+
+const PageSubtitle = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.base,
+  color: colors.text.secondary,
+});
+
+const FilterSection = styled(Box)({
+  marginBottom: spacing[6],
+});
+
+const StyledFormControl = styled(FormControl)({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: borderRadius.input,
+    fontFamily: typography.fontFamily.primary,
+  },
+  "& .MuiInputLabel-root": {
+    fontFamily: typography.fontFamily.primary,
+  },
+});
+
+const StyledTextField = styled(TextField)({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: borderRadius.input,
+    fontFamily: typography.fontFamily.primary,
+  },
+  "& .MuiInputLabel-root": {
+    fontFamily: typography.fontFamily.primary,
+  },
+});
+
+const StatCard = styled(Box)({
+  padding: spacing[5],
+  backgroundColor: colors.surface.container,
+  borderRadius: borderRadius.lg,
+  textAlign: "center",
+  transition: motion.transition.fast,
+  "&:hover": {
+    backgroundColor: colors.surface.containerHigh,
+  },
+});
+
+const TotalStatCard = styled(StatCard)({
+  backgroundColor: colors.primary.surface,
+  border: `1px solid ${alpha(colors.primary.main, 0.2)}`,
+});
+
+const StatValue = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontSize: typography.fontSize.xl,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+  marginBottom: spacing[1],
+});
+
+const StatLabel = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  color: colors.text.secondary,
+});
+
+const TableWrapper = styled(Box)({
+  overflowX: "auto",
+});
+
+const StyledTableContainer = styled(TableContainer)({
+  borderRadius: borderRadius.lg,
+  border: `1px solid ${colors.border.light}`,
+  boxShadow: "none",
+});
+
+const StyledTableHeadCell = styled(TableCell)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+  backgroundColor: colors.surface.container,
+  borderBottom: `1px solid ${colors.border.light}`,
+  padding: "14px 16px",
+  whiteSpace: "nowrap",
+});
+
+const StyledTableRow = styled(TableRow)({
+  transition: motion.transition.fast,
+  "&:hover": {
+    backgroundColor: colors.hover,
+  },
+});
+
+const StyledTableCell = styled(TableCell)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  padding: "12px 16px",
+  borderBottom: `1px solid ${colors.border.light}`,
+});
+
+const BillIdChip = styled(Chip)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.xs,
+  fontWeight: typography.fontWeight.medium,
+  height: "26px",
+  backgroundColor: colors.surface.container,
+  color: colors.text.primary,
+});
+
+const PatientName = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+});
+
+const TypeChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "billType",
+})(({ billType }) => {
+  const getColor = () => {
+    switch (billType) {
+      case "Consulting":
+        return { bg: colors.info.surface, color: colors.info.main };
+      case "Treatment":
+        return { bg: colors.secondary.surface, color: colors.secondary.main };
+      default:
+        return { bg: colors.surface.container, color: colors.text.secondary };
+    }
+  };
+  const colorStyle = getColor();
+  return {
+    fontFamily: typography.fontFamily.primary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    height: "24px",
+    backgroundColor: colorStyle.bg,
+    color: colorStyle.color,
+  };
+});
+
+const DateText = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  color: colors.text.secondary,
+});
+
+const TotalAmount = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.success.main,
+});
+
+const PaymentChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== "paymentType",
+})(({ paymentType }) => {
+  const getColor = () => {
+    switch (paymentType) {
+      case "UPI":
+        return { bg: colors.primary.surface, color: colors.primary.main };
+      case "Cash":
+        return { bg: colors.secondary.surface, color: colors.secondary.main };
+      default:
+        return { bg: colors.surface.container, color: colors.text.tertiary };
+    }
+  };
+  const colorStyle = getColor();
+  return {
+    fontFamily: typography.fontFamily.primary,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    height: "24px",
+    backgroundColor: colorStyle.bg,
+    color: colorStyle.color,
+  };
+});
+
+const ActionButtonsWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: spacing[1],
+});
+
+const ActionButton = styled(IconButton, {
+  shouldForwardProp: (prop) => prop !== "isDelete",
+})(({ isDelete }) => ({
+  color: isDelete ? colors.text.tertiary : colors.text.secondary,
+  padding: "6px",
+  transition: motion.transition.fast,
+  "&:hover": {
+    color: isDelete ? colors.error.main : colors.primary.main,
+    backgroundColor: isDelete
+      ? alpha(colors.error.main, 0.08)
+      : alpha(colors.primary.main, 0.08),
+  },
+}));
+
+const DownloadButton = styled("a")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: colors.text.secondary,
+  padding: "6px",
+  borderRadius: borderRadius.full,
+  transition: motion.transition.fast,
+  "&:hover": {
+    color: colors.success.main,
+    backgroundColor: alpha(colors.success.main, 0.08),
+  },
+});
+
+const EmptyState = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: spacing[8],
+});
+
+const EmptyStateText = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  color: colors.text.tertiary,
+});
+
+const StyledDialog = styled(Dialog)({
+  "& .MuiPaper-root": {
+    borderRadius: borderRadius.dialog,
+    boxShadow: elevation.modal,
+  },
+});
+
+const StyledDialogTitle = styled(DialogTitle)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.xl,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+  paddingBottom: spacing[2],
+});
+
+const AddItemButton = styled(Button)({
+  marginTop: spacing[4],
+  fontFamily: typography.fontFamily.primary,
+  textTransform: "none",
+  color: colors.primary.main,
+});
+
+const CancelButton = styled(Button)({
+  fontFamily: typography.fontFamily.primary,
+  textTransform: "none",
+  color: colors.text.secondary,
+  borderRadius: borderRadius.button,
+});
+
+const SaveButton = styled(Button)({
+  fontFamily: typography.fontFamily.primary,
+  textTransform: "none",
+  borderRadius: borderRadius.button,
+  backgroundColor: colors.primary.main,
+  "&:hover": {
+    backgroundColor: colors.primary.dark,
+  },
+});
+
+const DeleteConfirmButton = styled(Button)({
+  fontFamily: typography.fontFamily.primary,
+  textTransform: "none",
+  borderRadius: borderRadius.button,
+  backgroundColor: colors.error.main,
+  color: "white",
+  "&:hover": {
+    backgroundColor: colors.error.light,
+  },
+});
+
+const PreviewWrapper = styled(Box)({
+  marginTop: spacing[6],
+  padding: spacing[4],
+  backgroundColor: colors.surface.container,
+  borderRadius: borderRadius.lg,
+  overflowX: "auto",
+});
+
+const PreviewTable = styled("table")({
+  width: "100%",
+  borderCollapse: "collapse",
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+});
+
+const PreviewTh = styled("th")({
+  padding: "12px",
+  textAlign: "left",
+  backgroundColor: colors.surface.containerHigh,
+  borderBottom: `1px solid ${colors.border.medium}`,
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+});
+
+const PreviewTd = styled("td")({
+  padding: "10px 12px",
+  borderBottom: `1px solid ${colors.border.light}`,
+  color: colors.text.primary,
+});
 
 export default BillHistory;

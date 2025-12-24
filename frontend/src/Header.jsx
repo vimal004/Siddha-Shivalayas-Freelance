@@ -11,6 +11,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Container,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -20,15 +21,22 @@ import {
   History as HistoryIcon,
   LogoutOutlined as LogoutIcon,
   Menu as MenuIcon,
+  ShoppingCart as ShoppingCartIcon,
+  LocalShipping as LocalShippingIcon,
 } from "@mui/icons-material";
 import logo from "./img/Logo.svg";
-import { styled } from "@mui/system";
+import { styled, alpha } from "@mui/material/styles";
+import designTokens from "./designTokens";
+
+const { colors, typography, borderRadius, elevation, motion, spacing } =
+  designTokens;
 
 const Header = () => {
   const theme = useTheme();
-  const isSm = useMediaQuery(theme.breakpoints.up("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
-  const isHome = location.pathname === "/" || location.pathname === "/home";
+  const isLoginPage = location.pathname === "/";
+  const isHomePage = location.pathname === "/home";
 
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
 
@@ -46,197 +54,238 @@ const Header = () => {
   };
 
   const navigationLinks = [
-    { to: "/allpatients", icon: <PeopleAltIcon />, label: "View Patients" },
-    { to: "/managepatients", icon: <PersonIcon />, label: "Manage Patients" },
-    { to: "/managestocks", icon: <InventoryIcon />, label: "Manage Stocks" },
-    { to: "/viewstocks", icon: <InventoryIcon />, label: "View Stocks" },
-    { to: "/billhistory", icon: <HistoryIcon />, label: "Bill History" },
+    { to: "/allpatients", icon: <PeopleAltIcon />, label: "Patients" },
+    { to: "/managepatients", icon: <PersonIcon />, label: "Manage" },
+    { to: "/managestocks", icon: <InventoryIcon />, label: "Stocks" },
+    { to: "/viewstocks", icon: <InventoryIcon />, label: "Inventory" },
+    { to: "/billhistory", icon: <HistoryIcon />, label: "Bills" },
   ];
 
+  // Don't show header on login page
+  if (isLoginPage) {
+    return null;
+  }
+
   return (
-    <StyledAppBar position="static" elevation={0}>
-      <Toolbar sx={{ minHeight: { xs: 80, sm: 80 } }}>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent={isHome ? "center" : "space-between"}
-          width="100%"
-          flexDirection={isSm ? "row" : "column"}
-          gap={2}
-          marginTop={1}
-          marginBottom={1}
-        >
-          <HeaderLogoAndTitle isSm={isSm} isHome={isHome}>
+    <StyledAppBar position="sticky">
+      <Container maxWidth="xl">
+        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 }, gap: 2 }}>
+          {/* Logo and Brand */}
+          <LogoContainer>
             <Link
               to="/home"
               style={{
                 textDecoration: "none",
                 display: "flex",
                 alignItems: "center",
+                gap: "12px",
               }}
             >
-              <Logo src={logo} alt="Logo" />
-              <Typography
-                variant="h5"
-                sx={{
-                  ml: 2,
-                  fontFamily: '"Poppins", sans-serif',
-                  fontWeight: 600,
-                  background: "linear-gradient(45deg, #1976d2, #2196f3)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "-0.5px",
-                }}
-              >
-                Customer Database Management
-              </Typography>
+              <Logo src={logo} alt="Shivalayas Siddha" />
+              <BrandName variant="h6">Shivalayas</BrandName>
             </Link>
-          </HeaderLogoAndTitle>
+          </LogoContainer>
 
-          {location.pathname === "/home" && (
+          {/* Spacer */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Desktop Navigation - Pill-style tabs */}
+          {!isHomePage && !isMobile && (
+            <NavContainer>
+              {navigationLinks.map((link, index) => (
+                <NavPill
+                  key={index}
+                  component={Link}
+                  to={link.to}
+                  isActive={location.pathname === link.to}
+                >
+                  {link.label}
+                </NavPill>
+              ))}
+            </NavContainer>
+          )}
+
+          {/* Logout Button */}
+          {isHomePage && (
             <LogoutButton
               onClick={handleLogout}
-              variant="contained"
+              variant="outlined"
               startIcon={<LogoutIcon />}
             >
-              Logout
+              {!isMobile && "Sign out"}
             </LogoutButton>
           )}
 
-          {!isHome && (
-            <Box>
-              {isSm ? (
-                <Navigation isSm={isSm}>
-                  {navigationLinks.map((link, index) => (
-                    <NavButton
-                      key={index}
-                      component={Link}
-                      to={link.to}
-                      startIcon={link.icon}
-                    >
-                      {link.label}
-                    </NavButton>
-                  ))}
-                </Navigation>
-              ) : (
-                <IconButton
-                  size="large"
-                  aria-label="menu"
-                  onClick={handleMenuClick}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Menu
+          {/* Mobile Menu Button */}
+          {!isHomePage && isMobile && (
+            <>
+              <MobileMenuButton
+                aria-label="navigation menu"
+                onClick={handleMenuClick}
+              >
+                <MenuIcon />
+              </MobileMenuButton>
+              <StyledMenu
                 anchorEl={menuAnchorEl}
                 open={Boolean(menuAnchorEl)}
                 onClose={handleMenuClose}
-                PaperProps={{
-                  style: {
-                    backgroundColor: "rgba(255, 255, 255, 0.98)",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  },
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
                 }}
               >
                 {navigationLinks.map((link, index) => (
-                  <MenuItem
+                  <StyledMenuItem
                     key={index}
                     component={Link}
                     to={link.to}
                     onClick={handleMenuClose}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontFamily: '"Poppins", sans-serif',
-                      fontWeight: 500,
-                      color: "#2c3e50",
-                      "&:hover": {
-                        backgroundColor: "rgba(25, 118, 210, 0.08)",
-                      },
-                    }}
+                    isActive={location.pathname === link.to}
                   >
-                    {link.icon}
+                    <MenuItemIcon>{link.icon}</MenuItemIcon>
                     {link.label}
-                  </MenuItem>
+                  </StyledMenuItem>
                 ))}
-              </Menu>
-            </Box>
+              </StyledMenu>
+            </>
           )}
-        </Box>
-      </Toolbar>
+        </Toolbar>
+      </Container>
     </StyledAppBar>
   );
 };
 
-const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.98)",
-  backdropFilter: "blur(10px)",
-  borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
-  padding: "4px 0",
-}));
+// Styled Components using Design Tokens
 
-const HeaderLogoAndTitle = styled(Box)(({ isSm, isHome }) => ({
+const StyledAppBar = styled(AppBar)({
+  backgroundColor: colors.surface.background,
+  backdropFilter: "blur(12px)",
+  borderBottom: `1px solid ${colors.border.light}`,
+  boxShadow: "none",
+});
+
+const LogoContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
-  justifyContent: isHome ? "center" : isSm ? "flex-start" : "center",
-  transition: "all 0.3s ease",
-}));
+});
 
 const Logo = styled("img")({
-  height: "48px",
-  transition: "transform 0.3s ease",
+  height: "36px",
+  width: "auto",
+  transition: motion.transition.fast,
   "&:hover": {
-    transform: "scale(1.05)",
+    transform: "scale(1.02)",
   },
 });
-const Navigation = styled("nav")(({ isSm }) => ({
-  display: isSm ? "flex" : "none",
+
+const BrandName = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontWeight: typography.fontWeight.medium,
+  fontSize: typography.fontSize.xl,
+  color: colors.text.primary,
+  letterSpacing: "-0.01em",
+});
+
+const NavContainer = styled(Box)({
+  display: "flex",
   alignItems: "center",
-  textAlign: isSm ? "initial" : "center",
-  gap: "8px",
+  gap: "4px",
+  padding: "4px",
+  backgroundColor: colors.surface.container,
+  borderRadius: borderRadius.full,
+});
+
+const NavPill = styled(Button, {
+  shouldForwardProp: (prop) => prop !== "isActive",
+})(({ isActive }) => ({
+  padding: "8px 20px",
+  borderRadius: borderRadius.full,
+  fontFamily: typography.fontFamily.primary,
+  fontWeight: typography.fontWeight.medium,
+  fontSize: typography.fontSize.sm,
+  textTransform: "none",
+  color: isActive ? colors.text.primary : colors.text.secondary,
+  backgroundColor: isActive ? colors.surface.background : "transparent",
+  boxShadow: isActive ? elevation.level1 : "none",
+  transition: motion.transition.fast,
+  minWidth: "auto",
+  "&:hover": {
+    backgroundColor: isActive ? colors.surface.background : colors.hover,
+    color: colors.text.primary,
+  },
 }));
 
-const NavButton = styled(Button)(({ theme }) => ({
-  color: "#2c3e50",
-  fontWeight: 500,
-  padding: "10px 20px",
-  borderRadius: "12px",
+const LogoutButton = styled(Button)({
+  padding: "8px 20px",
+  borderRadius: borderRadius.full,
+  fontFamily: typography.fontFamily.primary,
+  fontWeight: typography.fontWeight.medium,
+  fontSize: typography.fontSize.sm,
   textTransform: "none",
-  fontSize: "0.95rem",
-  fontFamily: '"Poppins", sans-serif',
-  transition: "all 0.2s ease",
-  backgroundColor: "transparent",
-  border: "1px solid transparent",
+  color: colors.text.secondary,
+  borderColor: colors.border.medium,
+  transition: motion.transition.fast,
   "&:hover": {
-    backgroundColor: "rgba(25, 118, 210, 0.08)",
-    transform: "translateY(-2px)",
-    border: "1px solid rgba(25, 118, 210, 0.1)",
+    borderColor: colors.border.dark,
+    backgroundColor: colors.hover,
   },
-  "& .MuiButton-startIcon": {
-    color: "#1976d2",
+});
+
+const MobileMenuButton = styled(IconButton)({
+  color: colors.text.primary,
+  padding: "10px",
+  borderRadius: borderRadius.full,
+  transition: motion.transition.fast,
+  "&:hover": {
+    backgroundColor: colors.hover,
+  },
+});
+
+const StyledMenu = styled(Menu)({
+  "& .MuiPaper-root": {
+    marginTop: "8px",
+    borderRadius: borderRadius.menu,
+    boxShadow: elevation.dropdown,
+    border: `1px solid ${colors.border.light}`,
+    minWidth: "200px",
+    padding: "4px",
+  },
+});
+
+const StyledMenuItem = styled(MenuItem, {
+  shouldForwardProp: (prop) => prop !== "isActive",
+})(({ isActive }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  padding: "12px 16px",
+  borderRadius: borderRadius.sm,
+  margin: "2px 0",
+  fontFamily: typography.fontFamily.primary,
+  fontWeight: isActive
+    ? typography.fontWeight.medium
+    : typography.fontWeight.regular,
+  fontSize: typography.fontSize.sm,
+  color: isActive ? colors.primary.main : colors.text.primary,
+  backgroundColor: isActive ? alpha(colors.primary.main, 0.08) : "transparent",
+  transition: motion.transition.fast,
+  "&:hover": {
+    backgroundColor: isActive ? alpha(colors.primary.main, 0.12) : colors.hover,
   },
 }));
 
-const LogoutButton = styled(Button)(({ theme }) => ({
-  background: "linear-gradient(45deg, #1976d2, #2196f3)",
-  color: "white",
-  padding: "10px 24px",
-  borderRadius: "6px",
-  textTransform: "none",
-  fontSize: "0.95rem",
-  fontWeight: 600,
-  fontFamily: '"Poppins", sans-serif',
-  boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
-  transition: "all 0.2s ease",
-  border: "none",
-  //marginBottom: "10px",  
-  "&:hover": {
-    background: "linear-gradient(45deg, #1565c0, #1976d2)",
-    transform: "translateY(-2px)",
-    boxShadow: "0 6px 16px rgba(25, 118, 210, 0.2)",
+const MenuItemIcon = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: colors.text.secondary,
+  "& svg": {
+    fontSize: "20px",
   },
-}));
+});
 
 export default Header;
