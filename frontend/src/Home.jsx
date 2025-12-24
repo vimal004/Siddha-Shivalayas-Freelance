@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -6,9 +6,10 @@ import {
   Container,
   Grid,
   Typography,
-  IconButton,
+  CircularProgress,
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
+import axios from "axios";
 import {
   AccountCircle as AccountCircleIcon,
   People as PeopleIcon,
@@ -17,6 +18,7 @@ import {
   History as HistoryIcon,
   LocalShipping as LocalShippingIcon,
   ArrowForward as ArrowForwardIcon,
+  TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import designTokens from "./designTokens";
 
@@ -25,13 +27,61 @@ const { colors, typography, borderRadius, elevation, motion, spacing } =
 
 const Home = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalPatients: null,
+    productsInStock: null,
+    billsGenerated: null,
+    pendingOrders: null,
+    loading: true,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/");
+    } else {
+      fetchStats();
     }
   }, [navigate]);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch patients count
+      const patientsRes = await axios.get(
+        "https://siddha-shivalayas-backend.vercel.app/patients"
+      );
+      const patientsCount = patientsRes.data.length;
+
+      // Fetch stocks count
+      const stocksRes = await axios.get(
+        "https://siddha-shivalayas-backend.vercel.app/stocks"
+      );
+      const productsCount = stocksRes.data.length;
+
+      // Fetch bills count
+      const billsRes = await axios.get(
+        "https://siddha-shivalayas-backend.vercel.app/bills-history"
+      );
+      const billsCount = billsRes.data.length;
+
+      // Calculate total stock quantity (as a proxy for pending/available)
+      const totalStockQty = stocksRes.data.reduce(
+        (sum, item) => sum + (item.quantity || 0),
+        0
+      );
+
+      setStats({
+        totalPatients: patientsCount,
+        productsInStock: productsCount,
+        billsGenerated: billsCount,
+        pendingOrders: totalStockQty,
+        loading: false,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      setStats((prev) => ({ ...prev, loading: false }));
+    }
+  };
 
   const menuItems = [
     {
@@ -100,6 +150,37 @@ const Home = () => {
     },
   ];
 
+  const statItems = [
+    {
+      label: "Total Patients",
+      value: stats.totalPatients,
+      icon: <PeopleIcon />,
+      color: colors.primary.main,
+      bgColor: colors.primary.surface,
+    },
+    {
+      label: "Products in Stock",
+      value: stats.productsInStock,
+      icon: <InventoryIcon />,
+      color: "#9334e6",
+      bgColor: "#f3e8fd",
+    },
+    {
+      label: "Bills Generated",
+      value: stats.billsGenerated,
+      icon: <ReceiptIcon />,
+      color: "#137333",
+      bgColor: "#e6f4ea",
+    },
+    {
+      label: "Total Stock Qty",
+      value: stats.pendingOrders,
+      icon: <TrendingUpIcon />,
+      color: "#ea8600",
+      bgColor: "#fff4e5",
+    },
+  ];
+
   return (
     <PageWrapper>
       <Container maxWidth="lg">
@@ -111,8 +192,44 @@ const Home = () => {
           </HeroSubtitle>
         </HeroSection>
 
+        {/* Quick Stats Section */}
+        <StatsSection>
+          <Typography
+            variant="h6"
+            sx={{
+              fontFamily: typography.fontFamily.primary,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.text.primary,
+              mb: 3,
+            }}
+          >
+            Quick Overview
+          </Typography>
+          <Grid container spacing={2}>
+            {statItems.map((stat, index) => (
+              <Grid item xs={6} md={3} key={index}>
+                <StatCard style={{ animationDelay: `${index * 50}ms` }}>
+                  <StatIconWrapper style={{ backgroundColor: stat.bgColor }}>
+                    {React.cloneElement(stat.icon, {
+                      sx: { fontSize: 22, color: stat.color },
+                    })}
+                  </StatIconWrapper>
+                  <StatValue>
+                    {stats.loading ? (
+                      <CircularProgress size={20} sx={{ color: stat.color }} />
+                    ) : (
+                      stat.value ?? "0"
+                    )}
+                  </StatValue>
+                  <StatLabel>{stat.label}</StatLabel>
+                </StatCard>
+              </Grid>
+            ))}
+          </Grid>
+        </StatsSection>
+
         {/* Menu Grid */}
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mt: 2 }}>
           {menuItems.map((item, index) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={item.path}>
               <Link to={item.path} style={{ textDecoration: "none" }}>
@@ -142,47 +259,6 @@ const Home = () => {
             </Grid>
           ))}
         </Grid>
-
-        {/* Quick Stats Section (Optional Enhancement) */}
-        <StatsSection>
-          <Typography
-            variant="h6"
-            sx={{
-              fontFamily: typography.fontFamily.primary,
-              fontWeight: typography.fontWeight.medium,
-              color: colors.text.primary,
-              mb: 3,
-            }}
-          >
-            Quick Overview
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6} md={3}>
-              <StatCard>
-                <StatValue>--</StatValue>
-                <StatLabel>Total Patients</StatLabel>
-              </StatCard>
-            </Grid>
-            <Grid item xs={6} md={3}>
-              <StatCard>
-                <StatValue>--</StatValue>
-                <StatLabel>Products in Stock</StatLabel>
-              </StatCard>
-            </Grid>
-            <Grid item xs={6} md={3}>
-              <StatCard>
-                <StatValue>--</StatValue>
-                <StatLabel>Bills Generated</StatLabel>
-              </StatCard>
-            </Grid>
-            <Grid item xs={6} md={3}>
-              <StatCard>
-                <StatValue>--</StatValue>
-                <StatLabel>Pending Orders</StatLabel>
-              </StatCard>
-            </Grid>
-          </Grid>
-        </StatsSection>
       </Container>
     </PageWrapper>
   );
@@ -199,7 +275,7 @@ const PageWrapper = styled(Box)({
 
 const HeroSection = styled(Box)({
   textAlign: "center",
-  marginBottom: spacing[12],
+  marginBottom: spacing[8],
   animation: "fadeInUp 0.6s cubic-bezier(0, 0, 0, 1)",
 });
 
@@ -221,6 +297,60 @@ const HeroSubtitle = styled(Typography)({
   maxWidth: "500px",
   margin: "0 auto",
   lineHeight: 1.6,
+});
+
+const StatsSection = styled(Box)({
+  marginBottom: spacing[8],
+  padding: spacing[6],
+  backgroundColor: colors.surface.background,
+  borderRadius: borderRadius.cardLg,
+  boxShadow: elevation.level1,
+  animation: "fadeInUp 0.5s cubic-bezier(0, 0, 0, 1) 0.1s backwards",
+});
+
+const StatCard = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  padding: spacing[5],
+  backgroundColor: colors.surface.container,
+  borderRadius: borderRadius.lg,
+  textAlign: "center",
+  transition: motion.transition.fast,
+  animation: "fadeInUp 0.5s cubic-bezier(0, 0, 0, 1) backwards",
+  "&:hover": {
+    backgroundColor: colors.surface.containerHigh,
+    transform: "translateY(-2px)",
+  },
+});
+
+const StatIconWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "44px",
+  height: "44px",
+  borderRadius: borderRadius.md,
+  marginBottom: spacing[3],
+});
+
+const StatValue = styled(Typography)({
+  fontFamily: typography.fontFamily.display,
+  fontSize: typography.fontSize["2xl"],
+  fontWeight: typography.fontWeight.medium,
+  color: colors.text.primary,
+  marginBottom: spacing[1],
+  minHeight: "32px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
+const StatLabel = styled(Typography)({
+  fontFamily: typography.fontFamily.primary,
+  fontSize: typography.fontSize.sm,
+  fontWeight: typography.fontWeight.regular,
+  color: colors.text.secondary,
 });
 
 const MenuCard = styled(Box)({
@@ -290,39 +420,5 @@ const CardArrow = styled(Box)({
 CardArrow.defaultProps = {
   className: "card-arrow",
 };
-
-const StatsSection = styled(Box)({
-  marginTop: spacing[16],
-  padding: spacing[8],
-  backgroundColor: colors.surface.background,
-  borderRadius: borderRadius.cardLg,
-  boxShadow: elevation.level1,
-});
-
-const StatCard = styled(Box)({
-  padding: spacing[5],
-  backgroundColor: colors.surface.container,
-  borderRadius: borderRadius.lg,
-  textAlign: "center",
-  transition: motion.transition.fast,
-  "&:hover": {
-    backgroundColor: colors.surface.containerHigh,
-  },
-});
-
-const StatValue = styled(Typography)({
-  fontFamily: typography.fontFamily.display,
-  fontSize: typography.fontSize["2xl"],
-  fontWeight: typography.fontWeight.medium,
-  color: colors.text.primary,
-  marginBottom: spacing[1],
-});
-
-const StatLabel = styled(Typography)({
-  fontFamily: typography.fontFamily.primary,
-  fontSize: typography.fontSize.sm,
-  fontWeight: typography.fontWeight.regular,
-  color: colors.text.secondary,
-});
 
 export default Home;

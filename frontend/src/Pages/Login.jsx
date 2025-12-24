@@ -19,7 +19,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { styled, alpha } from "@mui/material/styles";
 import designTokens from "../designTokens";
-import logo from "../img/Logo.svg";
+import logo from "../img/Logo.png";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;

@@ -24,7 +24,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   LocalShipping as LocalShippingIcon,
 } from "@mui/icons-material";
-import logo from "./img/Logo.svg";
+import logo from "./img/Logo.png";
 import { styled, alpha } from "@mui/material/styles";
 import designTokens from "./designTokens";
 
