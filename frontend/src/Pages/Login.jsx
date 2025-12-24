@@ -221,8 +221,10 @@ const LogoSection = styled(Box)({
 });
 
 const LogoImage = styled("img")({
-  height: "48px",
-  width: "auto",
+  height: "56px",
+  width: "56px",
+  objectFit: "contain",
+  borderRadius: borderRadius.lg,
 });
 
 const BrandName = styled(Typography)({

@@ -82,7 +82,7 @@ const Header = () => {
               }}
             >
               <Logo src={logo} alt="Shivalayas Siddha" />
-              <BrandName variant="h6">Shivalayas</BrandName>
+              <BrandName variant="h6">Shivalayas Siddha</BrandName>
             </Link>
           </LogoContainer>
 
@@ -174,11 +174,13 @@ const LogoContainer = styled(Box)({
 });
 
 const Logo = styled("img")({
-  height: "36px",
-  width: "auto",
+  height: "40px",
+  width: "40px",
+  objectFit: "contain",
+  borderRadius: borderRadius.md,
   transition: motion.transition.fast,
   "&:hover": {
-    transform: "scale(1.02)",
+    transform: "scale(1.05)",
   },
 });
 
