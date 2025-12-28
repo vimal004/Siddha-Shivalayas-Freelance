@@ -116,28 +116,36 @@ const Header = () => {
               {user && (
                 <Chip
                   icon={
-                    user.role === "admin" ? (
+                    user.role === "admin" || user.role === "visitor" ? (
                       <AdminIcon sx={{ fontSize: 16 }} />
                     ) : (
                       <StaffIcon sx={{ fontSize: 16 }} />
                     )
                   }
-                  label={user.role === "admin" ? "Admin" : "Staff"}
+                  label={
+                    user.role === "admin" || user.role === "visitor"
+                      ? "Admin"
+                      : "Staff"
+                  }
                   size="small"
                   sx={{
                     backgroundColor:
-                      user.role === "admin"
+                      user.role === "admin" || user.role === "visitor"
                         ? alpha(colors.primary.main, 0.15)
                         : alpha("#6b7280", 0.15),
                     color:
-                      user.role === "admin" ? colors.primary.main : "#6b7280",
+                      user.role === "admin" || user.role === "visitor"
+                        ? colors.primary.main
+                        : "#6b7280",
                     fontFamily: typography.fontFamily.primary,
                     fontWeight: typography.fontWeight.medium,
                     fontSize: typography.fontSize.xs,
                     textTransform: "capitalize",
                     "& .MuiChip-icon": {
                       color:
-                        user.role === "admin" ? colors.primary.main : "#6b7280",
+                        user.role === "admin" || user.role === "visitor"
+                          ? colors.primary.main
+                          : "#6b7280",
                     },
                   }}
                 />
