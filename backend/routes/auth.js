@@ -40,6 +40,21 @@ const seedUsers = async () => {
         "Visitor user created: visitor@gmail.com (for recruiter demos)"
       );
     }
+
+    // Check if visitor-staff (recruiter demo with staff access) exists
+    const visitorStaffExists = await User.findOne({
+      email: "visitor-staff@gmail.com",
+    });
+    if (!visitorStaffExists) {
+      await User.create({
+        email: "visitor-staff@gmail.com",
+        password: "visitor123",
+        role: "visitor-staff",
+      });
+      console.log(
+        "Visitor-Staff user created: visitor-staff@gmail.com (for recruiter demos with staff access)"
+      );
+    }
   } catch (error) {
     console.error("Error seeding users:", error);
   }

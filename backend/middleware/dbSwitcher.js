@@ -3,7 +3,8 @@
  *
  * This middleware switches the database connection based on user role:
  * - admin/staff: Uses the original SiddhaShivalayas database (production data)
- * - visitor: Uses the dummy database (demo/recruiter data - no sensitive info)
+ * - visitor: Uses the dummy database (demo/recruiter data - admin access for demos)
+ * - visitor-staff: Uses the dummy database (demo/recruiter data - staff/restricted access for demos)
  */
 
 const mongoose = require("mongoose");
@@ -125,9 +126,12 @@ const models = {
  * based on the user's role (determined after authentication)
  */
 const attachDbModels = (req, res, next) => {
-  // If user is a visitor (recruiter demo), use dummy database
+  // If user is a visitor or visitor-staff (recruiter demo), use dummy database
   // Otherwise use original database for admin/staff
-  if (req.user && req.user.role === "visitor") {
+  if (
+    req.user &&
+    (req.user.role === "visitor" || req.user.role === "visitor-staff")
+  ) {
     req.db = models.dummy;
     req.dbName = "dummy";
   } else {
@@ -141,7 +145,9 @@ const attachDbModels = (req, res, next) => {
  * Helper function to get models based on role (for use outside middleware chain)
  */
 const getModelsForRole = (role) => {
-  return role === "visitor" ? models.dummy : models.original;
+  return role === "visitor" || role === "visitor-staff"
+    ? models.dummy
+    : models.original;
 };
 
 module.exports = {

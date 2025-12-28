@@ -24,23 +24,30 @@ export const isAuthenticated = () => {
   return !!token;
 };
 
-// Check if user is admin (includes visitor role for demo purposes)
+// Check if user is admin (includes visitor role for demo purposes - NOT visitor-staff)
 export const isAdmin = () => {
   const user = getUser();
   // Visitor role has full admin privileges for recruiter demos
+  // visitor-staff has staff-level restricted access
   return user?.role === "admin" || user?.role === "visitor";
 };
 
-// Check if user is visitor (recruiter demo mode)
+// Check if user is visitor (recruiter demo mode with admin access)
 export const isVisitor = () => {
   const user = getUser();
   return user?.role === "visitor";
 };
 
-// Check if user is staff
+// Check if user is visitor-staff (recruiter demo mode with staff access)
+export const isVisitorStaff = () => {
+  const user = getUser();
+  return user?.role === "visitor-staff";
+};
+
+// Check if user is staff (includes visitor-staff for restricted access)
 export const isStaff = () => {
   const user = getUser();
-  return user?.role === "staff";
+  return user?.role === "staff" || user?.role === "visitor-staff";
 };
 
 // Get user role
@@ -121,6 +128,7 @@ export default {
   isAuthenticated,
   isAdmin,
   isVisitor,
+  isVisitorStaff,
   isStaff,
   getUserRole,
   login,
