@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   TextField,
   Button,
@@ -39,6 +38,8 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import designTokens from "../designTokens";
+import { isAuthenticated, isAdmin, authAxios } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -46,6 +47,7 @@ const { colors, typography, borderRadius, elevation, motion, spacing } =
 const Transaction = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const userIsAdmin = isAdmin();
 
   const [formData, setFormData] = useState({
     id: "",
@@ -81,29 +83,33 @@ const Transaction = () => {
   const isExistingPatientRoute = location.pathname.startsWith("/customers/");
 
   const deleteBill = (billId) => async () => {
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     try {
-      await axios.delete(
-        `https://siddha-shivalayas-backend.vercel.app/bills/${billId}`
-      );
+      await authAxios.delete(`${API_ENDPOINTS.BILLS}/${billId}`);
       fetchBillHistory();
       setSuccessMessage("Bill deleted successfully.");
     } catch (error) {
       console.error("Error deleting bill:", error);
-      setErrorMessage("Error deleting bill. Please try again later.");
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Error deleting bill. Please try again later."
+      );
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     }
   }, [navigate]);
 
   useEffect(() => {
     setLoading(true);
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
+    authAxios
+      .get(API_ENDPOINTS.STOCKS)
       .then((response) => {
         setStocks(response.data);
         setLoading(false);
@@ -116,8 +122,8 @@ const Transaction = () => {
 
   useEffect(() => {
     if (isExistingPatientRoute) {
-      axios
-        .get(`https://siddha-shivalayas-backend.vercel.app/patients/${urlId}`)
+      authAxios
+        .get(`${API_ENDPOINTS.PATIENTS}/${urlId}`)
         .then((response) => {
           setFormData((prev) => ({
             ...prev,
@@ -151,12 +157,10 @@ const Transaction = () => {
 
   const fetchBillHistory = async (patientId = urlId) => {
     try {
-      const response = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/bills-history"
-      );
+      const response = await authAxios.get(API_ENDPOINTS.BILLS_HISTORY);
       const updatedBills = response.data.map((bill) => ({
         ...bill,
-        downloadLink: `https://siddha-shivalayas-backend.vercel.app/bills/download/${bill._id}`,
+        downloadLink: API_ENDPOINTS.BILL_DOWNLOAD(bill._id),
       }));
 
       const filtered =
@@ -311,16 +315,16 @@ const Transaction = () => {
           );
           if (selectedStock) {
             const updatedQuantity = selectedStock.quantity - item.quantity;
-            await axios.put(
-              `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+            await authAxios.put(
+              `${API_ENDPOINTS.STOCKS}/${selectedStock.stockId}`,
               { quantity: updatedQuantity, updateMode: "set" }
             );
           }
         }
       }
 
-      const response = await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
+      const response = await authAxios.post(
+        API_ENDPOINTS.GENERATE_BILL,
         formData,
         { responseType: "blob" }
       );
@@ -384,19 +388,17 @@ const Transaction = () => {
           );
           if (selectedStock) {
             const updatedQuantity = selectedStock.quantity - item.quantity;
-            await axios.put(
-              `https://siddha-shivalayas-backend.vercel.app/stocks/${selectedStock.stockId}`,
+            await authAxios.put(
+              `${API_ENDPOINTS.STOCKS}/${selectedStock.stockId}`,
               { quantity: updatedQuantity, updateMode: "set" }
             );
           }
         }
       }
 
-      await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/generate-bill",
-        formData,
-        { responseType: "blob" }
-      );
+      await authAxios.post(API_ENDPOINTS.GENERATE_BILL, formData, {
+        responseType: "blob",
+      });
 
       setSuccessMessage("Transaction saved successfully!");
       if (isExistingPatientRoute) {
@@ -576,17 +578,22 @@ const Transaction = () => {
     };
 
     const handleSave = async () => {
+      if (!userIsAdmin) {
+        setErrorMessage("Access denied. Admin privileges required.");
+        onClose();
+        return;
+      }
       try {
-        await axios.put(
-          `https://siddha-shivalayas-backend.vercel.app/bills/${bill._id}`,
-          { items, discount }
-        );
+        await authAxios.put(`${API_ENDPOINTS.BILLS}/${bill._id}`, {
+          items,
+          discount,
+        });
         onClose();
         fetchBillHistory();
         setSuccessMessage("Bill updated successfully.");
       } catch (err) {
         console.error("Failed to update bill", err);
-        setErrorMessage("Failed to update bill");
+        setErrorMessage(err.response?.data?.message || "Failed to update bill");
       }
     };
 

@@ -12,6 +12,7 @@ import {
   Menu,
   MenuItem,
   Container,
+  Chip,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -23,10 +24,13 @@ import {
   Menu as MenuIcon,
   ShoppingCart as ShoppingCartIcon,
   LocalShipping as LocalShippingIcon,
+  AdminPanelSettings as AdminIcon,
+  PersonOutline as StaffIcon,
 } from "@mui/icons-material";
 import logo from "./img/Logo.png";
 import { styled, alpha } from "@mui/material/styles";
 import designTokens from "./designTokens";
+import { logout, getUser, isAdmin } from "./services/authService";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -37,11 +41,12 @@ const Header = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/";
   const isHomePage = location.pathname === "/home";
+  const user = getUser();
 
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    logout();
     window.location.href = "/";
   };
 
@@ -105,15 +110,46 @@ const Header = () => {
             </NavContainer>
           )}
 
-          {/* Logout Button */}
+          {/* Role Badge and Logout Button */}
           {isHomePage && (
-            <LogoutButton
-              onClick={handleLogout}
-              variant="outlined"
-              startIcon={<LogoutIcon />}
-            >
-              {!isMobile && "Sign out"}
-            </LogoutButton>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {user && (
+                <Chip
+                  icon={
+                    user.role === "admin" ? (
+                      <AdminIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                      <StaffIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
+                  label={user.role === "admin" ? "Admin" : "Staff"}
+                  size="small"
+                  sx={{
+                    backgroundColor:
+                      user.role === "admin"
+                        ? alpha(colors.primary.main, 0.15)
+                        : alpha("#6b7280", 0.15),
+                    color:
+                      user.role === "admin" ? colors.primary.main : "#6b7280",
+                    fontFamily: typography.fontFamily.primary,
+                    fontWeight: typography.fontWeight.medium,
+                    fontSize: typography.fontSize.xs,
+                    textTransform: "capitalize",
+                    "& .MuiChip-icon": {
+                      color:
+                        user.role === "admin" ? colors.primary.main : "#6b7280",
+                    },
+                  }}
+                />
+              )}
+              <LogoutButton
+                onClick={handleLogout}
+                variant="outlined"
+                startIcon={<LogoutIcon />}
+              >
+                {!isMobile && "Sign out"}
+              </LogoutButton>
+            </Box>
           )}
 
           {/* Mobile Menu Button */}

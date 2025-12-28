@@ -24,6 +24,8 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import designTokens from "../designTokens";
+import { isAuthenticated } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -32,8 +34,7 @@ const AllPatients = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     }
   }, [navigate]);
@@ -42,7 +43,7 @@ const AllPatients = () => {
     data: customers,
     loading,
     error,
-  } = useFetchData("https://siddha-shivalayas-backend.vercel.app/patients");
+  } = useFetchData(API_ENDPOINTS.PATIENTS);
 
   const [nameFilter, setNameFilter] = useState("");
 

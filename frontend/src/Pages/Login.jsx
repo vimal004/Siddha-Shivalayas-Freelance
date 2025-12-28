@@ -15,11 +15,11 @@ import {
   Lock as LockIcon,
   ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { styled, alpha } from "@mui/material/styles";
 import designTokens from "../designTokens";
 import logo from "../img/Logo.png";
+import { login, isAuthenticated } from "../services/authService";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -32,8 +32,7 @@ const LoginForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    if (isAuthenticated()) {
       navigate("/home");
     }
   }, [navigate]);
@@ -43,26 +42,23 @@ const LoginForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    axios
-      .post("https://vcf-backend.vercel.app/login", {
-        email: formData.email,
-        password: formData.password,
-      })
-      .then((res) => {
-        setLoading(false);
-        setSuccess(true);
-        localStorage.setItem("token", res.data.email);
-        navigate("/home");
-      })
-      .catch((err) => {
-        setLoading(false);
-        setSuccess(false);
-        setErrorMessage(err.response?.data?.message || "Login failed");
-      });
+    try {
+      await login(formData.email, formData.password);
+      setLoading(false);
+      setSuccess(true);
+      navigate("/home");
+    } catch (err) {
+      setLoading(false);
+      setSuccess(false);
+      setErrorMessage(
+        err.response?.data?.message ||
+          "Login failed. Please check your credentials."
+      );
+    }
   };
 
   return (

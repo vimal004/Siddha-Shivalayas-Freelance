@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { authAxios } from "../services/authService";
 
 const useFetchData = (url) => {
   const [data, setData] = useState([]);
@@ -7,19 +7,19 @@ const useFetchData = (url) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios
+    authAxios
       .get(url)
       .then((response) => {
         setData(response.data.data || response.data);
         setLoading(false);
       })
       .catch((error) => {
-        setError(error.message);
+        setError(error.response?.data?.message || error.message);
         setLoading(false);
       });
   }, [url]);
 
-  return { data, loading, error };
+  return { data, loading, error, setData };
 };
 
 export default useFetchData;

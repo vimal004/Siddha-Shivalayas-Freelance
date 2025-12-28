@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   TextField,
   Button,
@@ -18,15 +17,19 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import designTokens from "../designTokens";
+import { isAuthenticated, isAdmin, authAxios } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
 
 const PatientForm = () => {
   const navigate = useNavigate();
+  const userIsAdmin = isAdmin();
 
   const [formData, setFormData] = useState({
     id: "",
@@ -49,8 +52,8 @@ const PatientForm = () => {
   const [isExistingPatient, setIsExistingPatient] = useState(false);
 
   const fetchPatientsAndSetNextId = () => {
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app/patients")
+    authAxios
+      .get(API_ENDPOINTS.PATIENTS)
       .then((response) => {
         const fetchedPatients = response.data;
         setPatients(fetchedPatients);
@@ -83,8 +86,7 @@ const PatientForm = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     } else {
       fetchPatientsAndSetNextId();
@@ -92,11 +94,13 @@ const PatientForm = () => {
   }, [navigate]);
 
   const handleDelete = () => {
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingDelete(true);
-    axios
-      .delete(
-        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`
-      )
+    authAxios
+      .delete(`${API_ENDPOINTS.PATIENTS}/${formData.id}`)
       .then(() => {
         setDeleted(true);
         setSuccess(true);
@@ -107,18 +111,21 @@ const PatientForm = () => {
       .catch((err) => {
         console.error(err);
         setLoadingDelete(false);
-        setErrorMessage("Patient deletion failed");
+        setErrorMessage(
+          err.response?.data?.message || "Patient deletion failed"
+        );
         setSuccess(false);
       });
   };
 
   const handleUpdate = () => {
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingUpdate(true);
-    axios
-      .put(
-        `https://siddha-shivalayas-backend.vercel.app/patients/${formData.id}`,
-        formData
-      )
+    authAxios
+      .put(`${API_ENDPOINTS.PATIENTS}/${formData.id}`, formData)
       .then(() => {
         setUpdated(true);
         setSuccess(true);
@@ -129,13 +136,17 @@ const PatientForm = () => {
       .catch((err) => {
         console.error(err);
         setLoadingUpdate(false);
-        setErrorMessage("Patient update failed");
+        setErrorMessage(err.response?.data?.message || "Patient update failed");
         setSuccess(false);
       });
   };
 
   const handleCreate = (e) => {
     e.preventDefault();
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingCreate(true);
     if (!formData.id) {
       setErrorMessage("Patient ID is required");
@@ -144,8 +155,8 @@ const PatientForm = () => {
       return;
     }
 
-    axios
-      .post("https://siddha-shivalayas-backend.vercel.app/patients", formData)
+    authAxios
+      .post(API_ENDPOINTS.PATIENTS, formData)
       .then(() => {
         setCreated(true);
         setSuccess(true);
@@ -156,7 +167,9 @@ const PatientForm = () => {
       .catch((err) => {
         console.error(err);
         setSuccess(false);
-        setErrorMessage("Patient creation failed");
+        setErrorMessage(
+          err.response?.data?.message || "Patient creation failed"
+        );
         setLoadingCreate(false);
       });
   };
@@ -171,6 +184,68 @@ const PatientForm = () => {
   };
 
   const isIdEntered = formData.id.trim() !== "";
+
+  // Show access denied message for non-admin users
+  if (!userIsAdmin) {
+    return (
+      <PageWrapper>
+        <Container maxWidth="md">
+          <ContentCard>
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  backgroundColor: alpha(colors.error.main, 0.1),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  mb: 3,
+                }}
+              >
+                <LockIcon sx={{ fontSize: 40, color: colors.error.main }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.display,
+                  fontSize: typography.fontSize["2xl"],
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
+                  mb: 2,
+                }}
+              >
+                Access Restricted
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  fontSize: typography.fontSize.base,
+                  color: colors.text.secondary,
+                  mb: 4,
+                }}
+              >
+                You do not have permission to manage patients. Please contact an
+                administrator.
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/allpatients")}
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  textTransform: "none",
+                  borderRadius: borderRadius.button,
+                }}
+              >
+                View Patients Instead
+              </Button>
+            </Box>
+          </ContentCard>
+        </Container>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>

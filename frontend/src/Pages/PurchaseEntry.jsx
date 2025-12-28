@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -26,13 +26,19 @@ import {
   Delete as DeleteIcon,
   Save as SaveIcon,
   LocalShipping as ShippingIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material";
 import designTokens from "../designTokens";
+import { isAuthenticated, isAdmin, authAxios } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
 
 const PurchaseEntry = () => {
+  const navigate = useNavigate();
+  const userIsAdmin = isAdmin();
+
   // State for Invoice Header Details
   const [invoiceDetails, setInvoiceDetails] = useState({
     vendorName: "",
@@ -72,10 +78,17 @@ const PurchaseEntry = () => {
     severity: "success",
   });
 
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/");
+    }
+  }, [navigate]);
+
   // Load Existing Stocks on Mount
   useEffect(() => {
-    axios
-      .get("https://siddha-shivalayas-backend.vercel.app/stocks")
+    authAxios
+      .get(API_ENDPOINTS.STOCKS)
       .then((res) => setExistingStocks(res.data))
       .catch((err) => console.error("Failed to load stocks", err));
   }, []);
@@ -170,6 +183,15 @@ const PurchaseEntry = () => {
   };
 
   const handleSubmit = async () => {
+    if (!userIsAdmin) {
+      setMessage({
+        open: true,
+        text: "Access denied. Admin privileges required.",
+        severity: "error",
+      });
+      return;
+    }
+
     setLoading(true);
 
     if (!invoiceDetails.invoiceNo || !invoiceDetails.vendorName) {
@@ -188,10 +210,7 @@ const PurchaseEntry = () => {
         items,
         totals,
       };
-      await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/purchases",
-        purchasePayload
-      );
+      await authAxios.post(API_ENDPOINTS.PURCHASES, purchasePayload);
 
       const stockUpdatePromises = items.map((item) => {
         const existingStock = existingStocks.find(
@@ -199,8 +218,8 @@ const PurchaseEntry = () => {
         );
 
         if (existingStock) {
-          return axios.put(
-            `https://siddha-shivalayas-backend.vercel.app/stocks/${existingStock.stockId}`,
+          return authAxios.put(
+            `${API_ENDPOINTS.STOCKS}/${existingStock.stockId}`,
             {
               quantity: item.qty,
               price: item.mrp > 0 ? item.mrp : existingStock.price,
@@ -212,26 +231,21 @@ const PurchaseEntry = () => {
             item.productName.substring(0, 3) +
             Math.floor(1000 + Math.random() * 9000)
           ).toUpperCase();
-          return axios.post(
-            "https://siddha-shivalayas-backend.vercel.app/stocks",
-            {
-              stockId: newStockId,
-              productName: item.productName,
-              quantity: item.qty,
-              price: item.mrp || item.rate,
-              hsnCode: item.hsnCode,
-              discount: 0,
-              gst: item.gstPercent,
-            }
-          );
+          return authAxios.post(API_ENDPOINTS.STOCKS, {
+            stockId: newStockId,
+            productName: item.productName,
+            quantity: item.qty,
+            price: item.mrp || item.rate,
+            hsnCode: item.hsnCode,
+            discount: 0,
+            gst: item.gstPercent,
+          });
         }
       });
 
       await Promise.all(stockUpdatePromises);
 
-      const res = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/stocks"
-      );
+      const res = await authAxios.get(API_ENDPOINTS.STOCKS);
       setExistingStocks(res.data);
 
       setMessage({
@@ -260,13 +274,75 @@ const PurchaseEntry = () => {
       console.error(error);
       setMessage({
         open: true,
-        text: "Error saving purchase",
+        text: error.response?.data?.message || "Error saving purchase",
         severity: "error",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  // Show access denied for non-admin users
+  if (!userIsAdmin) {
+    return (
+      <PageWrapper>
+        <Container maxWidth="md">
+          <ContentCard>
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  backgroundColor: alpha(colors.error.main, 0.1),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  mb: 3,
+                }}
+              >
+                <LockIcon sx={{ fontSize: 40, color: colors.error.main }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.display,
+                  fontSize: typography.fontSize["2xl"],
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
+                  mb: 2,
+                }}
+              >
+                Access Restricted
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  fontSize: typography.fontSize.base,
+                  color: colors.text.secondary,
+                  mb: 4,
+                }}
+              >
+                You do not have permission to enter purchases. Please contact an
+                administrator.
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/purchasehistory")}
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  textTransform: "none",
+                  borderRadius: borderRadius.button,
+                }}
+              >
+                View Purchase History Instead
+              </Button>
+            </Box>
+          </ContentCard>
+        </Container>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>

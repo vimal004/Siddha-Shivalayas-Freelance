@@ -1,9 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Patient = require("../models/Patient");
+const { authenticateToken, requireAdmin } = require("../middleware/auth");
 
-// Create Patient
-router.post("/", async (req, res) => {
+// Apply authentication to all routes
+router.use(authenticateToken);
+
+// Create Patient - Admin only
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const patient = new Patient(req.body);
     await patient.save();
@@ -13,7 +17,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Read All Patients
+// Read All Patients - All authenticated users
 router.get("/", async (req, res) => {
   try {
     const patients = await Patient.find();
@@ -23,7 +27,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Read Single Patient by ID
+// Read Single Patient by ID - All authenticated users
 router.get("/:id", async (req, res) => {
   try {
     const patient = await Patient.findOne({ id: req.params.id });
@@ -34,9 +38,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update Patient
-// Update Patient
-router.put("/:id", async (req, res) => {
+// Update Patient - Admin only
+router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const updatedFields = req.body; // Contains only the fields sent from the client
     const patient = await Patient.findOneAndUpdate(
@@ -51,9 +54,8 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-
-// Delete Patient
-router.delete("/:id", async (req, res) => {
+// Delete Patient - Admin only
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const patient = await Patient.findOneAndDelete({ id: req.params.id });
     if (!patient) return res.status(404).json({ message: "Patient not found" });

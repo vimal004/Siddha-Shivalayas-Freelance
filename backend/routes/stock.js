@@ -1,9 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Stock = require("../models/Stock");
+const { authenticateToken, requireAdmin } = require("../middleware/auth");
 
-// Create Stock
-router.post("/", async (req, res) => {
+// Apply authentication to all routes
+router.use(authenticateToken);
+
+// Create Stock - Admin only
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const existingStock = await Stock.findOne({ stockId: req.body.stockId });
     if (existingStock) {
@@ -19,7 +23,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Read All Stocks
+// Read All Stocks - All authenticated users
 router.get("/", async (req, res) => {
   try {
     const stocks = await Stock.find();
@@ -29,7 +33,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Read Single Stock by Stock ID
+// Read Single Stock by Stock ID - All authenticated users
 router.get("/:id", async (req, res) => {
   try {
     const stock = await Stock.findOne({ stockId: req.params.id });
@@ -40,8 +44,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update Stock by Stock ID
-router.put("/:id", async (req, res) => {
+// Update Stock by Stock ID - Admin only
+router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const stock = await Stock.findOne({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
@@ -61,7 +65,11 @@ router.put("/:id", async (req, res) => {
 
     // Update other fields if provided
     Object.keys(req.body).forEach((key) => {
-      if (req.body[key] !== undefined && key !== "quantity" && key !== "updateMode") {
+      if (
+        req.body[key] !== undefined &&
+        key !== "quantity" &&
+        key !== "updateMode"
+      ) {
         stock[key] = req.body[key];
       }
     });
@@ -73,8 +81,8 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete Stock by Stock ID
-router.delete("/:id", async (req, res) => {
+// Delete Stock by Stock ID - Admin only
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const stock = await Stock.findOneAndDelete({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });

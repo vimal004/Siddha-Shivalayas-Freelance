@@ -23,6 +23,8 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import designTokens from "../designTokens";
+import { isAuthenticated } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -31,17 +33,12 @@ const ViewStocks = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     }
   }, [navigate]);
 
-  const {
-    data: groups,
-    loading,
-    error,
-  } = useFetchData("https://siddha-shivalayas-backend.vercel.app/stocks");
+  const { data: groups, loading, error } = useFetchData(API_ENDPOINTS.STOCKS);
 
   const [searchTerm, setSearchTerm] = useState("");
 

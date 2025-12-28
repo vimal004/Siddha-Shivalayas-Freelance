@@ -9,7 +9,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
-import axios from "axios";
 import {
   AccountCircle as AccountCircleIcon,
   People as PeopleIcon,
@@ -21,6 +20,8 @@ import {
   TrendingUp as TrendingUpIcon,
 } from "@mui/icons-material";
 import designTokens from "./designTokens";
+import { isAuthenticated, authAxios } from "./services/authService";
+import { API_ENDPOINTS } from "./config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
@@ -36,8 +37,7 @@ const Home = () => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     } else {
       fetchStats();
@@ -47,21 +47,15 @@ const Home = () => {
   const fetchStats = async () => {
     try {
       // Fetch patients count
-      const patientsRes = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/patients"
-      );
+      const patientsRes = await authAxios.get(API_ENDPOINTS.PATIENTS);
       const patientsCount = patientsRes.data.length;
 
       // Fetch stocks count
-      const stocksRes = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/stocks"
-      );
+      const stocksRes = await authAxios.get(API_ENDPOINTS.STOCKS);
       const productsCount = stocksRes.data.length;
 
       // Fetch bills count
-      const billsRes = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/bills-history"
-      );
+      const billsRes = await authAxios.get(API_ENDPOINTS.BILLS_HISTORY);
       const billsCount = billsRes.data.length;
 
       // Calculate total stock quantity (as a proxy for pending/available)

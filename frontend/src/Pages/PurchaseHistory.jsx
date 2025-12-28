@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Box,
   Container,
@@ -23,12 +22,15 @@ import {
   Delete as DeleteIcon,
   LocalShipping as ShippingIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import designTokens from "../designTokens";
+import { isAuthenticated, isAdmin, authAxios } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
 
-const Row = ({ row, onDelete, index }) => {
+const Row = ({ row, onDelete, index, canDelete }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -61,9 +63,11 @@ const Row = ({ row, onDelete, index }) => {
           <AmountText>₹{row.totals?.grandTotal}</AmountText>
         </StyledTableCell>
         <StyledTableCell align="center">
-          <DeleteButton onClick={() => onDelete(row._id)} size="small">
-            <DeleteIcon sx={{ fontSize: 18 }} />
-          </DeleteButton>
+          {canDelete && (
+            <DeleteButton onClick={() => onDelete(row._id)} size="small">
+              <DeleteIcon sx={{ fontSize: 18 }} />
+            </DeleteButton>
+          )}
         </StyledTableCell>
       </StyledTableRow>
       <TableRow>
@@ -110,14 +114,20 @@ const Row = ({ row, onDelete, index }) => {
 };
 
 const PurchaseHistory = () => {
+  const navigate = useNavigate();
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const userIsAdmin = isAdmin();
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const fetchPurchases = async () => {
     try {
-      const response = await axios.get(
-        "https://siddha-shivalayas-backend.vercel.app/purchases"
-      );
+      const response = await authAxios.get(API_ENDPOINTS.PURCHASES);
       setPurchases(response.data);
     } catch (error) {
       console.error("Error fetching purchases:", error);
@@ -127,18 +137,23 @@ const PurchaseHistory = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!userIsAdmin) {
+      alert("Access denied. Admin privileges required.");
+      return;
+    }
     if (
       window.confirm(
         "Are you sure? Note: This will NOT revert the stock quantities automatically."
       )
     ) {
       try {
-        await axios.delete(
-          `https://siddha-shivalayas-backend.vercel.app/purchases/${id}`
-        );
+        await authAxios.delete(`${API_ENDPOINTS.PURCHASES}/${id}`);
         fetchPurchases();
       } catch (err) {
         console.error(err);
+        alert(
+          err.response?.data?.message || "Failed to delete purchase record."
+        );
       }
     }
   };
@@ -199,6 +214,7 @@ const PurchaseHistory = () => {
                           row={row}
                           onDelete={handleDelete}
                           index={index}
+                          canDelete={userIsAdmin}
                         />
                       ))
                     ) : (

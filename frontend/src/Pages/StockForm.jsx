@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   TextField,
   Button,
@@ -24,19 +23,22 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Inventory as InventoryIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import designTokens from "../designTokens";
+import { isAuthenticated, isAdmin, authAxios } from "../services/authService";
+import { API_ENDPOINTS } from "../config/api";
 
 const { colors, typography, borderRadius, elevation, motion, spacing } =
   designTokens;
 
 const StockForm = () => {
   const navigate = useNavigate();
+  const userIsAdmin = isAdmin();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate("/");
     }
   }, [navigate]);
@@ -65,9 +67,7 @@ const StockForm = () => {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
-        const response = await axios.get(
-          "https://siddha-shivalayas-backend.vercel.app/stocks"
-        );
+        const response = await authAxios.get(API_ENDPOINTS.STOCKS);
         setStocks(response.data);
       } catch (error) {
         console.error("Error fetching stocks:", error);
@@ -103,6 +103,10 @@ const StockForm = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingCreate(true);
     if (!formData.stockId) {
       setErrorMessage("Stock ID is required");
@@ -111,28 +115,29 @@ const StockForm = () => {
       return;
     }
     try {
-      await axios.post(
-        "https://siddha-shivalayas-backend.vercel.app/stocks",
-        formData
-      );
+      await authAxios.post(API_ENDPOINTS.STOCKS, formData);
       setCreated(true);
       setSuccess(true);
       resetForm();
     } catch (error) {
       console.error("Error creating stock:", error);
       setSuccess(false);
-      setErrorMessage("Stock creation failed");
+      setErrorMessage(error.response?.data?.message || "Stock creation failed");
     } finally {
       setLoadingCreate(false);
     }
   };
 
   const handleUpdate = async () => {
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingUpdate(true);
     try {
       const payload = { ...formData, updateMode };
-      await axios.put(
-        `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`,
+      await authAxios.put(
+        `${API_ENDPOINTS.STOCKS}/${formData.stockId}`,
         payload
       );
       setUpdated(true);
@@ -141,25 +146,27 @@ const StockForm = () => {
     } catch (error) {
       console.error("Error updating stock:", error);
       setSuccess(false);
-      setErrorMessage("Stock update failed");
+      setErrorMessage(error.response?.data?.message || "Stock update failed");
     } finally {
       setLoadingUpdate(false);
     }
   };
 
   const handleDelete = async () => {
+    if (!userIsAdmin) {
+      setErrorMessage("Access denied. Admin privileges required.");
+      return;
+    }
     setLoadingDelete(true);
     try {
-      await axios.delete(
-        `https://siddha-shivalayas-backend.vercel.app/stocks/${formData.stockId}`
-      );
+      await authAxios.delete(`${API_ENDPOINTS.STOCKS}/${formData.stockId}`);
       setDeleted(true);
       setSuccess(true);
       resetForm();
     } catch (error) {
       console.error("Error deleting stock:", error);
       setSuccess(false);
-      setErrorMessage("Stock deletion failed");
+      setErrorMessage(error.response?.data?.message || "Stock deletion failed");
     } finally {
       setLoadingDelete(false);
     }
@@ -176,6 +183,68 @@ const StockForm = () => {
     { key: "discount", label: "Discount (%)", type: "number" },
     { key: "gst", label: "GST (%)", type: "number" },
   ];
+
+  // Show access denied message for non-admin users
+  if (!userIsAdmin) {
+    return (
+      <PageWrapper>
+        <Container maxWidth="md">
+          <ContentCard>
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  backgroundColor: alpha(colors.error.main, 0.1),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  mb: 3,
+                }}
+              >
+                <LockIcon sx={{ fontSize: 40, color: colors.error.main }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.display,
+                  fontSize: typography.fontSize["2xl"],
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.text.primary,
+                  mb: 2,
+                }}
+              >
+                Access Restricted
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  fontSize: typography.fontSize.base,
+                  color: colors.text.secondary,
+                  mb: 4,
+                }}
+              >
+                You do not have permission to manage stocks. Please contact an
+                administrator.
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/viewstocks")}
+                sx={{
+                  fontFamily: typography.fontFamily.primary,
+                  textTransform: "none",
+                  borderRadius: borderRadius.button,
+                }}
+              >
+                View Inventory Instead
+              </Button>
+            </Box>
+          </ContentCard>
+        </Container>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>
