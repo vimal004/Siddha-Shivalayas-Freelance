@@ -1,6 +1,10 @@
 <div align="center">
 
+<<<<<<< HEAD
 # 🏥 Siddha Shivalayas
+=======
+> ⚠️ **Note:** This project is a **dummy replica** of the original system used at the Siddha Shivalayas Clinic. The actual production version is hosted privately on the clinic’s server and is not publicly accessible. Login credentials: visitor@gmail.com(admin)/visitor-staff@gmail.com(staff) pwd:visitor123
+>>>>>>> e5158840a7b2b7b7985704fd7e18ae121af6645c
 
 ### Healthcare Management System
 
