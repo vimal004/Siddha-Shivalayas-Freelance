@@ -1,12 +1,11 @@
 <div align="center">
 
-<<<<<<< HEAD
 # 🏥 Siddha Shivalayas
-=======
-> ⚠️ **Note:** This project is a **dummy replica** of the original system used at the Siddha Shivalayas Clinic. The actual production version is hosted privately on the clinic’s server and is not publicly accessible. Login credentials: visitor@gmail.com(admin)/visitor-staff@gmail.com(staff) pwd:visitor123
->>>>>>> e5158840a7b2b7b7985704fd7e18ae121af6645c
 
 ### Healthcare Management System
+
+> ⚠️ **Demo Version** — This is a replica connected to sample data. Production runs on the clinic's private server.
+> **Quick Access:** `visitor@gmail.com` (Admin) | `visitor-staff@gmail.com` (Staff) | Password: `visitor123`
 
 A comprehensive full-stack web application for managing patient records, inventory, billing, and purchase operations for a traditional Siddha medicine clinic.
 
@@ -34,10 +33,10 @@ A comprehensive full-stack web application for managing patient records, invento
 
 Experience the application with demo credentials:
 
-| Access Level | Email | Password |
-|:-------------|:------|:---------|
-| **Admin Access** (Full Privileges) | `visitor@gmail.com` | `visitor123` |
-| **Staff Access** (Restricted) | `visitor-staff@gmail.com` | `visitor123` |
+| Access Level                       | Email                     | Password     |
+| :--------------------------------- | :------------------------ | :----------- |
+| **Admin Access** (Full Privileges) | `visitor@gmail.com`       | `visitor123` |
+| **Staff Access** (Restricted)      | `visitor-staff@gmail.com` | `visitor123` |
 
 > 💡 **Tip:** Try both accounts to see the role-based access control in action!
 
@@ -46,34 +45,40 @@ Experience the application with demo credentials:
 ## ✨ Features
 
 ### 👥 Patient Management
+
 - Complete CRUD operations for patient records
 - Patient history tracking and quick search
 - Detailed patient profiles with visit records
 
 ### 📦 Inventory Management
+
 - Real-time stock level monitoring
 - HSN code and GST-compliant product catalog
 - Low stock alerts and quantity tracking
 
 ### 🧾 Billing System
+
 - Generate professional bills with itemized details
 - Support for consulting fees, treatments, and medicines
 - **PDF & DOCX export** with custom clinic branding
 - Complete billing history with search functionality
 
 ### 📥 Purchase Management
+
 - Record vendor purchases with invoice details
 - Batch number and expiry date tracking
 - Auto-update inventory on purchase entries
 - GST-compliant purchase records
 
 ### 🔐 Security & Access Control
+
 - **JWT-based authentication** with secure token management
 - **Role-based access control** (Admin/Staff/Demo)
 - Protected routes with automatic session handling
 - Multi-tenant database architecture for demo/production isolation
 
 ### 📊 Dashboard & Analytics
+
 - Quick overview of key metrics
 - Total patients, stock levels, and billing stats
 - Intuitive navigation with modern UI
@@ -83,34 +88,37 @@ Experience the application with demo credentials:
 ## 🛠 Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|:-----------|:--------|
-| **React 18** | UI library with hooks and functional components |
-| **Vite** | Next-generation build tool for fast development |
-| **Material-UI 5** | Comprehensive component library |
-| **React Router 6** | Client-side routing with protected routes |
-| **Axios** | HTTP client with interceptors for auth |
-| **jsPDF + html2canvas** | PDF generation for bills and reports |
-| **SheetJS (xlsx)** | Excel export functionality |
+
+| Technology              | Purpose                                         |
+| :---------------------- | :---------------------------------------------- |
+| **React 18**            | UI library with hooks and functional components |
+| **Vite**                | Next-generation build tool for fast development |
+| **Material-UI 5**       | Comprehensive component library                 |
+| **React Router 6**      | Client-side routing with protected routes       |
+| **Axios**               | HTTP client with interceptors for auth          |
+| **jsPDF + html2canvas** | PDF generation for bills and reports            |
+| **SheetJS (xlsx)**      | Excel export functionality                      |
 
 ### Backend
-| Technology | Purpose |
-|:-----------|:--------|
-| **Node.js** | JavaScript runtime |
-| **Express.js** | Web application framework |
-| **MongoDB + Mongoose** | NoSQL database with ODM |
-| **JWT** | Secure authentication tokens |
-| **bcrypt.js** | Password hashing |
-| **docxtemplater** | DOCX document generation |
-| **PDFKit** | Server-side PDF creation |
+
+| Technology             | Purpose                      |
+| :--------------------- | :--------------------------- |
+| **Node.js**            | JavaScript runtime           |
+| **Express.js**         | Web application framework    |
+| **MongoDB + Mongoose** | NoSQL database with ODM      |
+| **JWT**                | Secure authentication tokens |
+| **bcrypt.js**          | Password hashing             |
+| **docxtemplater**      | DOCX document generation     |
+| **PDFKit**             | Server-side PDF creation     |
 
 ### DevOps & Tooling
-| Technology | Purpose |
-|:-----------|:--------|
-| **Docker** | Containerization ready |
-| **Vercel** | Frontend deployment |
-| **MongoDB Atlas** | Cloud database hosting |
-| **ESLint** | Code quality and standards |
+
+| Technology        | Purpose                    |
+| :---------------- | :------------------------- |
+| **Docker**        | Containerization ready     |
+| **Vercel**        | Frontend deployment        |
+| **MongoDB Atlas** | Cloud database hosting     |
+| **ESLint**        | Code quality and standards |
 
 ---
 
@@ -213,18 +221,21 @@ Siddha-Shivalayas/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/vimal004/Siddha-Shivalayas.git
    cd Siddha-Shivalayas
    ```
 
 2. **Backend Setup**
+
    ```bash
    cd backend
    npm install
    ```
 
    Create a `.env` file:
+
    ```env
    MONGODB_URI=your-mongodb-connection-string
    JWT_SECRET=your-secret-key
@@ -232,22 +243,26 @@ Siddha-Shivalayas/
    ```
 
    Start the server:
+
    ```bash
    npm start
    ```
 
 3. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
    ```
 
    Create a `.env` file:
+
    ```env
    VITE_API_BASE_URL=http://localhost:5000
    ```
 
    Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -261,42 +276,47 @@ Siddha-Shivalayas/
 ## 📡 API Reference
 
 ### Authentication
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| POST | `/auth/login` | Authenticate user and receive JWT |
-| GET | `/auth/verify` | Verify token validity |
-| GET | `/auth/me` | Get current user info |
+
+| Method | Endpoint       | Description                       |
+| :----- | :------------- | :-------------------------------- |
+| POST   | `/auth/login`  | Authenticate user and receive JWT |
+| GET    | `/auth/verify` | Verify token validity             |
+| GET    | `/auth/me`     | Get current user info             |
 
 ### Patients
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| GET | `/patients` | List all patients |
-| POST | `/patients` | Create new patient |
-| GET | `/patients/:id` | Get patient by ID |
-| PUT | `/patients/:id` | Update patient |
-| DELETE | `/patients/:id` | Delete patient |
+
+| Method | Endpoint        | Description        |
+| :----- | :-------------- | :----------------- |
+| GET    | `/patients`     | List all patients  |
+| POST   | `/patients`     | Create new patient |
+| GET    | `/patients/:id` | Get patient by ID  |
+| PUT    | `/patients/:id` | Update patient     |
+| DELETE | `/patients/:id` | Delete patient     |
 
 ### Inventory
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| GET | `/stocks` | List all stock items |
-| POST | `/stocks` | Add new stock item |
-| PUT | `/stocks/:id` | Update stock item |
-| DELETE | `/stocks/:id` | Remove stock item |
+
+| Method | Endpoint      | Description          |
+| :----- | :------------ | :------------------- |
+| GET    | `/stocks`     | List all stock items |
+| POST   | `/stocks`     | Add new stock item   |
+| PUT    | `/stocks/:id` | Update stock item    |
+| DELETE | `/stocks/:id` | Remove stock item    |
 
 ### Billing
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| GET | `/bills` | Get billing history |
-| POST | `/bills` | Generate new bill |
-| GET | `/bills/:id/pdf` | Download bill as PDF |
-| GET | `/bills/:id/docx` | Download bill as DOCX |
+
+| Method | Endpoint          | Description           |
+| :----- | :---------------- | :-------------------- |
+| GET    | `/bills`          | Get billing history   |
+| POST   | `/bills`          | Generate new bill     |
+| GET    | `/bills/:id/pdf`  | Download bill as PDF  |
+| GET    | `/bills/:id/docx` | Download bill as DOCX |
 
 ### Purchases
-| Method | Endpoint | Description |
-|:-------|:---------|:------------|
-| GET | `/purchases` | List purchase history |
-| POST | `/purchases` | Record new purchase |
+
+| Method | Endpoint     | Description           |
+| :----- | :----------- | :-------------------- |
+| GET    | `/purchases` | List purchase history |
+| POST   | `/purchases` | Record new purchase   |
 
 ---
 
@@ -313,6 +333,7 @@ Siddha-Shivalayas/
 ## 🎨 Design Philosophy
 
 The UI follows **Material Design 3** principles with:
+
 - Clean, minimalist interfaces
 - Consistent design tokens
 - Responsive layouts for all devices
@@ -351,6 +372,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### ⭐ Star this repository if you find it helpful!
 
-*Built with ❤️ for Siddha Shivalayas Clinic*
+_Built with ❤️ for Siddha Shivalayas Clinic_
 
 </div>
