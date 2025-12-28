@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const Stock = require("../models/Stock");
 const { authenticateToken, requireAdmin } = require("../middleware/auth");
+const { attachDbModels } = require("../middleware/dbSwitcher");
 
-// Apply authentication to all routes
+// Apply authentication and database switching to all routes
 router.use(authenticateToken);
+router.use(attachDbModels);
 
 // Create Stock - Admin only
 router.post("/", requireAdmin, async (req, res) => {
   try {
+    const Stock = req.db.Stock; // Use dynamic Stock model based on user role
     const existingStock = await Stock.findOne({ stockId: req.body.stockId });
     if (existingStock) {
       return res
@@ -26,6 +28,7 @@ router.post("/", requireAdmin, async (req, res) => {
 // Read All Stocks - All authenticated users
 router.get("/", async (req, res) => {
   try {
+    const Stock = req.db.Stock; // Use dynamic Stock model based on user role
     const stocks = await Stock.find();
     res.json(stocks);
   } catch (error) {
@@ -36,6 +39,7 @@ router.get("/", async (req, res) => {
 // Read Single Stock by Stock ID - All authenticated users
 router.get("/:id", async (req, res) => {
   try {
+    const Stock = req.db.Stock; // Use dynamic Stock model based on user role
     const stock = await Stock.findOne({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
     res.json(stock);
@@ -47,6 +51,7 @@ router.get("/:id", async (req, res) => {
 // Update Stock by Stock ID - Admin only
 router.put("/:id", requireAdmin, async (req, res) => {
   try {
+    const Stock = req.db.Stock; // Use dynamic Stock model based on user role
     const stock = await Stock.findOne({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
 
@@ -84,6 +89,7 @@ router.put("/:id", requireAdmin, async (req, res) => {
 // Delete Stock by Stock ID - Admin only
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
+    const Stock = req.db.Stock; // Use dynamic Stock model based on user role
     const stock = await Stock.findOneAndDelete({ stockId: req.params.id });
     if (!stock) return res.status(404).json({ message: "Stock not found" });
     res.json({ message: "Stock deleted successfully" });

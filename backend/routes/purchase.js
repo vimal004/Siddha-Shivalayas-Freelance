@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const Purchase = require("../models/Purchase");
 const { authenticateToken, requireAdmin } = require("../middleware/auth");
+const { attachDbModels } = require("../middleware/dbSwitcher");
 
-// Apply authentication to all routes
+// Apply authentication and database switching to all routes
 router.use(authenticateToken);
+router.use(attachDbModels);
 
 // Create a new Purchase Record - Admin only
 router.post("/", requireAdmin, async (req, res) => {
   try {
+    const Purchase = req.db.Purchase; // Use dynamic Purchase model based on user role
     const purchase = new Purchase(req.body);
     await purchase.save();
     res.status(201).json(purchase);
@@ -20,6 +22,7 @@ router.post("/", requireAdmin, async (req, res) => {
 // Get all Purchases - All authenticated users
 router.get("/", async (req, res) => {
   try {
+    const Purchase = req.db.Purchase; // Use dynamic Purchase model based on user role
     const purchases = await Purchase.find().sort({ invoiceDate: -1 });
     res.json(purchases);
   } catch (error) {
@@ -30,6 +33,7 @@ router.get("/", async (req, res) => {
 // Delete a Purchase Record - Admin only
 router.delete("/:id", requireAdmin, async (req, res) => {
   try {
+    const Purchase = req.db.Purchase; // Use dynamic Purchase model based on user role
     const purchase = await Purchase.findByIdAndDelete(req.params.id);
     if (!purchase)
       return res.status(404).json({ message: "Purchase record not found" });

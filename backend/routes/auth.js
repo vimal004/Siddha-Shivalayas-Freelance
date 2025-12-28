@@ -27,6 +27,19 @@ const seedUsers = async () => {
       });
       console.log("Staff user created: user@gmail.com");
     }
+
+    // Check if visitor/recruiter demo account exists
+    const visitorExists = await User.findOne({ email: "visitor@gmail.com" });
+    if (!visitorExists) {
+      await User.create({
+        email: "visitor@gmail.com",
+        password: "visitor123",
+        role: "visitor",
+      });
+      console.log(
+        "Visitor user created: visitor@gmail.com (for recruiter demos)"
+      );
+    }
   } catch (error) {
     console.error("Error seeding users:", error);
   }

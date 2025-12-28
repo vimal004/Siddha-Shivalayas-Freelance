@@ -29,59 +29,58 @@ const ILOVEPDF_SECRET_KEY =
   "secret_key_34cdae62c413fa81474dd25d046f029e_kKaGBd4f783ba1b08c961929ffca2cb946d21";
 const ilovepdf = new ILovePDFApi(ILOVEPDF_PUBLIC_KEY, ILOVEPDF_SECRET_KEY);
 
-// MongoDB Connection
-const MONGO_URI =
-  "mongodb+srv://2004vimal:zaq1%40wsx@cluster0.kfsrfxi.mongodb.net/SiddhaShivalayas";
-mongoose
-  .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+// MongoDB Connections - handled by dbSwitcher middleware
+const {
+  attachDbModels,
+  models,
+  originalConnection,
+} = require("./middleware/dbSwitcher");
+
+// Default connection for auth (users stored in original db only)
+const mongoose_default = require("mongoose");
+mongoose_default
+  .connect(
+    "mongodb+srv://2004vimal:zaq1%40wsx@cluster0.kfsrfxi.mongodb.net/SiddhaShivalayas",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(async () => {
-    console.log("MongoDB connected");
-    // Seed default users (admin and staff) on startup
+    console.log("✅ MongoDB (Default) connected for auth");
+    // Seed default users (admin, staff, visitor) on startup
     await seedUsers();
   })
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 // --- END: Configuration ---
 
 // --- START: Routes ---
 // Auth routes (public - no authentication required for login)
 app.use("/auth", authRoutes);
 
-const stockRoutes = require("./routes/stock");
-const patientRoutes = require("./routes/patient");
-const purchaseRoutes = require("./routes/purchase");
+// Create route factories that use dynamic models from request
+const createStockRoutes = require("./routes/stock");
+const createPatientRoutes = require("./routes/patient");
+const createPurchaseRoutes = require("./routes/purchase");
 
-app.use("/stocks", stockRoutes);
-app.use("/patients", patientRoutes);
-app.use("/purchases", purchaseRoutes); // Add this line
+app.use("/stocks", createStockRoutes);
+app.use("/patients", createPatientRoutes);
+app.use("/purchases", createPurchaseRoutes);
 
 app.get("/", (req, res) => {
   res.json("Hello World");
 });
 
-// Bill Schema (MODIFIED)
-const BillSchema = new mongoose.Schema({
-  id: String,
-  name: String,
-  phone: String,
-  address: String,
-  age: Number,
-  type: String,
-  date: Date,
-  items: Array,
-  discount: { type: Number, default: 0 },
-  typeOfPayment: String,
-  consultingFee: { type: Number, default: 0 },
-  treatmentFee: { type: Number, default: 0 }, // ADDED
-  createdAt: { type: Date, default: Date.now },
-});
-const Bill = mongoose.model("Bill", BillSchema);
+// Bill model is accessed via req.db after attachDbModels middleware
 
 // Bill Generation Endpoint (MODIFIED to switch templates) - Admin only
 app.post(
   "/generate-bill",
   authenticateToken,
+  attachDbModels,
   requireAdmin,
   async (req, res) => {
+    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
     const isSpecialBill =
       req.body.type === "Consulting" || req.body.type === "Treatment";
     const templateName = isSpecialBill
@@ -256,135 +255,149 @@ app.post(
 );
 
 // Download a specific bill by ID as PDF (MODIFIED to switch templates) - All authenticated users
-app.get("/bills/download/:billId", authenticateToken, async (req, res) => {
-  const tmpDocxPath = path.join(
-    "/tmp",
-    `bill-${req.params.billId}-${Date.now()}.docx`
-  );
-  try {
-    const { billId } = req.params;
-    const bill = await Bill.findById(billId);
-    if (!bill) return res.status(404).send("Bill not found");
-
-    const isSpecialBill =
-      bill.type === "Consulting" || bill.type === "Treatment";
-    const templateName = isSpecialBill
-      ? "bill_template_1.docx"
-      : "bill_template.docx";
-    const templatePath = path.resolve(__dirname, templateName);
-
-    const content = await fs.readFile(templatePath, "binary");
-    const zip = new PizZip(content);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
-
-    // Calculate totals including consulting/treatment fee
-    const itemSubtotal = bill.items.reduce(
-      (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
-      0
+app.get(
+  "/bills/download/:billId",
+  authenticateToken,
+  attachDbModels,
+  async (req, res) => {
+    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const tmpDocxPath = path.join(
+      "/tmp",
+      `bill-${req.params.billId}-${Date.now()}.docx`
     );
-
-    let feeValue = 0;
-    let feeLabel = "";
-
-    if (bill.type === "Consulting") {
-      feeValue = bill.consultingFee || 0;
-      feeLabel = "Consulting Fee";
-    } else if (bill.type === "Treatment") {
-      feeValue = bill.treatmentFee || 0;
-      feeLabel = "Treatment Fee";
-    }
-
-    const subtotal = itemSubtotal + feeValue;
-    const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
-
-    // Date format for dd/mm/yyyy in Indian English locale
-    const displayDate = bill.date
-      ? new Date(bill.date).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
-      : new Date(bill.createdAt).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
-
-    doc.setData({
-      id: bill.id,
-      name: bill.name,
-      phone: bill.phone,
-      address: bill.address,
-      age: bill.age || "",
-      type: bill.type || "",
-      date: displayDate.replace(/\//g, "-"),
-      items: bill.items,
-      subtotal: subtotal.toFixed(2),
-      discount: (bill.discount || 0).toFixed(2),
-      consultingFee: bill.type === "Consulting" ? feeValue.toFixed(2) : "",
-      treatmentFee: bill.type === "Treatment" ? feeValue.toFixed(2) : "",
-      // NEW fields for bill_template_1.docx
-      feeLabel: isSpecialBill ? feeLabel : "",
-      feeValue: isSpecialBill ? feeValue.toFixed(2) : "",
-      typeOfPayment: bill.typeOfPayment || "N/A",
-      total: total.toFixed(2),
-    });
-
-    doc.render();
-    const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
-
-    // **FIX:** Write buffer to a temporary file first
-    await fs.writeFile(tmpDocxPath, docxBuffer);
-
-    const task = ilovepdf.newTask("officepdf");
-    await task.start();
-    const file = new ILovePDFFile(tmpDocxPath);
-    await task.addFile(file);
-    await task.process();
-    const pdfData = await task.download();
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=bill-${billId}.pdf`
-    );
-    res.setHeader("Content-Type", "application/pdf");
-    res.send(pdfData);
-  } catch (err) {
-    console.error("Error downloading bill:", err);
-    res.status(500).json({
-      error: "Internal server error.",
-      message: err.message,
-      stack: err.stack,
-    });
-  } finally {
-    // **IMPORTANT:** Clean up the temporary file
     try {
-      await fs.unlink(tmpDocxPath);
-    } catch (cleanupErr) {
-      console.error("Error cleaning up temporary file:", cleanupErr);
+      const { billId } = req.params;
+      const bill = await Bill.findById(billId);
+      if (!bill) return res.status(404).send("Bill not found");
+
+      const isSpecialBill =
+        bill.type === "Consulting" || bill.type === "Treatment";
+      const templateName = isSpecialBill
+        ? "bill_template_1.docx"
+        : "bill_template.docx";
+      const templatePath = path.resolve(__dirname, templateName);
+
+      const content = await fs.readFile(templatePath, "binary");
+      const zip = new PizZip(content);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      // Calculate totals including consulting/treatment fee
+      const itemSubtotal = bill.items.reduce(
+        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+        0
+      );
+
+      let feeValue = 0;
+      let feeLabel = "";
+
+      if (bill.type === "Consulting") {
+        feeValue = bill.consultingFee || 0;
+        feeLabel = "Consulting Fee";
+      } else if (bill.type === "Treatment") {
+        feeValue = bill.treatmentFee || 0;
+        feeLabel = "Treatment Fee";
+      }
+
+      const subtotal = itemSubtotal + feeValue;
+      const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
+
+      // Date format for dd/mm/yyyy in Indian English locale
+      const displayDate = bill.date
+        ? new Date(bill.date).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })
+        : new Date(bill.createdAt).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+
+      doc.setData({
+        id: bill.id,
+        name: bill.name,
+        phone: bill.phone,
+        address: bill.address,
+        age: bill.age || "",
+        type: bill.type || "",
+        date: displayDate.replace(/\//g, "-"),
+        items: bill.items,
+        subtotal: subtotal.toFixed(2),
+        discount: (bill.discount || 0).toFixed(2),
+        consultingFee: bill.type === "Consulting" ? feeValue.toFixed(2) : "",
+        treatmentFee: bill.type === "Treatment" ? feeValue.toFixed(2) : "",
+        // NEW fields for bill_template_1.docx
+        feeLabel: isSpecialBill ? feeLabel : "",
+        feeValue: isSpecialBill ? feeValue.toFixed(2) : "",
+        typeOfPayment: bill.typeOfPayment || "N/A",
+        total: total.toFixed(2),
+      });
+
+      doc.render();
+      const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
+
+      // **FIX:** Write buffer to a temporary file first
+      await fs.writeFile(tmpDocxPath, docxBuffer);
+
+      const task = ilovepdf.newTask("officepdf");
+      await task.start();
+      const file = new ILovePDFFile(tmpDocxPath);
+      await task.addFile(file);
+      await task.process();
+      const pdfData = await task.download();
+
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=bill-${billId}.pdf`
+      );
+      res.setHeader("Content-Type", "application/pdf");
+      res.send(pdfData);
+    } catch (err) {
+      console.error("Error downloading bill:", err);
+      res.status(500).json({
+        error: "Internal server error.",
+        message: err.message,
+        stack: err.stack,
+      });
+    } finally {
+      // **IMPORTANT:** Clean up the temporary file
+      try {
+        await fs.unlink(tmpDocxPath);
+      } catch (cleanupErr) {
+        console.error("Error cleaning up temporary file:", cleanupErr);
+      }
     }
   }
-});
+);
 
-app.get("/bills-history", authenticateToken, async (req, res) => {
-  try {
-    // Sort by creation date for a stable chronological order
-    const bills = await Bill.find().sort({ createdAt: 1 });
-    res.json(bills);
-  } catch (error) {
-    console.error("Error fetching bill history:", error);
-    res.status(500).json({ error: "Error fetching bill history." });
+app.get(
+  "/bills-history",
+  authenticateToken,
+  attachDbModels,
+  async (req, res) => {
+    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    try {
+      // Sort by creation date for a stable chronological order
+      const bills = await Bill.find().sort({ createdAt: 1 });
+      res.json(bills);
+    } catch (error) {
+      console.error("Error fetching bill history:", error);
+      res.status(500).json({ error: "Error fetching bill history." });
+    }
   }
-});
+);
 
 app.delete(
   "/bills/:billId",
   authenticateToken,
+  attachDbModels,
   requireAdmin,
   async (req, res) => {
+    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
     try {
       const { billId } = req.params;
       const bill = await Bill.findByIdAndDelete(billId);
@@ -398,23 +411,30 @@ app.delete(
   }
 );
 
-app.put("/bills/:billId", authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { billId } = req.params;
-    const { items, discount } = req.body;
-    const updatedBill = await Bill.findByIdAndUpdate(
-      billId,
-      { items, discount },
-      { new: true }
-    );
-    if (!updatedBill) {
-      return res.status(404).json({ error: "Bill not found" });
+app.put(
+  "/bills/:billId",
+  authenticateToken,
+  attachDbModels,
+  requireAdmin,
+  async (req, res) => {
+    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    try {
+      const { billId } = req.params;
+      const { items, discount } = req.body;
+      const updatedBill = await Bill.findByIdAndUpdate(
+        billId,
+        { items, discount },
+        { new: true }
+      );
+      if (!updatedBill) {
+        return res.status(404).json({ error: "Bill not found" });
+      }
+      res.json({ message: "Bill updated successfully." });
+    } catch (error) {
+      res.status(500).json({ error: "Error updating the bill." });
     }
-    res.json({ message: "Bill updated successfully." });
-  } catch (error) {
-    res.status(500).json({ error: "Error updating the bill." });
   }
-});
+);
 // --- END: Routes ---
 
 // --- START: Server ---
