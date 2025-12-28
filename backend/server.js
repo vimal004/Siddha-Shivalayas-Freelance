@@ -22,11 +22,9 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// iLovePDF API Keys
-const ILOVEPDF_PUBLIC_KEY =
-  "project_public_0f6e1a7f5c6ebbd83cd869b99afe325b_MIke497da1ee9b7a763eb9eb296487395116b";
-const ILOVEPDF_SECRET_KEY =
-  "secret_key_34cdae62c413fa81474dd25d046f029e_kKaGBd4f783ba1b08c961929ffca2cb946d21";
+// iLovePDF API Keys (from environment variables)
+const ILOVEPDF_PUBLIC_KEY = process.env.ILOVEPDF_PUBLIC_KEY;
+const ILOVEPDF_SECRET_KEY = process.env.ILOVEPDF_SECRET_KEY;
 const ilovepdf = new ILovePDFApi(ILOVEPDF_PUBLIC_KEY, ILOVEPDF_SECRET_KEY);
 
 // MongoDB Connections - handled by dbSwitcher middleware
@@ -37,15 +35,10 @@ const {
 } = require("./middleware/dbSwitcher");
 
 // Default connection for auth (users stored in original db only)
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI_ORIGINAL;
 const mongoose_default = require("mongoose");
 mongoose_default
-  .connect(
-    "mongodb+srv://2004vimal:zaq1%40wsx@cluster0.kfsrfxi.mongodb.net/SiddhaShivalayas",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
-  )
+  .connect(MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB (Default) connected for auth");
     // Seed default users (admin, staff, visitor) on startup

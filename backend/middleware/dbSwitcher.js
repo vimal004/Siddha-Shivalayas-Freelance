@@ -9,22 +9,14 @@
 
 const mongoose = require("mongoose");
 
-// MongoDB URIs
-const MONGO_URI_ORIGINAL =
-  "mongodb+srv://2004vimal:zaq1%40wsx@cluster0.kfsrfxi.mongodb.net/SiddhaShivalayas";
-const MONGO_URI_DUMMY =
-  "mongodb+srv://2004vimal:zaq1%40wsx@cluster0.kfsrfxi.mongodb.net/dummy";
+// MongoDB URIs (from environment variables)
+const MONGO_URI_ORIGINAL = process.env.MONGO_URI_ORIGINAL;
+const MONGO_URI_DUMMY = process.env.MONGO_URI_DUMMY;
 
 // Create separate connections for each database
-const originalConnection = mongoose.createConnection(MONGO_URI_ORIGINAL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const originalConnection = mongoose.createConnection(MONGO_URI_ORIGINAL);
 
-const dummyConnection = mongoose.createConnection(MONGO_URI_DUMMY, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const dummyConnection = mongoose.createConnection(MONGO_URI_DUMMY);
 
 // Log connection status
 originalConnection.on("connected", () =>
