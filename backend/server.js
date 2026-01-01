@@ -413,10 +413,10 @@ app.put(
     const Bill = req.db.Bill; // Use dynamic Bill model based on user role
     try {
       const { billId } = req.params;
-      const { items, discount } = req.body;
+      const { items, discount, typeOfPayment } = req.body;
       const updatedBill = await Bill.findByIdAndUpdate(
         billId,
-        { items, discount },
+        { items, discount, typeOfPayment },
         { new: true }
       );
       if (!updatedBill) {

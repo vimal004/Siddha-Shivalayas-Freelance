@@ -67,6 +67,7 @@ const BillHistory = () => {
     total: 0,
     upi: 0,
     cash: 0,
+    credit: 0,
   });
 
   useEffect(() => {
@@ -166,6 +167,8 @@ const BillHistory = () => {
         stats.upi += total;
       } else if (bill.typeOfPayment === "Cash") {
         stats.cash += total;
+      } else if (bill.typeOfPayment === "Credit") {
+        stats.credit += total;
       }
 
       stats.total += total;
@@ -224,6 +227,9 @@ const BillHistory = () => {
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
+    const [typeOfPayment, setTypeOfPayment] = useState(
+      bill.typeOfPayment || ""
+    );
     const isProductBill = bill.type === "Product" || bill.type === "";
 
     const handleItemChange = (index, field, value) => {
@@ -272,6 +278,7 @@ const BillHistory = () => {
         await authAxios.put(`${API_ENDPOINTS.BILLS}/${bill._id}`, {
           items,
           discount,
+          typeOfPayment,
         });
         onClose();
         fetchBillHistory();
@@ -400,6 +407,20 @@ const BillHistory = () => {
             fullWidth
             sx={{ mt: 2 }}
           />
+          <StyledTextField
+            select
+            label="Payment Method"
+            value={typeOfPayment}
+            onChange={(e) => setTypeOfPayment(e.target.value)}
+            fullWidth
+            sx={{ mt: 2 }}
+            SelectProps={{ native: true }}
+          >
+            <option value="">— Select payment —</option>
+            <option value="UPI">UPI</option>
+            <option value="Cash">Cash</option>
+            <option value="Credit">Credit</option>
+          </StyledTextField>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <CancelButton onClick={onClose}>Cancel</CancelButton>
@@ -627,6 +648,12 @@ const BillHistory = () => {
               </StatCard>
             </Grid>
             <Grid item xs={6} sm={4} md={2}>
+              <StatCard>
+                <StatValue>₹{monthlyStats.credit.toFixed(0)}</StatValue>
+                <StatLabel>Credit</StatLabel>
+              </StatCard>
+            </Grid>
+            <Grid item xs={12} sm={4} md={2}>
               <TotalStatCard>
                 <StatValue style={{ color: colors.primary.main }}>
                   ₹{monthlyStats.total.toFixed(0)}
@@ -673,6 +700,7 @@ const BillHistory = () => {
                     <MenuItem value="">All</MenuItem>
                     <MenuItem value="UPI">UPI</MenuItem>
                     <MenuItem value="Cash">Cash</MenuItem>
+                    <MenuItem value="Credit">Credit</MenuItem>
                   </Select>
                 </StyledFormControl>
               </Grid>
@@ -1077,6 +1105,11 @@ const PaymentChip = styled(Chip, {
         return { bg: colors.primary.surface, color: colors.primary.main };
       case "Cash":
         return { bg: colors.secondary.surface, color: colors.secondary.main };
+      case "Credit":
+        return {
+          bg: colors.warning?.surface || "#FFF3E0",
+          color: colors.warning?.main || "#E65100",
+        };
       default:
         return { bg: colors.surface.container, color: colors.text.tertiary };
     }

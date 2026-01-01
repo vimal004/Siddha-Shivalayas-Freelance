@@ -566,6 +566,9 @@ const Transaction = () => {
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
+    const [typeOfPayment, setTypeOfPayment] = useState(
+      bill.typeOfPayment || ""
+    );
     const isProductBill = bill.type === "Product" || bill.type === "";
 
     const handleItemChange = (index, field, value) => {
@@ -614,6 +617,7 @@ const Transaction = () => {
         await authAxios.put(`${API_ENDPOINTS.BILLS}/${bill._id}`, {
           items,
           discount,
+          typeOfPayment,
         });
         onClose();
         fetchBillHistory();
@@ -741,6 +745,20 @@ const Transaction = () => {
             fullWidth
             sx={{ mt: 2 }}
           />
+          <StyledTextField
+            select
+            label="Payment Method"
+            value={typeOfPayment}
+            onChange={(e) => setTypeOfPayment(e.target.value)}
+            fullWidth
+            sx={{ mt: 2 }}
+            SelectProps={{ native: true }}
+          >
+            <option value="">— Select payment —</option>
+            <option value="UPI">UPI</option>
+            <option value="Cash">Cash</option>
+            <option value="Credit">Credit</option>
+          </StyledTextField>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <CancelButton onClick={onClose}>Cancel</CancelButton>
@@ -918,6 +936,7 @@ const Transaction = () => {
                       <option value="">— Select payment —</option>
                       <option value="UPI">UPI</option>
                       <option value="Cash">Cash</option>
+                      <option value="Credit">Credit</option>
                     </StyledTextField>
                   </Grid>
                   {formData.type === "Consulting" && (
