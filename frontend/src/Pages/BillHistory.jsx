@@ -137,6 +137,7 @@ const BillHistory = () => {
       total: 0,
       upi: 0,
       cash: 0,
+      credit: 0,
     };
 
     filteredBills.forEach((bill) => {
