@@ -194,6 +194,33 @@ const BillHistory = () => {
     }
   };
 
+  // Download bill with authentication
+  const handleDownloadBill = async (billId, patientName) => {
+    try {
+      const response = await authAxios.get(
+        API_ENDPOINTS.BILL_DOWNLOAD(billId),
+        { responseType: "blob" }
+      );
+
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `bill-${patientName || billId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading bill:", error);
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Error downloading bill. Please try again later."
+      );
+    }
+  };
+
   const EditBillModal = ({ bill, open, onClose }) => {
     const [items, setItems] = useState(bill.items || []);
     const [discount, setDiscount] = useState(bill.discount || 0);
@@ -740,9 +767,9 @@ const BillHistory = () => {
                               <DeleteIcon sx={{ fontSize: 18 }} />
                             </ActionButton>
                             <DownloadButton
-                              href={bill.downloadLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              onClick={() =>
+                                handleDownloadBill(bill._id, bill.name)
+                              }
                               title="Download"
                             >
                               <DownloadIcon sx={{ fontSize: 18 }} />
@@ -1086,7 +1113,7 @@ const ActionButton = styled(IconButton, {
   },
 }));
 
-const DownloadButton = styled("a")({
+const DownloadButton = styled(IconButton)({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
