@@ -37,12 +37,6 @@ const StockForm = () => {
   const navigate = useNavigate();
   const userIsAdmin = isAdmin();
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/");
-    }
-  }, [navigate]);
-
   const [formData, setFormData] = useState({
     stockId: "",
     productName: "",
@@ -63,29 +57,53 @@ const StockForm = () => {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
+  const [isExistingStock, setIsExistingStock] = useState(false);
+
+  const fetchStocksAndSetNextId = () => {
+    authAxios
+      .get(API_ENDPOINTS.STOCKS)
+      .then((response) => {
+        const fetchedStocks = response.data;
+        setStocks(fetchedStocks);
+
+        let nextId = "1";
+        if (fetchedStocks.length > 0) {
+          const numericIds = fetchedStocks
+            .map((s) => parseInt(s.stockId, 10))
+            .filter((id) => !isNaN(id));
+          if (numericIds.length > 0) {
+            const maxId = Math.max(...numericIds);
+            nextId = String(maxId + 1);
+          }
+        }
+
+        setFormData({
+          stockId: nextId,
+          productName: "",
+          quantity: "",
+          price: "",
+          hsnCode: "",
+          discount: "",
+          gst: "",
+        });
+        setIsExistingStock(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching stocks:", error);
+        setErrorMessage("Could not fetch stock data.");
+      });
+  };
 
   useEffect(() => {
-    const fetchStocks = async () => {
-      try {
-        const response = await authAxios.get(API_ENDPOINTS.STOCKS);
-        setStocks(response.data);
-      } catch (error) {
-        console.error("Error fetching stocks:", error);
-      }
-    };
-    fetchStocks();
-  }, []);
+    if (!isAuthenticated()) {
+      navigate("/");
+    } else {
+      fetchStocksAndSetNextId();
+    }
+  }, [navigate]);
 
   const resetForm = () => {
-    setFormData({
-      stockId: "",
-      productName: "",
-      quantity: "",
-      price: "",
-      hsnCode: "",
-      discount: "",
-      gst: "",
-    });
+    fetchStocksAndSetNextId();
   };
 
   const handleChange = (e) => {
@@ -96,6 +114,7 @@ const StockForm = () => {
   const handleAutocompleteChange = (event, value) => {
     if (value) {
       setFormData(value);
+      setIsExistingStock(true);
     } else {
       resetForm();
     }
@@ -138,7 +157,7 @@ const StockForm = () => {
       const payload = { ...formData, updateMode };
       await authAxios.put(
         `${API_ENDPOINTS.STOCKS}/${formData.stockId}`,
-        payload
+        payload,
       );
       setUpdated(true);
       setSuccess(true);
@@ -300,21 +319,40 @@ const StockForm = () => {
           <form onSubmit={handleCreate}>
             <FormSection>
               <Grid container spacing={3}>
-                {formFields.map((field) => (
-                  <Grid item xs={12} sm={6} md={4} key={field.key}>
-                    <StyledTextField
-                      label={field.label}
-                      name={field.key}
-                      value={formData[field.key]}
-                      onChange={handleChange}
-                      variant="outlined"
-                      fullWidth
-                      required={field.required}
-                      type={field.type || "text"}
-                      placeholder={`Enter ${field.label.toLowerCase()}`}
-                    />
-                  </Grid>
-                ))}
+                {/* Stock ID - rendered separately with helper text */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <StyledTextField
+                    label="Stock ID"
+                    name="stockId"
+                    value={formData.stockId}
+                    onChange={handleChange}
+                    variant="outlined"
+                    fullWidth
+                    required
+                    placeholder="Enter stock ID"
+                    helperText={
+                      !isExistingStock ? "Auto-generated for new stocks" : ""
+                    }
+                  />
+                </Grid>
+                {/* Other fields */}
+                {formFields
+                  .filter((field) => field.key !== "stockId")
+                  .map((field) => (
+                    <Grid item xs={12} sm={6} md={4} key={field.key}>
+                      <StyledTextField
+                        label={field.label}
+                        name={field.key}
+                        value={formData[field.key]}
+                        onChange={handleChange}
+                        variant="outlined"
+                        fullWidth
+                        required={field.required}
+                        type={field.type || "text"}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                      />
+                    </Grid>
+                  ))}
               </Grid>
             </FormSection>
 
@@ -348,7 +386,7 @@ const StockForm = () => {
               <CreateButton
                 type="submit"
                 variant="contained"
-                disabled={!isStockIdEntered || loadingCreate}
+                disabled={!isStockIdEntered || loadingCreate || isExistingStock}
                 startIcon={!loadingCreate && <AddIcon />}
               >
                 {loadingCreate ? (
@@ -359,7 +397,9 @@ const StockForm = () => {
               </CreateButton>
               <UpdateButton
                 variant="outlined"
-                disabled={!isStockIdEntered || loadingUpdate}
+                disabled={
+                  !isStockIdEntered || loadingUpdate || !isExistingStock
+                }
                 onClick={handleUpdate}
                 startIcon={!loadingUpdate && <EditIcon />}
               >
@@ -367,7 +407,9 @@ const StockForm = () => {
               </UpdateButton>
               <DeleteButton
                 variant="text"
-                disabled={!isStockIdEntered || loadingDelete}
+                disabled={
+                  !isStockIdEntered || loadingDelete || !isExistingStock
+                }
                 onClick={handleDelete}
                 startIcon={!loadingDelete && <DeleteIcon />}
               >
@@ -394,10 +436,10 @@ const StockForm = () => {
               {created
                 ? "Stock created successfully!"
                 : updated
-                ? "Stock updated successfully!"
-                : deleted
-                ? "Stock deleted successfully!"
-                : ""}
+                  ? "Stock updated successfully!"
+                  : deleted
+                    ? "Stock deleted successfully!"
+                    : ""}
             </Alert>
           </Snackbar>
 
@@ -554,6 +596,12 @@ const StyledTextField = styled(TextField)({
       color: colors.text.tertiary,
       opacity: 1,
     },
+  },
+  "& .MuiFormHelperText-root": {
+    fontFamily: typography.fontFamily.primary,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    marginLeft: "4px",
   },
 });
 
