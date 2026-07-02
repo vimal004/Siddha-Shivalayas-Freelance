@@ -77,8 +77,8 @@ app.post(
     const isSpecialBill =
       req.body.type === "Consulting" || req.body.type === "Treatment";
     const templateName = isSpecialBill
-      ? "bill_template_1.docx"
-      : "bill_template.docx";
+      ? "Siddha_Shivalayas_Invoice_Layout_v2.docx"
+      : "Siddha_Shivalayas_Invoice_Layout_v2.docx";
     const tmpDocxPath = path.join(
       "/tmp",
       `bill-${req.body.id}-${Date.now()}.docx`
