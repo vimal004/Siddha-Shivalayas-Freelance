@@ -136,7 +136,7 @@ async function prepareDocxTemplate(templatePath) {
   //   <w:r><w:t>}</w:t></w:r>
   //   <w:r><w:t>}</w:t></w:r>
   const splitFinalAmountRe =
-    /<w:r><w:t>\{<\/w:t><\/w:r><w:r><w:t>\{<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>finalAmount<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>\}\{\/items<\/w:t><\/w:r>(?:<w:r><w:t>\}<\/w:t><\/w:r>)*/;
+    /<w:r><w:t>\{\{<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>finalAmount<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>\}\{\/items\}\}<\/w:t><\/w:r>/;
 
   const fixedXml = xml.replace(
     splitFinalAmountRe,
