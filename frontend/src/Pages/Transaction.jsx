@@ -1361,7 +1361,7 @@ const Transaction = () => {
                           <StyledTableRow key={index}>
                             <StyledTableCell>
                               <BillIdChip
-                                label={`B${(index + 1)
+                                label={bill.invoiceNo || bill.id || `B${(index + 1)
                                   .toString()
                                   .padStart(3, "0")}`}
                               />
