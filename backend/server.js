@@ -47,6 +47,254 @@ mongoose_default
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 // --- END: Configuration ---
 
+// ============================================================
+// TEMPLATE HELPER FUNCTIONS
+// ============================================================
+
+/**
+ * Converts a numeric amount to Indian English words.
+ * e.g. 1234.50 → "One Thousand Two Hundred Thirty Four Rupees and Fifty Paise Only"
+ */
+function numberToWords(amount) {
+  const ones = [
+    "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen",
+  ];
+  const tens = [
+    "", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety",
+  ];
+
+  function convertHundreds(n) {
+    if (n === 0) return "";
+    if (n < 20) return ones[n] + " ";
+    if (n < 100)
+      return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? " " + ones[n % 10] : "") + " ";
+    return ones[Math.floor(n / 100)] + " Hundred " + convertHundreds(n % 100);
+  }
+
+  function convert(n) {
+    if (n === 0) return "Zero";
+    let result = "";
+    if (n >= 10000000) {
+      result += convertHundreds(Math.floor(n / 10000000)) + "Crore ";
+      n %= 10000000;
+    }
+    if (n >= 100000) {
+      result += convertHundreds(Math.floor(n / 100000)) + "Lakh ";
+      n %= 100000;
+    }
+    if (n >= 1000) {
+      result += convertHundreds(Math.floor(n / 1000)) + "Thousand ";
+      n %= 1000;
+    }
+    result += convertHundreds(n);
+    return result.trim();
+  }
+
+  if (isNaN(amount) || amount == null) return "Zero Rupees Only";
+  const numAmount = parseFloat(amount);
+  const rupees = Math.floor(numAmount);
+  const paise = Math.round((numAmount - rupees) * 100);
+  let words = convert(rupees) + " Rupees";
+  if (paise > 0) {
+    words += " and " + convert(paise) + " Paise";
+  }
+  return words + " Only";
+}
+
+/**
+ * Reads the DOCX template and fixes its XML on-the-fly so that
+ * Docxtemplater can render it correctly. Specifically:
+ *
+ * 1. The template uses {{field}} (double-brace) – converts to {field}
+ * 2. {{finalAmount}} is split across XML runs by Word's spell-checker –
+ *    merges those runs and fixes the adjacent {/items} loop-close tag
+ * 3. The items row loop-start tag {#items} is missing – injects it into
+ *    the first (empty) cell of the data row
+ *
+ * None of these changes affect the visual design of the bill.
+ */
+async function prepareDocxTemplate(templatePath) {
+  const content = await fs.readFile(templatePath, "binary");
+  const zip = new PizZip(content);
+  let xml = zip.files["word/document.xml"].asText();
+
+  // Fix 1: {{field}} → {field}  (handles all tags in single <w:t> runs)
+  xml = xml.replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, "{$1}");
+
+  // Fix 2: Word's spell-checker splits {{finalAmount}}{/items} across
+  // multiple <w:r> runs.  Collapse them into two clean tags.
+  //
+  // Original XML sequence (concatenated text = "{{finalAmount}{/items}}"):
+  //   <w:r><w:t>{</w:t></w:r>
+  //   <w:r><w:t>{</w:t></w:r>
+  //   <w:proofErr w:type="spellStart"/>
+  //   <w:r><w:t>finalAmount</w:t></w:r>
+  //   <w:proofErr w:type="spellEnd"/>
+  //   <w:r><w:t>}{/items</w:t></w:r>
+  //   <w:r><w:t>}</w:t></w:r>
+  //   <w:r><w:t>}</w:t></w:r>
+  const splitFinalAmountRe =
+    /<w:r><w:t>\{<\/w:t><\/w:r><w:r><w:t>\{<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>finalAmount<\/w:t><\/w:r>(?:<w:proofErr[^>]*\/>)*<w:r><w:t>\}\{\/items<\/w:t><\/w:r>(?:<w:r><w:t>\}<\/w:t><\/w:r>)*/;
+
+  const fixedXml = xml.replace(
+    splitFinalAmountRe,
+    "<w:r><w:t>{finalAmount}{/items}</w:t></w:r>"
+  );
+  if (fixedXml !== xml) {
+    xml = fixedXml;
+    console.log("✅ Fixed split {{finalAmount}}/{/items} XML runs");
+  } else {
+    console.warn("⚠️  Could not find split finalAmount pattern – template may already be fixed");
+  }
+
+  // Fix 3: Inject the missing {#items} loop-start tag.
+  // The items data row's first cell contains an empty self-closing <w:p>
+  // identified by its stable paraId "2C49228E".
+  const injectedXml = xml.replace(
+    /<w:p\s[^>]*w14:paraId="2C49228E"[^>]*\/>/,
+    '<w:p w14:paraId="2C49228E" w14:textId="6A87250A" w:rsidR="003F019A" w:rsidRDefault="003F019A" w:rsidP="003F019A"><w:r><w:t>{#items}</w:t></w:r></w:p>'
+  );
+  if (injectedXml !== xml) {
+    xml = injectedXml;
+    console.log("✅ Injected {#items} loop-start tag into items data row");
+  } else {
+    console.warn("⚠️  Could not find items data row to inject {#items}");
+  }
+
+  zip.file("word/document.xml", xml);
+  return zip;
+}
+
+/**
+ * Maps bill data from the server/DB to the exact field names expected by
+ * the DOCX template, and computes all derived values.
+ *
+ * Template fields:
+ *   patientName, patientPhone, patientId, invoiceNo, billDate, paymentMode
+ *   items[]  →  description, hsn, qty, rate, gst, discount, finalAmount
+ *   subtotal, totalQty, totalDiscount, tax, cgst, sgst,
+ *   transportCgst, transportSgst, grandTotal, amountInWords, discountRemark
+ */
+function buildTemplateData({
+  id,
+  name,
+  phone,
+  displayDate,
+  typeOfPayment,
+  itemTotals,
+  discountValue,
+  isSpecialBill,
+  feeValue,
+  feeLabel,
+  type,
+  subtotal,
+  finalTotal,
+}) {
+  // ── Build display items ────────────────────────────────────────────────
+  let displayItems;
+
+  if (isSpecialBill && parseFloat(feeValue || 0) > 0) {
+    // Consulting / Treatment: show the fee as a single line item so the
+    // items table is never empty and the bill clearly explains the charge.
+    const fv = parseFloat(feeValue);
+    displayItems = [
+      {
+        description: feeLabel || type || "Service",
+        hsn: "",
+        qty: 1,
+        rate: fv.toFixed(2),
+        gst: "0",
+        discount: "0",
+        finalAmount: fv.toFixed(2),
+      },
+    ];
+  } else {
+    displayItems = (itemTotals || []).map((item) => {
+      const qty = parseFloat(item.quantity || 0);
+      const rate = parseFloat(item.price || 0);
+      const gstPct = parseFloat(item.GST || item.gst || 0);
+      const discPct = parseFloat(item.discount || 0);
+      const base = qty * rate;
+      const taxable = base * (1 - discPct / 100);
+      const gstAmt = taxable * (gstPct / 100);
+      const finalAmt = taxable + gstAmt;
+
+      return {
+        description: item.productName || item.name || item.description || "",
+        hsn: item.HSN || item.hsnCode || "",
+        qty,
+        rate: rate.toFixed(2),
+        gst: gstPct || "0",
+        discount: discPct || "0",
+        finalAmount: finalAmt > 0 ? finalAmt.toFixed(2) : parseFloat(item.finalAmount || 0).toFixed(2),
+      };
+    });
+  }
+
+  // ── Aggregate totals ───────────────────────────────────────────────────
+  const totalQty = displayItems.reduce(
+    (s, i) => s + parseFloat(i.qty || 0),
+    0
+  );
+
+  const totalGSTAmt = displayItems.reduce((s, i) => {
+    const qty = parseFloat(i.qty || 0);
+    const rate = parseFloat(i.rate || 0);
+    const gstPct = parseFloat(i.gst || 0);
+    const discPct = parseFloat(i.discount || 0);
+    const taxable = qty * rate * (1 - discPct / 100);
+    return s + taxable * (gstPct / 100);
+  }, 0);
+
+  const totalItemDiscountAmt = displayItems.reduce((s, i) => {
+    const qty = parseFloat(i.qty || 0);
+    const rate = parseFloat(i.rate || 0);
+    const discPct = parseFloat(i.discount || 0);
+    return s + qty * rate * (discPct / 100);
+  }, 0);
+
+  const headerDiscountAmt =
+    parseFloat(subtotal || 0) * (parseFloat(discountValue) || 0) / 100;
+
+  const cgst = (totalGSTAmt / 2).toFixed(2);
+  const sgst = (totalGSTAmt / 2).toFixed(2);
+
+  return {
+    // ── Header fields ────────────────────────────────────────────────────
+    patientName: name || "",
+    patientPhone: phone || "",
+    patientId: id || "",
+    invoiceNo: id || "",
+    billDate: displayDate,
+    paymentMode: typeOfPayment || "N/A",
+
+    // ── Items loop ───────────────────────────────────────────────────────
+    items: displayItems,
+
+    // ── Summary fields ───────────────────────────────────────────────────
+    subtotal: parseFloat(subtotal || 0).toFixed(2),
+    totalQty,
+    totalDiscount: (totalItemDiscountAmt + headerDiscountAmt).toFixed(2),
+    tax: totalGSTAmt.toFixed(2),
+    cgst,
+    sgst,
+    transportCgst: "0.00",
+    transportSgst: "0.00",
+    grandTotal: parseFloat(finalTotal || 0).toFixed(2),
+    amountInWords: numberToWords(parseFloat(finalTotal || 0)),
+    discountRemark:
+      parseFloat(discountValue) > 0
+        ? `${parseFloat(discountValue)}% discount applied`
+        : "",
+  };
+}
+
+// ============================================================
+// END: TEMPLATE HELPER FUNCTIONS
+// ============================================================
+
 // --- START: Routes ---
 // Auth routes (public - no authentication required for login)
 app.use("/auth", authRoutes);
@@ -66,19 +314,17 @@ app.get("/", (req, res) => {
 
 // Bill model is accessed via req.db after attachDbModels middleware
 
-// Bill Generation Endpoint (MODIFIED to switch templates) - Admin only
+// Bill Generation Endpoint - Admin only
 app.post(
   "/generate-bill",
   authenticateToken,
   attachDbModels,
   requireAdmin,
   async (req, res) => {
-    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const Bill = req.db.Bill;
     const isSpecialBill =
       req.body.type === "Consulting" || req.body.type === "Treatment";
-    const templateName = isSpecialBill
-      ? "Siddha_Shivalayas_Invoice_Layout_v2.docx"
-      : "Siddha_Shivalayas_Invoice_Layout_v2.docx";
+    const templateName = "Siddha_Shivalayas_Invoice_Layout_v2.docx";
     const tmpDocxPath = path.join(
       "/tmp",
       `bill-${req.body.id}-${Date.now()}.docx`
@@ -114,31 +360,27 @@ app.post(
       // 1. Calculate item subtotal
       const itemTotals = billItems.map((item) => ({
         ...item,
-        // Ensure product fields are zeroed if it's a special bill (to prevent template rendering issues)
+        // Zero out product fields for special bills
         price: isSpecialBill ? 0 : parseFloat(item.price || 0),
         quantity: isSpecialBill ? 0 : parseInt(item.quantity || 0, 10),
         HSN: isSpecialBill ? "" : item.HSN || "",
-        GST: isSpecialBill ? 0 : item.GST || 0,
+        GST: isSpecialBill ? 0 : parseFloat(item.GST || 0),
+        discount: isSpecialBill ? 0 : parseFloat(item.discount || 0),
         baseTotal: isSpecialBill
           ? 0
-          : (
-              parseFloat(item.price || 0) * parseFloat(item.quantity || 0)
-            ).toFixed(2),
+          : (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
         finalAmount: isSpecialBill
           ? 0
-          : (
-              parseFloat(item.price || 0) * parseFloat(item.quantity || 0)
-            ).toFixed(2),
+          : (parseFloat(item.price || 0) * parseFloat(item.quantity || 0)).toFixed(2),
       }));
       const itemSubtotal = itemTotals.reduce(
         (sum, item) => sum + parseFloat(item.baseTotal),
         0
       );
 
-      // 2. Calculate and add fee (MODIFIED logic)
+      // 2. Determine fee
       let feeValue = 0;
       let feeLabel = "";
-
       if (req.body.type === "Consulting") {
         feeValue = parseFloat(consultingFee || 0);
         feeLabel = "Consulting Fee";
@@ -147,13 +389,12 @@ app.post(
         feeLabel = "Treatment Fee";
       }
 
-      const subtotal = itemSubtotal + feeValue; // Combined subtotal
+      const subtotal = itemSubtotal + feeValue;
 
-      // 3. Apply discount
-      const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(
-        2
-      );
+      // 3. Apply header-level discount
+      const finalTotal = (subtotal - (subtotal * discountValue) / 100).toFixed(2);
 
+      // 4. Persist to DB
       const newBill = new Bill({
         id,
         name,
@@ -170,15 +411,7 @@ app.post(
       });
       await newBill.save();
 
-      const templatePath = path.resolve(__dirname, templateName);
-      const content = await fs.readFile(templatePath, "binary");
-      const zip = new PizZip(content);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-
-      // Date format for dd/mm/yyyy in Indian English locale
+      // 5. Format date for display
       const displayDate = date
         ? new Date(date).toLocaleDateString("en-IN", {
             day: "2-digit",
@@ -191,30 +424,37 @@ app.post(
             year: "numeric",
           });
 
-      doc.setData({
-        id,
-        name,
-        phone,
-        address,
-        age: age || "",
-        type: req.body.type || "",
-        date: displayDate.replace(/\//g, "-"),
-        items: itemTotals,
-        subtotal: subtotal.toFixed(2),
-        discount: discountValue.toFixed(2),
-        consultingFee:
-          req.body.type === "Consulting" ? feeValue.toFixed(2) : "",
-        treatmentFee: req.body.type === "Treatment" ? feeValue.toFixed(2) : "",
-        // NEW fields for bill_template_1.docx
-        feeLabel: isSpecialBill ? feeLabel : "",
-        feeValue: isSpecialBill ? feeValue.toFixed(2) : "",
-        typeOfPayment: typeOfPayment || "N/A",
-        total: finalTotal,
+      // 6. Prepare & render template
+      const templatePath = path.resolve(__dirname, templateName);
+      const zip = await prepareDocxTemplate(templatePath);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        nullGetter: () => "",   // render missing/undefined tags as empty string
       });
+
+      doc.setData(
+        buildTemplateData({
+          id,
+          name,
+          phone,
+          displayDate: displayDate.replace(/\//g, "-"),
+          typeOfPayment,
+          itemTotals,
+          discountValue,
+          isSpecialBill,
+          feeValue,
+          feeLabel,
+          type: req.body.type,
+          subtotal,
+          finalTotal,
+        })
+      );
       doc.render();
+
       const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-      // --- PDF Conversion using a temporary file ---
+      // 7. Convert to PDF via iLovePDF
       await fs.writeFile(tmpDocxPath, docxBuffer);
 
       const task = ilovepdf.newTask("officepdf");
@@ -241,19 +481,19 @@ app.post(
       try {
         await fs.unlink(tmpDocxPath);
       } catch (cleanupErr) {
-        console.error("Error cleaning up temporary file:", cleanupErr);
+        // Silently ignore cleanup errors
       }
     }
   }
 );
 
-// Download a specific bill by ID as PDF (MODIFIED to switch templates) - All authenticated users
+// Download a specific bill by ID as PDF - All authenticated users
 app.get(
   "/bills/download/:billId",
   authenticateToken,
   attachDbModels,
   async (req, res) => {
-    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const Bill = req.db.Bill;
     const tmpDocxPath = path.join(
       "/tmp",
       `bill-${req.params.billId}-${Date.now()}.docx`
@@ -265,27 +505,12 @@ app.get(
 
       const isSpecialBill =
         bill.type === "Consulting" || bill.type === "Treatment";
-      const templateName = isSpecialBill
-        ? "Siddha_Shivalayas_Invoice_Layout_v2.docx"
-        : "Siddha_Shivalayas_Invoice_Layout_v2.docx";
+      const templateName = "Siddha_Shivalayas_Invoice_Layout_v2.docx";
       const templatePath = path.resolve(__dirname, templateName);
 
-      const content = await fs.readFile(templatePath, "binary");
-      const zip = new PizZip(content);
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-
-      // Calculate totals including consulting/treatment fee
-      const itemSubtotal = bill.items.reduce(
-        (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
-        0
-      );
-
+      // Determine fee
       let feeValue = 0;
       let feeLabel = "";
-
       if (bill.type === "Consulting") {
         feeValue = bill.consultingFee || 0;
         feeLabel = "Consulting Fee";
@@ -294,10 +519,16 @@ app.get(
         feeLabel = "Treatment Fee";
       }
 
+      // Re-calculate totals consistent with generation logic
+      const itemSubtotal = bill.items.reduce(
+        (sum, item) =>
+          sum + parseFloat(item.price || 0) * parseFloat(item.quantity || 0),
+        0
+      );
       const subtotal = itemSubtotal + feeValue;
       const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
-      // Date format for dd/mm/yyyy in Indian English locale
+      // Format date
       const displayDate = bill.date
         ? new Date(bill.date).toLocaleDateString("en-IN", {
             day: "2-digit",
@@ -310,30 +541,36 @@ app.get(
             year: "numeric",
           });
 
-      doc.setData({
-        id: bill.id,
-        name: bill.name,
-        phone: bill.phone,
-        address: bill.address,
-        age: bill.age || "",
-        type: bill.type || "",
-        date: displayDate.replace(/\//g, "-"),
-        items: bill.items,
-        subtotal: subtotal.toFixed(2),
-        discount: (bill.discount || 0).toFixed(2),
-        consultingFee: bill.type === "Consulting" ? feeValue.toFixed(2) : "",
-        treatmentFee: bill.type === "Treatment" ? feeValue.toFixed(2) : "",
-        // NEW fields for bill_template_1.docx
-        feeLabel: isSpecialBill ? feeLabel : "",
-        feeValue: isSpecialBill ? feeValue.toFixed(2) : "",
-        typeOfPayment: bill.typeOfPayment || "N/A",
-        total: total.toFixed(2),
+      // Prepare & render template
+      const zip = await prepareDocxTemplate(templatePath);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        nullGetter: () => "",
       });
 
+      doc.setData(
+        buildTemplateData({
+          id: bill.id,
+          name: bill.name,
+          phone: bill.phone,
+          displayDate: displayDate.replace(/\//g, "-"),
+          typeOfPayment: bill.typeOfPayment,
+          itemTotals: bill.items,
+          discountValue: bill.discount || 0,
+          isSpecialBill,
+          feeValue,
+          feeLabel,
+          type: bill.type,
+          subtotal,
+          finalTotal: total.toFixed(2),
+        })
+      );
       doc.render();
+
       const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-      // **FIX:** Write buffer to a temporary file first
+      // Convert to PDF via iLovePDF
       await fs.writeFile(tmpDocxPath, docxBuffer);
 
       const task = ilovepdf.newTask("officepdf");
@@ -357,11 +594,10 @@ app.get(
         stack: err.stack,
       });
     } finally {
-      // **IMPORTANT:** Clean up the temporary file
       try {
         await fs.unlink(tmpDocxPath);
       } catch (cleanupErr) {
-        console.error("Error cleaning up temporary file:", cleanupErr);
+        // Silently ignore cleanup errors
       }
     }
   }
@@ -372,7 +608,7 @@ app.get(
   authenticateToken,
   attachDbModels,
   async (req, res) => {
-    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const Bill = req.db.Bill;
     try {
       // Sort by creation date for a stable chronological order
       const bills = await Bill.find().sort({ createdAt: 1 });
@@ -390,7 +626,7 @@ app.delete(
   attachDbModels,
   requireAdmin,
   async (req, res) => {
-    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const Bill = req.db.Bill;
     try {
       const { billId } = req.params;
       const bill = await Bill.findByIdAndDelete(billId);
@@ -410,7 +646,7 @@ app.put(
   attachDbModels,
   requireAdmin,
   async (req, res) => {
-    const Bill = req.db.Bill; // Use dynamic Bill model based on user role
+    const Bill = req.db.Bill;
     try {
       const { billId } = req.params;
       const { items, discount, typeOfPayment } = req.body;
