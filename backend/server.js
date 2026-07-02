@@ -270,7 +270,7 @@ function buildTemplateData({
     // ── Header fields ────────────────────────────────────────────────────
     patientName: name || "",
     patientPhone: phone || "",
-    patientId: id || "",          // patient's own reference ID
+    patientId: invoiceNo || id || "",          // display the Invoice No (Bill ID) in patientId field so they are the same
     invoiceNo: invoiceNo || id || "", // auto-generated readable bill number
     billDate: displayDate,
     paymentMode: typeOfPayment || "N/A",
@@ -282,6 +282,7 @@ function buildTemplateData({
     subtotal: parseFloat(subtotal || 0).toFixed(2),
     totalQty,
     totalDiscount: (totalItemDiscountAmt + headerDiscountAmt).toFixed(2),
+    discount: (totalItemDiscountAmt + headerDiscountAmt).toFixed(2),      // Populates the {{discount}} field under subtotal block
     tax: totalGSTAmt.toFixed(2),
     cgst,
     sgst,
@@ -361,18 +362,10 @@ app.post(
         ? 0
         : parseFloat(discount);
 
-      // ── Generate readable invoice number: SS-YYMM-NNN ─────────────────
-      // Count bills already created this calendar month to get sequence #
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const billCountThisMonth = await Bill.countDocuments({
-        createdAt: { $gte: monthStart, $lt: nextMonthStart },
-      });
-      const yy = String(now.getFullYear()).slice(-2);
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const seq = String(billCountThisMonth + 1).padStart(3, "0");
-      const generatedInvoiceNo = `SS-${yy}${mm}-${seq}`;
+      // ── Generate readable invoice number: SSB001, SSB002... (Global sequence) ──
+      const totalBills = await Bill.countDocuments({});
+      const seq = String(totalBills + 1).padStart(3, "0");
+      const generatedInvoiceNo = `SSB${seq}`;
 
       // 1. Calculate item subtotal
       const itemTotals = billItems.map((item) => ({
