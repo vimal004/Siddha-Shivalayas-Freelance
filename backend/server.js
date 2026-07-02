@@ -474,22 +474,30 @@ app.post(
 
       const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-      // 7. Convert to PDF via iLovePDF
+      // 7. Convert to PDF via iLovePDF — fall back to DOCX if conversion fails
       await fs.writeFile(tmpDocxPath, docxBuffer);
 
-      const task = ilovepdf.newTask("officepdf");
-      await task.start();
-      const file = new ILovePDFFile(tmpDocxPath);
-      await task.addFile(file);
-      await task.process();
-      const pdfData = await task.download();
+      let responseBuffer, contentType, fileName;
+      try {
+        const task = ilovepdf.newTask("officepdf");
+        await task.start();
+        const ilovePdfFile = new ILovePDFFile(tmpDocxPath);
+        await task.addFile(ilovePdfFile);
+        await task.process();
+        responseBuffer = await task.download();
+        contentType = "application/pdf";
+        fileName = `bill-${id}.pdf`;
+        console.log("✅ PDF conversion successful");
+      } catch (pdfErr) {
+        console.error("⚠️ iLovePDF failed – serving DOCX fallback:", pdfErr.message);
+        responseBuffer = docxBuffer;
+        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        fileName = `bill-${id}.docx`;
+      }
 
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=bill-${id}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      res.send(pdfData);
+      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+      res.setHeader("Content-Type", contentType);
+      res.send(responseBuffer);
     } catch (err) {
       console.error("Error during bill generation:", err);
       res.status(500).json({
@@ -589,22 +597,30 @@ app.get(
 
       const docxBuffer = doc.getZip().generate({ type: "nodebuffer" });
 
-      // Convert to PDF via iLovePDF
+      // Convert to PDF via iLovePDF — fall back to DOCX if conversion fails
       await fs.writeFile(tmpDocxPath, docxBuffer);
 
-      const task = ilovepdf.newTask("officepdf");
-      await task.start();
-      const file = new ILovePDFFile(tmpDocxPath);
-      await task.addFile(file);
-      await task.process();
-      const pdfData = await task.download();
+      let responseBuffer, contentType, fileName;
+      try {
+        const task = ilovepdf.newTask("officepdf");
+        await task.start();
+        const ilovePdfFile = new ILovePDFFile(tmpDocxPath);
+        await task.addFile(ilovePdfFile);
+        await task.process();
+        responseBuffer = await task.download();
+        contentType = "application/pdf";
+        fileName = `bill-${billId}.pdf`;
+        console.log("✅ PDF conversion successful");
+      } catch (pdfErr) {
+        console.error("⚠️ iLovePDF failed – serving DOCX fallback:", pdfErr.message);
+        responseBuffer = docxBuffer;
+        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        fileName = `bill-${billId}.docx`;
+      }
 
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=bill-${billId}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      res.send(pdfData);
+      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+      res.setHeader("Content-Type", contentType);
+      res.send(responseBuffer);
     } catch (err) {
       console.error("Error downloading bill:", err);
       res.status(500).json({

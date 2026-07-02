@@ -108,22 +108,41 @@ const Transaction = () => {
         { responseType: "blob" }
       );
 
-      // Create a blob URL and trigger download
-      const blob = new Blob([response.data], { type: "application/pdf" });
+      // Detect if the server sent PDF or DOCX (fallback)
+      const ct = response.headers["content-type"] || "";
+      const isDocx = ct.includes("wordprocessingml");
+      const ext = isDocx ? "docx" : "pdf";
+      const mimeType = isDocx
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/pdf";
+
+      const blob = new Blob([response.data], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `bill-${patientName || billId}.pdf`);
+      link.setAttribute("download", `bill-${patientName || billId}.${ext}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
+      if (isDocx) {
+        setSuccessMessage("Bill downloaded as Word document (PDF conversion unavailable).");
+      }
     } catch (error) {
       console.error("Error downloading bill:", error);
-      setErrorMessage(
-        error.response?.data?.message ||
-          "Error downloading bill. Please try again later."
-      );
+      // Blob error responses need to be parsed back to text/JSON
+      let msg = "Error downloading bill. Please try again later.";
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const parsed = JSON.parse(text);
+          msg = parsed.message || parsed.error || msg;
+        } catch (_) { /* ignore */ }
+      } else if (error.message) {
+        msg = error.message;
+      }
+      setErrorMessage(msg);
     }
   };
 
@@ -354,15 +373,28 @@ const Transaction = () => {
         { responseType: "blob" }
       );
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Detect PDF vs DOCX fallback from content-type
+      const ct = response.headers["content-type"] || "";
+      const isDocx = ct.includes("wordprocessingml");
+      const ext = isDocx ? "docx" : "pdf";
+      const mimeType = isDocx
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/pdf";
+
+      const blob = new Blob([response.data], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `bill-${formData.id}.pdf`);
+      link.setAttribute("download", `bill-${formData.id}.${ext}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      setSuccessMessage("Bill generated and downloaded successfully!");
+      setSuccessMessage(
+        isDocx
+          ? "Bill saved! Downloaded as Word document (PDF conversion unavailable)."
+          : "Bill generated and downloaded successfully!"
+      );
       if (isExistingPatientRoute) {
         fetchBillHistory();
       } else {
@@ -370,7 +402,16 @@ const Transaction = () => {
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      // Blob responses wrap JSON errors — parse them back
+      let msg = err.message || "Error processing the request";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          msg = parsed.message || parsed.error || msg;
+        } catch (_) { /* ignore */ }
+      }
+      setErrorMessage(msg);
     }
   };
 
@@ -433,7 +474,16 @@ const Transaction = () => {
       }
     } catch (err) {
       console.error(err);
-      setErrorMessage(err.message || "Error processing the request");
+      // Blob responses wrap JSON errors — parse them back
+      let msg = err.message || "Error processing the request";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          msg = parsed.message || parsed.error || msg;
+        } catch (_) { /* ignore */ }
+      }
+      setErrorMessage(msg);
     }
   };
 
