@@ -746,7 +746,7 @@ const BillHistory = () => {
                     const total =
                       subtotal - (subtotal * (bill.discount || 0)) / 100;
                     const billNumber = (index + 1).toString().padStart(3, "0");
-                    const displayId = `B${billNumber}`;
+                    const displayId = bill.invoiceNo || bill.id || `B${billNumber}`;
 
                     return (
                       <StyledTableRow key={index}>
