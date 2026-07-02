@@ -213,27 +213,29 @@ function buildTemplateData({
       },
     ];
   } else {
-    displayItems = (itemTotals || []).map((item, idx) => {
-      const qty = parseFloat(item.quantity || 0);
-      const rate = parseFloat(item.price || 0);
-      const gstPct = parseFloat(item.GST || item.gst || 0);
-      const discPct = parseFloat(item.discount || 0);
-      const base = qty * rate;
-      const taxable = base * (1 - discPct / 100);
-      const gstAmt = taxable * (gstPct / 100);
-      const finalAmt = taxable + gstAmt;
+    displayItems = (itemTotals || [])
+      .filter((item) => item !== null && item !== undefined)
+      .map((item, idx) => {
+        const qty = parseFloat(item.quantity || 0);
+        const rate = parseFloat(item.price || 0);
+        const gstPct = parseFloat(item.GST || item.gst || 0);
+        const discPct = parseFloat(item.discount || 0);
+        const base = qty * rate;
+        const taxable = base * (1 - discPct / 100);
+        const gstAmt = taxable * (gstPct / 100);
+        const finalAmt = taxable + gstAmt;
 
-      return {
-        sno: idx + 1,
-        description: item.productName || item.name || item.description || "",
-        hsn: item.HSN || item.hsnCode || "",
-        qty,
-        rate: rate.toFixed(2),
-        gst: gstPct || "0",
-        discount: discPct || "0",
-        finalAmount: finalAmt > 0 ? finalAmt.toFixed(2) : parseFloat(item.finalAmount || 0).toFixed(2),
-      };
-    });
+        return {
+          sno: idx + 1,
+          description: item.productName || item.name || item.description || "",
+          hsn: item.HSN || item.hsnCode || "",
+          qty,
+          rate: rate.toFixed(2),
+          gst: gstPct || "0",
+          discount: discPct || "0",
+          finalAmount: finalAmt > 0 ? finalAmt.toFixed(2) : parseFloat(item.finalAmount || 0).toFixed(2),
+        };
+      });
   }
 
   // ── Aggregate totals ───────────────────────────────────────────────────
@@ -537,27 +539,25 @@ app.get(
         feeLabel = "Treatment Fee";
       }
 
-      // Re-calculate totals consistent with generation logic
-      const itemSubtotal = bill.items.reduce(
+      // Re-calculate totals safely
+      const billItems = Array.isArray(bill.items) ? bill.items : [];
+      const itemSubtotal = billItems.reduce(
         (sum, item) =>
-          sum + parseFloat(item.price || 0) * parseFloat(item.quantity || 0),
+          sum + parseFloat((item && item.price) || 0) * parseFloat((item && item.quantity) || 0),
         0
       );
       const subtotal = itemSubtotal + feeValue;
       const total = subtotal - (subtotal * (bill.discount || 0)) / 100;
 
-      // Format date
-      const displayDate = bill.date
-        ? new Date(bill.date).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })
-        : new Date(bill.createdAt).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          });
+      // Safe date formatting
+      const rawDate = bill.date || bill.createdAt || new Date();
+      const parsedDate = new Date(rawDate);
+      const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+      const displayDate = validDate.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
 
       // Prepare & render template
       const zip = await prepareDocxTemplate(templatePath);
@@ -575,7 +575,7 @@ app.get(
           phone: bill.phone,
           displayDate: displayDate.replace(/\//g, "-"),
           typeOfPayment: bill.typeOfPayment,
-          itemTotals: bill.items,
+          itemTotals: billItems,
           discountValue: bill.discount || 0,
           isSpecialBill,
           feeValue,
