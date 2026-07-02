@@ -266,8 +266,8 @@ app.get(
       const isSpecialBill =
         bill.type === "Consulting" || bill.type === "Treatment";
       const templateName = isSpecialBill
-        ? "bill_template_1.docx"
-        : "bill_template.docx";
+        ? "Siddha_Shivalayas_Invoice_Layout_v2.docx"
+        : "Siddha_Shivalayas_Invoice_Layout_v2.docx";
       const templatePath = path.resolve(__dirname, templateName);
 
       const content = await fs.readFile(templatePath, "binary");
