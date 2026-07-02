@@ -43,7 +43,7 @@ const PurchaseEntry = () => {
   const [invoiceDetails, setInvoiceDetails] = useState({
     vendorName: "",
     invoiceNo: "",
-    invoiceDate: new Date().toISOString().split("T")[0],
+    invoiceDate: new Date().toLocaleDateString('en-CA'),
     gstin: "",
   });
 

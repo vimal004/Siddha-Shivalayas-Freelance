@@ -155,9 +155,7 @@ const Transaction = () => {
           setFormData((prev) => ({
             ...prev,
             ...response.data,
-            date: response.data.date
-              ? response.data.date.split("T")[0]
-              : new Date().toISOString().split("T")[0],
+            date: new Date().toLocaleDateString('en-CA'), // Formats to YYYY-MM-DD in local time
           }));
           fetchBillHistory(response.data.id);
         })
@@ -169,7 +167,7 @@ const Transaction = () => {
         phone: "",
         address: "",
         age: "",
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toLocaleDateString('en-CA'),
         items: [],
         discount: 0,
         totalAmount: 0,
@@ -454,7 +452,7 @@ const Transaction = () => {
       typeOfPayment: "",
       consultingFee: 0,
       treatmentFee: 0,
-      date: new Date().toISOString().split("T")[0],
+      date: new Date().toLocaleDateString('en-CA'),
     }));
   };
 
