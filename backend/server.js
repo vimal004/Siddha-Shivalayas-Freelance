@@ -350,9 +350,8 @@ app.post(
         treatmentFee,
       } = req.body;
 
-      if (!id) {
-        return res.status(400).json({ error: "Missing required fields (ID)." });
-      }
+      // If id is missing, fall back to a generated timestamp-based ID or empty string
+      const patientId = id || `P-${Date.now()}`;
       const billItems = Array.isArray(items) ? items : [];
       if (!typeOfPayment) {
         return res.status(400).json({ error: "Type of Payment is required." });
@@ -414,7 +413,7 @@ app.post(
 
       // 4. Persist to DB
       const newBill = new Bill({
-        id,
+        id: patientId,
         invoiceNo: generatedInvoiceNo,
         name,
         phone,
@@ -454,7 +453,7 @@ app.post(
 
       doc.setData(
         buildTemplateData({
-          id,
+          id: patientId,
           invoiceNo: generatedInvoiceNo,
           name,
           phone,

@@ -322,17 +322,6 @@ const Transaction = () => {
 
   const handleDownloadBill = async () => {
     try {
-      if (
-        !formData.id ||
-        !formData.name ||
-        !formData.phone ||
-        !formData.address
-      ) {
-        throw new Error(
-          "Patient details (ID, Name, Phone, Address) are required."
-        );
-      }
-
       const isProductBill = formData.type === "Product" || formData.type === "";
 
       if (isProductBill) {
@@ -417,17 +406,6 @@ const Transaction = () => {
 
   const handleSaveTransaction = async () => {
     try {
-      if (
-        !formData.id ||
-        !formData.name ||
-        !formData.phone ||
-        !formData.address
-      ) {
-        throw new Error(
-          "Patient details (ID, Name, Phone, Address) are required."
-        );
-      }
-
       const isProductBill = formData.type === "Product" || formData.type === "";
 
       if (isProductBill) {
