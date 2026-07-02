@@ -82,7 +82,8 @@ const purchaseSchema = new mongoose.Schema({
 });
 
 const billSchema = new mongoose.Schema({
-  id: String,
+  id: String,          // patient reference ID (from frontend)
+  invoiceNo: String,   // auto-generated human-readable bill number e.g. SS-2507-001
   name: String,
   phone: String,
   address: String,

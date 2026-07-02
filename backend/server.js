@@ -149,18 +149,18 @@ async function prepareDocxTemplate(templatePath) {
     console.warn("⚠️  Could not find split finalAmount pattern – template may already be fixed");
   }
 
-  // Fix 3: Inject the missing {#items} loop-start tag.
-  // The items data row's first cell contains an empty self-closing <w:p>
-  // identified by its stable paraId "2C49228E".
+  // Fix 3: Inject the missing {#items} loop-start tag AND {sno} serial-number
+  // tag into the first ("SNo") cell of the items data row.
+  // The cell is identified by its stable paraId "2C49228E".
   const injectedXml = xml.replace(
     /<w:p\s[^>]*w14:paraId="2C49228E"[^>]*\/>/,
-    '<w:p w14:paraId="2C49228E" w14:textId="6A87250A" w:rsidR="003F019A" w:rsidRDefault="003F019A" w:rsidP="003F019A"><w:r><w:t>{#items}</w:t></w:r></w:p>'
+    '<w:p w14:paraId="2C49228E" w14:textId="6A87250A" w:rsidR="003F019A" w:rsidRDefault="003F019A" w:rsidP="003F019A"><w:r><w:t>{#items}{sno}</w:t></w:r></w:p>'
   );
   if (injectedXml !== xml) {
     xml = injectedXml;
-    console.log("✅ Injected {#items} loop-start tag into items data row");
+    console.log("✅ Injected {#items} + {sno} into items data row");
   } else {
-    console.warn("⚠️  Could not find items data row to inject {#items}");
+    console.warn("⚠️  Could not find items data row to inject {#items}/{sno}");
   }
 
   zip.file("word/document.xml", xml);
@@ -179,6 +179,7 @@ async function prepareDocxTemplate(templatePath) {
  */
 function buildTemplateData({
   id,
+  invoiceNo,
   name,
   phone,
   displayDate,
@@ -201,6 +202,7 @@ function buildTemplateData({
     const fv = parseFloat(feeValue);
     displayItems = [
       {
+        sno: 1,
         description: feeLabel || type || "Service",
         hsn: "",
         qty: 1,
@@ -211,7 +213,7 @@ function buildTemplateData({
       },
     ];
   } else {
-    displayItems = (itemTotals || []).map((item) => {
+    displayItems = (itemTotals || []).map((item, idx) => {
       const qty = parseFloat(item.quantity || 0);
       const rate = parseFloat(item.price || 0);
       const gstPct = parseFloat(item.GST || item.gst || 0);
@@ -222,6 +224,7 @@ function buildTemplateData({
       const finalAmt = taxable + gstAmt;
 
       return {
+        sno: idx + 1,
         description: item.productName || item.name || item.description || "",
         hsn: item.HSN || item.hsnCode || "",
         qty,
@@ -265,8 +268,8 @@ function buildTemplateData({
     // ── Header fields ────────────────────────────────────────────────────
     patientName: name || "",
     patientPhone: phone || "",
-    patientId: id || "",
-    invoiceNo: id || "",
+    patientId: id || "",          // patient's own reference ID
+    invoiceNo: invoiceNo || id || "", // auto-generated readable bill number
     billDate: displayDate,
     paymentMode: typeOfPayment || "N/A",
 
@@ -357,6 +360,19 @@ app.post(
         ? 0
         : parseFloat(discount);
 
+      // ── Generate readable invoice number: SS-YYMM-NNN ─────────────────
+      // Count bills already created this calendar month to get sequence #
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const billCountThisMonth = await Bill.countDocuments({
+        createdAt: { $gte: monthStart, $lt: nextMonthStart },
+      });
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const seq = String(billCountThisMonth + 1).padStart(3, "0");
+      const generatedInvoiceNo = `SS-${yy}${mm}-${seq}`;
+
       // 1. Calculate item subtotal
       const itemTotals = billItems.map((item) => ({
         ...item,
@@ -397,6 +413,7 @@ app.post(
       // 4. Persist to DB
       const newBill = new Bill({
         id,
+        invoiceNo: generatedInvoiceNo,
         name,
         phone,
         address,
@@ -436,6 +453,7 @@ app.post(
       doc.setData(
         buildTemplateData({
           id,
+          invoiceNo: generatedInvoiceNo,
           name,
           phone,
           displayDate: displayDate.replace(/\//g, "-"),
@@ -552,6 +570,7 @@ app.get(
       doc.setData(
         buildTemplateData({
           id: bill.id,
+          invoiceNo: bill.invoiceNo || bill.id, // fall back to patient id for old bills
           name: bill.name,
           phone: bill.phone,
           displayDate: displayDate.replace(/\//g, "-"),
