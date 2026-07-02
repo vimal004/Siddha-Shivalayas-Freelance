@@ -158,7 +158,7 @@ async function prepareDocxTemplate(templatePath) {
   );
   if (injectedXml !== xml) {
     xml = injectedXml;
-    console.log("✅ Injected {#items} + {sno} into items data row");
+    console.log("✅ Injected {#items} + {sno} into items d ata row");
   } else {
     console.warn("⚠️  Could not find items data row to inject {#items}/{sno}");
   }
